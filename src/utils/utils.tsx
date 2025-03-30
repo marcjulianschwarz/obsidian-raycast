@@ -280,6 +280,17 @@ export async function getClipboardContent() {
   return clipboardText ? clipboardText : "";
 }
 
+/** Retrieves the currently selected text if available, returns undefined if not found */
+export async function getSelectedTextContent(): Promise<string | undefined> {
+  let selection;
+  try {
+    selection = await getSelectedText();
+  } catch (error) {
+    console.warn("Could not get selected text", error);
+  }
+  return selection;
+}
+
 async function ISO8601_week_no(dt: Date) {
   const tdt = new Date(dt.getTime());
   const dayn = (dt.getDay() + 6) % 7;
@@ -302,6 +313,7 @@ export async function applyTemplates(content: string, template = "") {
   const seconds = date.getSeconds().toString().padStart(2, "0");
   const timestamp = Date.now().toString();
   const clipboard = await getClipboardContent();
+  const selection = (await getSelectedTextContent()) ?? "";
 
   const preprocessed = template.includes("{content}")
     ? template // Has {content} e.g. | {hour}:{minute} | {content} |
@@ -404,6 +416,8 @@ export async function applyTemplates(content: string, template = "") {
           return clipboard;
         case "clip":
           return clipboard;
+        case "selection":
+          return selection;
         case "\n":
           return "\n";
         case "newline":
