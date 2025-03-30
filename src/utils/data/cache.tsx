@@ -79,7 +79,7 @@ export function getNotesFromCache(vault: Vault) {
   if (cacheExistForVault(vault)) {
     const data = JSON.parse(cache.get(vault.name) ?? "{}");
     if (data.notes?.length > 0 && data.lastCached > Date.now() - 1000 * 60 * 5) {
-      const notes_ = data.notes;
+      const notes_ = data.notes as Note[];
       console.log("Returning cached notes");
       return notes_;
     }
