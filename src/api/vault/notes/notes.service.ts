@@ -143,6 +143,9 @@ export function isNote(note: Note | undefined): note is Note {
 }
 
 export function deleteNote(note: Note) {
+  if (!fs.existsSync(note.path)) {
+    return;
+  }
   fs.unlinkSync(note.path);
   showToast({ title: "Deleted Note", style: Toast.Style.Success });
   return true;

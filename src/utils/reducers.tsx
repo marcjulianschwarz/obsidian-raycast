@@ -65,9 +65,12 @@ export function NoteReducer(notes: Note[], action: NoteReducerAction) {
 
     case NoteReducerActionType.Delete: {
       console.log("REDUCER DELETE");
+      const filteredNotes = notes.filter((note) => note.path !== action.payload.note.path);
+
       deleteNote(action.payload.note);
       deleteNoteFromCache(action.payload.vault, action.payload.note);
-      return notes.filter((note) => note.path !== action.payload.note.path);
+
+      return filteredNotes;
     }
 
     case NoteReducerActionType.Bookmark: {
