@@ -8,6 +8,9 @@ import { ObsidianVaultsState, Vault } from "../api/vault/vault.types";
 import { Note } from "../api/vault/notes/notes.types";
 import { loadMedia, loadObsidianJson, parseVaults } from "../api/vault/vault.service";
 import { getNotesFromCache } from "../api/cache/cache.service";
+import { Logger } from "../api/logger/logger.service";
+
+const logger = new Logger("Hooks");
 
 export const NotesContext = createContext([] as Note[]);
 export const NotesDispatchContext = createContext((() => {}) as (action: NoteReducerAction) => void);
@@ -23,7 +26,7 @@ export function useNotes(vault: Vault, bookmarked = false) {
   const notes_: Note[] = getNotesFromCache(vault);
 
   const [notes] = useState<Note[]>(notes_);
-  console.log("Using Notes");
+  logger.info("useNotes hook called");
   if (bookmarked) {
     return [notes.filter((note: Note) => note.bookmarked)] as const;
   } else {
@@ -44,6 +47,8 @@ export function useMedia(vault: Vault) {
     ready: false,
     media: [],
   });
+
+  logger.info("useMedia hook called");
 
   useEffect(() => {
     async function fetch() {
@@ -79,6 +84,8 @@ export function useObsidianVaults(): ObsidianVaultsState {
         }
       : { ready: false, vaults: [] }
   );
+
+  logger.info("useObsidianVaults hook called");
 
   useEffect(() => {
     if (!state.ready) {

@@ -3,6 +3,9 @@ import { Vault } from "../../vault.types";
 import { BookmarkEntry, BookmarkFile } from "./bookmarks.types";
 import fs from "fs";
 import { Note } from "../notes.types";
+import { Logger } from "../../../logger/logger.service";
+
+const logger = new Logger("Bookmarks");
 
 function* flattenBookmarks(BookmarkEntry: BookmarkEntry[]): Generator<BookmarkEntry> {
   for (const item of BookmarkEntry) {
@@ -15,9 +18,13 @@ function getBookmarkedJSON(vault: Vault): BookmarkEntry[] {
   const { configFileName } = getPreferenceValues();
   const bookmarkedNotesPath = `${vault.path}/${configFileName || ".obsidian"}/bookmarks.json`;
   if (!fs.existsSync(bookmarkedNotesPath)) {
+    logger.warning("No bookmarks JSON found");
     return [];
   }
-  return JSON.parse(fs.readFileSync(bookmarkedNotesPath, "utf-8"))?.items || [];
+  const fileContent = fs.readFileSync(bookmarkedNotesPath, "utf-8");
+  const bookmarkEntries = JSON.parse(fileContent).items;
+  logger.info(bookmarkEntries);
+  return bookmarkEntries || [];
 }
 
 function getBookmarkedList(vault: Vault): BookmarkEntry[] {
