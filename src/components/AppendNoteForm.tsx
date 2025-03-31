@@ -1,9 +1,10 @@
 import { ActionPanel, Form, Action, useNavigation, showToast, Toast, getPreferenceValues } from "@raycast/api";
 import fs from "fs";
-import { NoteReducerAction, NoteReducerActionType } from "../utils/data/reducers";
-import { Note, Vault } from "../utils/interfaces";
+import { NoteReducerAction, NoteReducerActionType } from "../utils/reducers";
 import { SearchNotePreferences } from "../utils/preferences";
-import { applyTemplates } from "../utils/utils";
+import { applyTemplates } from "../utils/templating";
+import { Note } from "../api/vault/notes/notes.types";
+import { Vault } from "../api/vault/vault.types";
 
 interface FormValue {
   content: string;

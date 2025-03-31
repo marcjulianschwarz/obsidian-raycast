@@ -1,13 +1,56 @@
 import { getPreferenceValues, Icon } from "@raycast/api";
 import * as fs from "fs";
-import path from "path";
+import { readFile } from "fs/promises";
+import { homedir } from "os";
+import { default as fsPath, default as path } from "path";
 import { performance } from "perf_hooks";
+import { AUDIO_FILE_EXTENSIONS, LATEX_INLINE_REGEX, LATEX_REGEX, VIDEO_FILE_EXTENSIONS } from "../../utils/constants";
+import { Media } from "../../utils/interfaces";
+import { GlobalPreferences, SearchNotePreferences } from "../../utils/preferences";
+import { tagsForString } from "../../utils/yaml";
+import { getBookmarkedNotePaths } from "./notes/bookmarks/bookmarks.service";
+import { Note } from "./notes/notes.types";
+import { ObsidianJSON, Vault } from "./vault.types";
 
-import { AUDIO_FILE_EXTENSIONS, VIDEO_FILE_EXTENSIONS } from "../constants";
-import { Media, Note, Vault } from "../interfaces";
-import { GlobalPreferences, SearchNotePreferences } from "../preferences";
-import { getBookmarkedNotePaths, getNoteFileContent } from "../utils";
-import { tagsForString } from "../yaml";
+function getVaultNameFromPath(vaultPath: string): string {
+  const name = vaultPath
+    .split(fsPath.sep)
+    .filter((i) => {
+      if (i != "") {
+        return i;
+      }
+    })
+    .pop();
+  if (name) {
+    return name;
+  } else {
+    return "Default Vault Name (check your path preferences)";
+  }
+}
+
+export function parseVaults(): Vault[] {
+  const pref: GlobalPreferences = getPreferenceValues();
+  const vaultString = pref.vaultPath;
+  return vaultString
+    .split(",")
+    .filter((vaultPath) => vaultPath.trim() !== "")
+    .filter((vaultPath) => fs.existsSync(vaultPath))
+    .map((vault) => ({ name: getVaultNameFromPath(vault.trim()), key: vault.trim(), path: vault.trim() }));
+}
+
+export async function loadObsidianJson(): Promise<Vault[]> {
+  const obsidianJsonPath = fsPath.resolve(`${homedir()}/Library/Application Support/obsidian/obsidian.json`);
+  try {
+    const obsidianJson = JSON.parse(await readFile(obsidianJsonPath, "utf8")) as ObsidianJSON;
+    return Object.values(obsidianJson.vaults).map(({ path }) => ({
+      name: getVaultNameFromPath(path),
+      key: path,
+      path,
+    }));
+  } catch (e) {
+    return [];
+  }
+}
 
 /**
  * Checks if a path should be excluded based on exclusion rules
@@ -90,6 +133,39 @@ function getUserIgnoreFilters(vault: Vault): string[] {
     const appJSON = JSON.parse(fs.readFileSync(appJSONPath, "utf-8"));
     return appJSON["userIgnoreFilters"] || [];
   }
+}
+
+export function filterContent(content: string) {
+  const pref: GlobalPreferences = getPreferenceValues();
+
+  if (pref.removeYAML) {
+    const yamlHeader = content.match(/---(.|\n)*?---/gm);
+    if (yamlHeader) {
+      content = content.replace(yamlHeader[0], "");
+    }
+  }
+  if (pref.removeLatex) {
+    const latex = content.matchAll(LATEX_REGEX);
+    for (const match of latex) {
+      content = content.replace(match[0], "");
+    }
+    const latexInline = content.matchAll(LATEX_INLINE_REGEX);
+    for (const match of latexInline) {
+      content = content.replace(match[0], "");
+    }
+  }
+  if (pref.removeLinks) {
+    content = content.replaceAll("![[", "");
+    content = content.replaceAll("[[", "");
+    content = content.replaceAll("]]", "");
+  }
+  return content;
+}
+
+export function getNoteFileContent(path: string, filter = false) {
+  let content = "";
+  content = fs.readFileSync(path, "utf8") as string;
+  return filter ? filterContent(content) : content;
 }
 
 /** Reads a list of notes from the vault path */

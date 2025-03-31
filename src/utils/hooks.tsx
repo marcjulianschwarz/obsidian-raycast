@@ -1,11 +1,13 @@
-import { showToast, Toast } from "@raycast/api";
-import { createContext, useContext, useEffect, useState } from "react";
-import { getNotesFromCache } from "./data/cache";
-import { loadMedia } from "./data/loader";
-import { NoteReducerAction } from "./data/reducers";
-import { MediaState, Note, Vault } from "./interfaces";
+import { getPreferenceValues, showToast, Toast } from "@raycast/api";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { NoteReducerAction } from "./reducers";
+import { MediaState } from "./interfaces";
 import { sortByAlphabet } from "./utils";
 import fs from "fs";
+import { ObsidianVaultsState, Vault } from "../api/vault/vault.types";
+import { Note } from "../api/vault/notes/notes.types";
+import { loadMedia, loadObsidianJson, parseVaults } from "../api/vault/vault.service";
+import { getNotesFromCache } from "../api/cache/cache.service";
 
 export const NotesContext = createContext([] as Note[]);
 export const NotesDispatchContext = createContext((() => {}) as (action: NoteReducerAction) => void);
@@ -65,4 +67,28 @@ export function useMedia(vault: Vault) {
   }, []);
 
   return media;
+}
+
+export function useObsidianVaults(): ObsidianVaultsState {
+  const pref = useMemo(() => getPreferenceValues(), []);
+  const [state, setState] = useState<ObsidianVaultsState>(
+    pref.vaultPath
+      ? {
+          ready: true,
+          vaults: parseVaults(),
+        }
+      : { ready: false, vaults: [] }
+  );
+
+  useEffect(() => {
+    if (!state.ready) {
+      loadObsidianJson()
+        .then((vaults) => {
+          setState({ vaults, ready: true });
+        })
+        .catch(() => setState({ vaults: parseVaults(), ready: true }));
+    }
+  }, []);
+
+  return state;
 }

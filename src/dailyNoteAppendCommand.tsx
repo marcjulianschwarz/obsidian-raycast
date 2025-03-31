@@ -4,14 +4,11 @@ import AdvancedURIPluginNotInstalled from "./components/Notifications/AdvancedUR
 import { NoVaultFoundMessage } from "./components/Notifications/NoVaultFoundMessage";
 import { vaultsWithoutAdvancedURIToast } from "./components/Toasts";
 import { DailyNoteAppendPreferences } from "./utils/preferences";
-import {
-  applyTemplates,
-  getObsidianTarget,
-  ObsidianTargetType,
-  useObsidianVaults,
-  vaultPluginCheck,
-} from "./utils/utils";
-import { clearCache } from "./utils/data/cache";
+import { getObsidianTarget, ObsidianTargetType } from "./utils/utils";
+import { applyTemplates } from "./utils/templating";
+import { useObsidianVaults } from "./utils/hooks";
+import { vaultPluginCheck } from "./api/vault/plugins/plugins.service";
+import { clearCache } from "./api/cache/cache.service";
 
 interface DailyNoteAppendArgs {
   text: string;

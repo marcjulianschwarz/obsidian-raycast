@@ -1,7 +1,10 @@
-import { deleteNoteFromCache, updateNoteInCache } from "./cache";
-import { Note, Vault } from "../interfaces";
-import { deleteNote, getNoteFileContent, bookmarkNote, unbookmarkNote } from "../utils";
-import { tagsForNotes } from "../yaml";
+import { deleteNoteFromCache, updateNoteInCache } from "../api/cache/cache.service";
+import { bookmarkNote, unbookmarkNote } from "../api/vault/notes/bookmarks/bookmarks.service";
+import { deleteNote } from "../api/vault/notes/notes.service";
+import { Note } from "../api/vault/notes/notes.types";
+import { getNoteFileContent } from "../api/vault/vault.service";
+import { Vault } from "../api/vault/vault.types";
+import { tagsForNotes } from "./yaml";
 
 export enum NoteReducerActionType {
   Set,

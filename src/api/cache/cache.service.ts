@@ -1,7 +1,8 @@
 import { Cache } from "@raycast/api";
-import { BYTES_PER_MEGABYTE } from "../constants";
-import { Note, Vault } from "../interfaces";
-import { loadNotes } from "./loader";
+import { BYTES_PER_MEGABYTE } from "../../utils/constants";
+import { Note } from "../vault/notes/notes.types";
+import { loadNotes } from "../vault/vault.service";
+import { Vault } from "../vault/vault.types";
 
 //--------------------------------------------------------------------------------
 // This cache is shared accross all commands.
