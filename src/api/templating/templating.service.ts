@@ -1,7 +1,7 @@
-import { ISO8601_week_no } from "./utils";
 import { DateTime } from "luxon";
-import { DAY_NUMBER_TO_STRING, MONTH_NUMBER_TO_STRING } from "./constants";
 import { Clipboard } from "@raycast/api";
+import { ISO8601_week_no } from "../../utils/utils";
+import { DAY_NUMBER_TO_STRING, MONTH_NUMBER_TO_STRING } from "../../utils/constants";
 
 /** both content and template might have templates to apply */
 export async function applyTemplates(content: string, template = "") {

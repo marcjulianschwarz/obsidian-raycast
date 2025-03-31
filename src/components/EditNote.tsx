@@ -1,9 +1,9 @@
 import { ActionPanel, Form, Action, useNavigation, showToast, Toast, Icon, confirmAlert } from "@raycast/api";
 import fs from "fs";
+import { applyTemplates } from "../api/templating/templating.service";
 import { Note } from "../api/vault/notes/notes.types";
 import { Vault } from "../api/vault/vault.types";
 import { NoteReducerAction, NoteReducerActionType } from "../utils/reducers";
-import { applyTemplates } from "../utils/templating";
 
 interface FormValue {
   content: string;

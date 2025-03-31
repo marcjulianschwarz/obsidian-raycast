@@ -1,12 +1,12 @@
 import { confirmAlert, getPreferenceValues, getSelectedText, Icon, open, showToast, Toast } from "@raycast/api";
 import { NoteFormPreferences, SearchNotePreferences } from "../../../utils/preferences";
-import { applyTemplates } from "../../../utils/templating";
 import fs from "fs";
 import { CodeBlock, CreateNoteParams, Note } from "./notes.types";
 import { Vault } from "../vault.types";
 import path from "path";
 import { directoryCreationErrorToast, fileWriteErrorToast } from "../../../components/Toasts";
 import { CODE_BLOCK_REGEX } from "../../../utils/constants";
+import { applyTemplates } from "../../templating/templating.service";
 
 export async function appendSelectedTextTo(note: Note) {
   let { appendSelectedTemplate } = getPreferenceValues<SearchNotePreferences>();
@@ -63,11 +63,11 @@ export async function createNote(vault: Vault, params: CreateNoteParams) {
 
   console.log(params.content);
 
-  content = content + getObsidianProperties(params.tags);
+  content = content + createObsidianProperties(params.tags);
   content = await applyTemplates(content);
   name = await applyTemplates(name);
 
-  const saved = await saveNote(vault.path, content, name, params.path);
+  const saved = await saveStringToDisk(vault.path, content, name, params.path);
 
   if (pref.openOnCreate) {
     const target = "obsidian://open?path=" + encodeURIComponent(path.join(vault.path, params.path, name + ".md"));
@@ -81,7 +81,7 @@ export async function createNote(vault: Vault, params: CreateNoteParams) {
 }
 
 /** Gets the Obsidian Properties YAML frontmatter for a list of tags */
-function getObsidianProperties(tags: string[]): string {
+function createObsidianProperties(tags: string[]): string {
   let obsidianProperties = "";
   if (tags.length > 0) {
     obsidianProperties = "---\ntags: [";
@@ -101,7 +101,7 @@ function getObsidianProperties(tags: string[]): string {
  * @param name - The name of the note
  * @returns - True if the note was saved successfully
  */
-async function saveNote(vaultPath: string, content: string, name: string, notePath: string) {
+async function saveStringToDisk(vaultPath: string, content: string, name: string, notePath: string) {
   const fullPath = path.join(vaultPath, notePath);
 
   if (fs.existsSync(path.join(fullPath, name + ".md"))) {

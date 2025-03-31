@@ -5,10 +5,10 @@ import { NoVaultFoundMessage } from "./components/Notifications/NoVaultFoundMess
 import { vaultsWithoutAdvancedURIToast } from "./components/Toasts";
 import { DailyNoteAppendPreferences } from "./utils/preferences";
 import { getObsidianTarget, ObsidianTargetType } from "./utils/utils";
-import { applyTemplates } from "./utils/templating";
 import { useObsidianVaults } from "./utils/hooks";
 import { vaultPluginCheck } from "./api/vault/plugins/plugins.service";
 import { clearCache } from "./api/cache/cache.service";
+import { applyTemplates } from "./api/templating/templating.service";
 
 interface DailyNoteAppendArgs {
   text: string;

@@ -2,9 +2,9 @@ import { ActionPanel, Form, Action, useNavigation, showToast, Toast, getPreferen
 import fs from "fs";
 import { NoteReducerAction, NoteReducerActionType } from "../utils/reducers";
 import { SearchNotePreferences } from "../utils/preferences";
-import { applyTemplates } from "../utils/templating";
 import { Note } from "../api/vault/notes/notes.types";
 import { Vault } from "../api/vault/vault.types";
+import { applyTemplates } from "../api/templating/templating.service";
 
 interface FormValue {
   content: string;
