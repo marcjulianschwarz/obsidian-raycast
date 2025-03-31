@@ -1,7 +1,7 @@
 import { Cache } from "@raycast/api";
 import { BYTES_PER_MEGABYTE } from "../constants";
 import { Note, Vault } from "../interfaces";
-import { NoteLoader } from "./loader";
+import { loadNotes } from "./loader";
 
 //--------------------------------------------------------------------------------
 // This cache is shared accross all commands.
@@ -16,8 +16,7 @@ const cache = new Cache({ capacity: BYTES_PER_MEGABYTE * 500 });
  * @returns The cached notes for the vault
  */
 export function cacheNotesFor(vault: Vault) {
-  const nl = new NoteLoader(vault);
-  const notes = nl.loadNotes();
+  const notes = loadNotes(vault);
   cache.set(vault.name, JSON.stringify({ lastCached: Date.now(), notes: notes }));
   return notes;
 }

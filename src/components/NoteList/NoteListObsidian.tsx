@@ -1,11 +1,10 @@
 import React, { useReducer } from "react";
 
-import { useNotes } from "../../utils/hooks";
+import { NotesContext, NotesDispatchContext, useNotes } from "../../utils/hooks";
 import { Note, Vault, SearchArguments } from "../../utils/interfaces";
 import { NoteList } from "./NoteList";
 import { NoteActions, OpenNoteActions } from "../../utils/actions";
 import { NoteReducer } from "../../utils/data/reducers";
-import { NotesContext, NotesDispatchContext } from "../../utils/utils";
 import { Action, Icon } from "@raycast/api";
 import { renewCache } from "../../utils/data/cache";
 

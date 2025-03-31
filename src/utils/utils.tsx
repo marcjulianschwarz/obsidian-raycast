@@ -5,10 +5,10 @@ import fsPath from "path";
 import path from "path";
 import { readFile } from "fs/promises";
 import { homedir } from "os";
-import { createContext, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { DateTime } from "luxon";
 
-import { Note, ObsidianJSON, ObsidianVaultsState, Vault, MediaState, Media, CodeBlock } from "../utils/interfaces";
+import { Note, ObsidianJSON, ObsidianVaultsState, Vault, Media, CodeBlock } from "../utils/interfaces";
 
 import {
   BYTES_PER_KILOBYTE,
@@ -19,9 +19,6 @@ import {
   MONTH_NUMBER_TO_STRING,
 } from "./constants";
 
-import { MediaLoader } from "./data/loader";
-
-import { NoteReducerAction } from "./data/reducers";
 import { GlobalPreferences, SearchNotePreferences } from "./preferences";
 
 export function getCodeBlocks(content: string): CodeBlock[] {
@@ -85,17 +82,6 @@ export function vaultPluginCheck(vaults: Vault[], plugin: string) {
     }
   });
   return [vaults, vaultsWithoutPlugin];
-}
-
-export function getUserIgnoreFilters(vault: Vault) {
-  const { configFileName } = getPreferenceValues();
-  const appJSONPath = `${vault.path}/${configFileName || ".obsidian"}/app.json`;
-  if (!fs.existsSync(appJSONPath)) {
-    return [];
-  } else {
-    const appJSON = JSON.parse(fs.readFileSync(appJSONPath, "utf-8"));
-    return appJSON["userIgnoreFilters"] || [];
-  }
 }
 
 type BookmarkFile = { type: "file"; path: string; title: string };
@@ -539,112 +525,3 @@ export function getListOfExtensions(media: Media[]) {
 export function isNote(note: Note | undefined): note is Note {
   return (note as Note) !== undefined;
 }
-
-function validFile(file: string, includes: string[]) {
-  for (const include of includes) {
-    if (include && file.includes(include)) {
-      return false;
-    }
-  }
-  return true;
-}
-
-export function walkFilesHelper(dirPath: string, exFolders: string[], fileEndings: string[], arrayOfFiles: string[]) {
-  const files = fs.readdirSync(dirPath);
-  const { configFileName } = getPreferenceValues();
-
-  arrayOfFiles = arrayOfFiles || [];
-
-  for (const file of files) {
-    const next = fs.statSync(dirPath + "/" + file);
-    if (
-      next.isDirectory() &&
-      validFile(file, [".git", ".obsidian", ".trash", ".excalidraw", ".mobile", configFileName].filter(Boolean))
-    ) {
-      arrayOfFiles = walkFilesHelper(dirPath + "/" + file, exFolders, fileEndings, arrayOfFiles);
-    } else {
-      if (
-        validFileEnding(file, fileEndings) &&
-        file !== ".md" &&
-        !file.includes(".excalidraw") &&
-        !dirPath.includes(".obsidian") &&
-        !dirPath.includes(configFileName || ".obsidian") &&
-        validFolder(dirPath, exFolders)
-      ) {
-        arrayOfFiles.push(path.join(dirPath, "/", file));
-      }
-    }
-  }
-
-  return arrayOfFiles;
-}
-
-export function validFolder(folder: string, exFolders: string[]) {
-  for (let f of exFolders) {
-    if (f.endsWith("/")) {
-      f = f.slice(0, -1);
-    }
-    if (folder.includes(f)) {
-      return false;
-    }
-  }
-  return true;
-}
-
-export function validFileEnding(file: string, fileEndings: string[]) {
-  for (const ending of fileEndings) {
-    if (file.endsWith(ending)) {
-      return true;
-    }
-  }
-  return false;
-}
-
-export function prefExcludedFolders() {
-  const pref: SearchNotePreferences = getPreferenceValues();
-  const foldersString = pref.excludedFolders;
-  if (foldersString) {
-    const folders = foldersString.split(",");
-    for (let i = 0; i < folders.length; i++) {
-      folders[i] = folders[i].trim();
-    }
-    return folders;
-  } else {
-    return [];
-  }
-}
-
-export function useMedia(vault: Vault) {
-  const [media, setMedia] = useState<MediaState>({
-    ready: false,
-    media: [],
-  });
-
-  useEffect(() => {
-    async function fetch() {
-      if (!media.ready) {
-        try {
-          await fs.promises.access(vault.path + "/.");
-
-          const ml = new MediaLoader(vault);
-          const media = ml.loadMedia().sort((m1, m2) => sortByAlphabet(m1.title, m2.title));
-
-          setMedia({ ready: true, media });
-        } catch (error) {
-          showToast({
-            title: "The path set in preferences doesn't exist",
-            message: "Please set a valid path in preferences",
-            style: Toast.Style.Failure,
-          });
-        }
-      }
-    }
-    fetch();
-  }, []);
-
-  return media;
-}
-
-export const NotesContext = createContext([] as Note[]);
-// eslint-disable-next-line @typescript-eslint/no-empty-function
-export const NotesDispatchContext = createContext((() => {}) as (action: NoteReducerAction) => void);

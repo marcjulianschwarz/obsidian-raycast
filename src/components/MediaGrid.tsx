@@ -3,10 +3,10 @@ import { useEffect, useMemo, useState } from "react";
 
 import { Media, MediaSearchArguments, Vault } from "../utils/interfaces";
 import { OpenPathInObsidianAction, ShowPathInFinderAction } from "../utils/actions";
-import { getListOfExtensions, useMedia } from "../utils/utils";
+import { getListOfExtensions } from "../utils/utils";
 import { IMAGE_SIZE_MAPPING } from "../utils/constants";
 import { filterMedia } from "../utils/search";
-import { useNotes } from "../utils/hooks";
+import { useMedia, useNotes } from "../utils/hooks";
 import { SearchMediaPreferences } from "../utils/preferences";
 
 export function MediaGrid(props: { vault: Vault; searchArguments: MediaSearchArguments }) {
