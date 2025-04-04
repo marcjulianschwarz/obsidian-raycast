@@ -1,4 +1,4 @@
-import { ActionPanel, Form, Action, useNavigation, getPreferenceValues, Keyboard } from "@raycast/api";
+import { ActionPanel, Form, Action, getPreferenceValues, Keyboard, popToRoot, closeMainWindow } from "@raycast/api";
 import { renewCache } from "../api/cache/cache.service";
 import { createNote } from "../api/vault/notes/notes.service";
 import { CreateNoteParams } from "../api/vault/notes/notes.types";
@@ -7,7 +7,6 @@ import { NoteFormPreferences } from "../utils/preferences";
 
 export function CreateNoteForm(props: { vault: Vault; showTitle: boolean }) {
   const { vault, showTitle } = props;
-  const { pop } = useNavigation();
 
   const pref = getPreferenceValues<NoteFormPreferences>();
   const { folderActions, tags, prefTag, prefPath } = pref;
@@ -48,7 +47,8 @@ export function CreateNoteForm(props: { vault: Vault; showTitle: boolean }) {
     if (await saved) {
       renewCache(vault);
     }
-    pop();
+    popToRoot();
+    closeMainWindow();
   }
 
   return (
