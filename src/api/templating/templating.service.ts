@@ -1,6 +1,6 @@
 import { DateTime } from "luxon";
 import { Clipboard } from "@raycast/api";
-import { ISO8601_week_no } from "../../utils/utils";
+import { getSelectedTextContent, ISO8601_week_no } from "../../utils/utils";
 import { DAY_NUMBER_TO_STRING, MONTH_NUMBER_TO_STRING } from "../../utils/constants";
 
 /** both content and template might have templates to apply */
@@ -13,6 +13,7 @@ export async function applyTemplates(content: string, template = "") {
   const seconds = date.getSeconds().toString().padStart(2, "0");
   const timestamp = Date.now().toString();
   const clipboard = (await Clipboard.readText()) || "";
+  const selectedText = (await getSelectedTextContent()) || "";
 
   const preprocessed = template.includes("{content}")
     ? template // Has {content} e.g. | {hour}:{minute} | {content} |
@@ -115,6 +116,10 @@ export async function applyTemplates(content: string, template = "") {
           return clipboard;
         case "clip":
           return clipboard;
+        case "selection":
+          return selectedText;
+        case "selected":
+          return selectedText;
         case "\n":
           return "\n";
         case "newline":

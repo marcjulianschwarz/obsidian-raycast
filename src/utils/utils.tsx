@@ -4,6 +4,7 @@ import { BYTES_PER_KILOBYTE } from "./constants";
 import { Media } from "./interfaces";
 import { Vault } from "../api/vault/vault.types";
 import { Note } from "../api/vault/notes/notes.types";
+import { getSelectedText } from "@raycast/api";
 
 export function sortByAlphabet(a: string, b: string) {
   const aTitle = a;
@@ -70,7 +71,16 @@ export function getListOfMediaFileExtensions(media: Media[]) {
   return foundExtensions;
 }
 
-// OBSIDIAN TARGETS
+/** Retrieves the currently selected text if available, returns undefined if not found */
+export async function getSelectedTextContent(): Promise<string | undefined> {
+  let selection;
+  try {
+    selection = await getSelectedText();
+  } catch (error) {
+    console.warn("Could not get selected text", error);
+  }
+  return selection;
+} // OBSIDIAN TARGETS
 
 export enum ObsidianTargetType {
   OpenVault = "obsidian://open?vault=",
