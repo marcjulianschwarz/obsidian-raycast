@@ -128,7 +128,7 @@ export function CopyObsidianURIAction(props: { note: Note }) {
 
   return (
     <Action.CopyToClipboard
-      title="Copy Obsidian URI"
+      title="Copy Obsidian Link"
       icon={Icon.Link}
       content={target}
       shortcut={{ modifiers: ["opt"], key: "u" }}
