@@ -1,7 +1,7 @@
 # Obsidian Changelog
 
 ## [Spring Cleaning] - 2025-04-05
-- Closes Raycast after creating a note
+- Closes Raycast after creating a note with the Create Note command
 - Adds `{selection}` and `{selected}` templates to Create Note command which both get replaced by the currently selected text
 - Fixes bug where a tag dropdown selection would reset after the Quick Look action
 - Fixes bug where Obsidian bookmark groups would get overriden by the extension
