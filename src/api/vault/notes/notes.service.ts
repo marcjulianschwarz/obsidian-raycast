@@ -115,6 +115,7 @@ async function saveStringToDisk(vaultPath: string, content: string, name: string
       writeTextToMarkdownFile(fullPath, name, content);
       return true;
     }
+    return false;
   } else {
     writeTextToMarkdownFile(fullPath, name, content);
     return true;
