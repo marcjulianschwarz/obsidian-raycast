@@ -90,6 +90,7 @@ export function CreateNoteForm(props: { vault: Vault; showTitle: boolean }) {
         id="content"
         placeholder={"Text"}
         defaultValue={pref.fillFormWithDefaults ? pref.prefNoteContent ?? "" : ""}
+        autoFocus={pref.focusContentArea}
       />
     </Form>
   );
