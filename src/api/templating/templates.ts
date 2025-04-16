@@ -71,10 +71,6 @@ export const templates = [
     replacement: async () => (await getSelectedTextContent()) || "",
   },
   {
-    placeholder: "{\n}",
-    replacement: () => "\n",
-  },
-  {
     placeholder: "{newline}",
     replacement: () => "\n",
   },
@@ -152,4 +148,3 @@ export const templates = [
 ];
 
 export const templateMap = new Map(templates.map((t) => [t.placeholder, t.replacement]));
-console.log(Array.from(templateMap.keys()).join("\n"));
