@@ -79,6 +79,8 @@ declare namespace Preferences {
   export type CreateNoteCommand = ExtensionPreferences & {
   /** Blank Note - Create a blank note */
   "blankNote": boolean,
+  /** Auto Focus Content Field - Let's you auto focus on the content field rather than the name field */
+  "focusContentArea": boolean,
   /** Open Note on Creation - Open the created note in Obsidian */
   "openOnCreate": boolean,
   /** Default Path - The default path where a new note will be created */
