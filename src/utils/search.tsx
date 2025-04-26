@@ -2,33 +2,6 @@ import { Media } from "./interfaces";
 import Fuse from "fuse.js";
 import { Note } from "../api/vault/notes/notes.types";
 
-/**
- * Filters a list of notes according to the input search string. If the search string is empty, all notes are returned. It will match the notes title, path and content.
- *
- * @param notes - The notes to load the media for
- * @param input - Search input
- * @param byContent - If true, will use the content of the note to filter.
- * @returns - A list of notes filtered according to the input search string
- */
-export function filterNotes(notes: Note[], input: string, byContent: boolean) {
-  if (input.length === 0) {
-    return notes;
-  }
-
-  input = input.toLowerCase();
-
-  if (byContent) {
-    return notes.filter(
-      (note) =>
-        note.content.toLowerCase().includes(input) ||
-        note.title.toLowerCase().includes(input) ||
-        note.path.toLowerCase().includes(input)
-    );
-  } else {
-    return notes.filter((note) => note.title.toLowerCase().includes(input));
-  }
-}
-
 export function filterNotesFuzzy(notes: Note[], input: string, byContent: boolean) {
   if (input.length === 0) {
     return notes;

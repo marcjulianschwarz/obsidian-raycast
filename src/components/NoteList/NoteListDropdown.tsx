@@ -1,11 +1,10 @@
 import { List } from "@raycast/api";
 import { useEffect, useState } from "react";
-import { useNotesContext, useNotesDispatchContext } from "../../utils/hooks";
+import { useNotesDispatchContext } from "../../utils/hooks";
 import { SearchArguments } from "../../utils/interfaces";
 import { NoteReducerActionType } from "../../utils/reducers";
 
 export function NoteListDropdown(props: { tags: string[]; searchArguments: SearchArguments }) {
-  const allNotes = useNotesContext();
   const dispatch = useNotesDispatchContext();
   const { tags, searchArguments } = props;
 
@@ -21,18 +20,18 @@ export function NoteListDropdown(props: { tags: string[]; searchArguments: Searc
   });
 
   // Apply the filter whenever selectedTag changes or allNotes changes
-  useEffect(() => {
-    if (allNotes) {
-      if (selectedTag !== "all") {
-        dispatch({
-          type: NoteReducerActionType.Set,
-          payload: allNotes.filter((note) => note.tags.includes(selectedTag)),
-        });
-      } else {
-        dispatch({ type: NoteReducerActionType.Set, payload: allNotes });
-      }
-    }
-  }, [selectedTag, allNotes, dispatch]);
+  // useEffect(() => {
+  //   if (allNotes) {
+  //     if (selectedTag !== "all") {
+  //       dispatch({
+  //         type: NoteReducerActionType.Set,
+  //         payload: allNotes.filter((note) => note.tags.includes(selectedTag)),
+  //       });
+  //     } else {
+  //       dispatch({ type: NoteReducerActionType.Set, payload: allNotes });
+  //     }
+  //   }
+  // }, [selectedTag, allNotes, dispatch]);
 
   function handleChange(tag: string) {
     setSelectedTag(tag);

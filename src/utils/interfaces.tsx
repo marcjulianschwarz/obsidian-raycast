@@ -3,8 +3,8 @@ import { Note } from "../api/vault/notes/notes.types";
 import { Vault } from "../api/vault/vault.types";
 
 export interface SearchArguments {
-  searchArgument: string;
-  tagArgument: string;
+  searchArgument?: string;
+  tagArgument?: string;
 }
 
 export interface Media {

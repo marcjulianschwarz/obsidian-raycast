@@ -1,10 +1,11 @@
 import { deleteNoteFromCache, updateNoteInCache } from "../api/cache/cache.service";
+import { Logger } from "../api/logger/logger.service";
 import { bookmarkNote, unbookmarkNote } from "../api/vault/notes/bookmarks/bookmarks.service";
 import { deleteNote } from "../api/vault/notes/notes.service";
 import { Note } from "../api/vault/notes/notes.types";
-import { getNoteFileContent } from "../api/vault/vault.service";
 import { Vault } from "../api/vault/vault.types";
-import { tagsForNotes } from "./yaml";
+
+const logger = new Logger("NotesReducer");
 
 export enum NoteReducerActionType {
   Set,
@@ -57,14 +58,14 @@ export type NoteReducerAction =
     };
 
 export function NoteReducer(notes: Note[], action: NoteReducerAction) {
+  logger.debug(action.type);
+
   switch (action.type) {
     case NoteReducerActionType.Set: {
-      console.log("REDUCER SET");
       return action.payload;
     }
 
     case NoteReducerActionType.Delete: {
-      console.log("REDUCER DELETE");
       const filteredNotes = notes.filter((note) => note.path !== action.payload.note.path);
 
       deleteNote(action.payload.note);
@@ -74,7 +75,6 @@ export function NoteReducer(notes: Note[], action: NoteReducerAction) {
     }
 
     case NoteReducerActionType.Bookmark: {
-      console.log("REDUCER BOOKMARK");
       bookmarkNote(action.payload.vault, action.payload.note);
       return notes.map((note) => {
         if (note.path === action.payload.note.path) {
@@ -85,7 +85,6 @@ export function NoteReducer(notes: Note[], action: NoteReducerAction) {
       });
     }
     case NoteReducerActionType.Unbookmark: {
-      console.log("REDUCER UNBOOKMARK");
       unbookmarkNote(action.payload.vault, action.payload.note);
       return notes.map((note) => {
         if (note.path === action.payload.note.path) {
@@ -97,22 +96,21 @@ export function NoteReducer(notes: Note[], action: NoteReducerAction) {
     }
 
     case NoteReducerActionType.Update: {
-      console.log("REDUCER UPDATE");
-      const newContent = getNoteFileContent(action.payload.note.path);
-      console.log(newContent);
-      action.payload.note.content = newContent;
-      const newTags = tagsForNotes([action.payload.note]);
-      action.payload.note.tags = newTags;
-      updateNoteInCache(action.payload.vault, action.payload.note);
-      return notes.map((note) => {
-        if (note.path === action.payload.note.path) {
-          return action.payload.note;
-        }
-        return note;
-      });
+      // const newContent = getNoteFileContent(action.payload.note.path);
+      // console.log(newContent);
+      // action.payload.note.content = newContent;
+      // const newTags = tagsForNotes([action.payload.note]);
+      // action.payload.note.tags = newTags;
+      // updateNoteInCache(action.payload.vault, action.payload.note);
+      // return notes.map((note) => {
+      //   if (note.path === action.payload.note.path) {
+      //     return action.payload.note;
+      //   }
+      //   return note;
+      // });
+      return notes;
     }
     case NoteReducerActionType.Add: {
-      console.log("REDUCER ADD");
       updateNoteInCache(action.payload.vault, action.payload.note);
       return [...notes, action.payload.note];
     }
