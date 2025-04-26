@@ -6,36 +6,44 @@ import { sortByAlphabet } from "./utils";
 import fs from "fs";
 import { ObsidianVaultsState, Vault } from "../api/vault/vault.types";
 import { Note } from "../api/vault/notes/notes.types";
-import { loadMedia, loadObsidianJson, parseVaults } from "../api/vault/vault.service";
-import { getNotesFromCache } from "../api/cache/cache.service";
+import {
+  loadMedia,
+  getVaultsFromObsidianJSON,
+  getExistingVaultsFromPreferences,
+  getNotes,
+} from "../api/vault/vault.service";
 import { Logger } from "../api/logger/logger.service";
 
 const logger = new Logger("Hooks");
 
-export const NotesContext = createContext([] as Note[]);
 export const NotesDispatchContext = createContext((() => {}) as (action: NoteReducerAction) => void);
 
 export function useNotes(vault: Vault, bookmarked = false) {
-  /**
-   * The preferred way of loading notes inside the extension
-   *
-   * @param vault - The Vault to get the notes from
-   * @returns All notes in the cache for the vault
-   */
+  const [notes, setNotes] = useState<Note[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const notes_: Note[] = getNotesFromCache(vault);
+  // only load notes when vault path is different
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      try {
+        setLoading(true);
+        const loadedNotes = await getNotes(vault);
+        if (!cancelled) setNotes(loadedNotes);
+      } catch {
+        console.log("error in useNotes");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [vault.path]);
 
-  const [notes] = useState<Note[]>(notes_);
-  logger.info("useNotes hook called");
-  if (bookmarked) {
-    return [notes.filter((note: Note) => note.bookmarked)] as const;
-  } else {
-    return [notes] as const;
-  }
-}
-
-export function useNotesContext() {
-  return useContext(NotesContext);
+  const filtered = useMemo(() => (bookmarked ? notes.filter((n) => n.bookmarked) : notes), [notes, bookmarked]);
+  return { notes: filtered, loading } as const;
 }
 
 export function useNotesDispatchContext() {
@@ -80,7 +88,7 @@ export function useObsidianVaults(): ObsidianVaultsState {
     pref.vaultPath
       ? {
           ready: true,
-          vaults: parseVaults(),
+          vaults: getExistingVaultsFromPreferences(),
         }
       : { ready: false, vaults: [] }
   );
@@ -89,11 +97,11 @@ export function useObsidianVaults(): ObsidianVaultsState {
 
   useEffect(() => {
     if (!state.ready) {
-      loadObsidianJson()
+      getVaultsFromObsidianJSON()
         .then((vaults) => {
           setState({ vaults, ready: true });
         })
-        .catch(() => setState({ vaults: parseVaults(), ready: true }));
+        .catch(() => setState({ vaults: getExistingVaultsFromPreferences(), ready: true }));
     }
   }, []);
 

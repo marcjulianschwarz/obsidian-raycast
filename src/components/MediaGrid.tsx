@@ -6,7 +6,7 @@ import { OpenPathInObsidianAction, ShowPathInFinderAction } from "../utils/actio
 import { getListOfMediaFileExtensions } from "../utils/utils";
 import { IMAGE_SIZE_MAPPING } from "../utils/constants";
 import { filterMedia } from "../utils/search";
-import { useMedia, useNotes } from "../utils/hooks";
+import { useMedia } from "../utils/hooks";
 import { SearchMediaPreferences } from "../utils/preferences";
 import { Vault } from "../api/vault/vault.types";
 
@@ -16,7 +16,6 @@ export function MediaGrid(props: { vault: Vault; searchArguments: MediaSearchArg
   const { ready, media } = useMedia(vault);
   const [mediaList, setMediaList] = useState<Media[]>([]);
   const [allMedia, setAllMedia] = useState<Media[]>([]);
-  const [notes] = useNotes(vault);
 
   useEffect(() => {
     if (ready) {
@@ -29,7 +28,7 @@ export function MediaGrid(props: { vault: Vault; searchArguments: MediaSearchArg
   const { imageSize } = getPreferenceValues<SearchMediaPreferences>();
 
   const [searchText, setSearchText] = useState(searchArguments?.searchArgument ?? "");
-  const list = useMemo(() => filterMedia(mediaList, searchText, notes), [mediaList, searchText]);
+  const list = useMemo(() => filterMedia(mediaList, searchText, []), [mediaList, searchText]);
 
   return (
     <Grid

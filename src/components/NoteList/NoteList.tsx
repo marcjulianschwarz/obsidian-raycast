@@ -1,69 +1,87 @@
-import { List, getPreferenceValues, ActionPanel, Action, open } from "@raycast/api";
-import { useState, useMemo } from "react";
-
+import { List, getPreferenceValues } from "@raycast/api";
+import { useState, useEffect } from "react";
 import { NoteListProps } from "../../utils/interfaces";
 import { MAX_RENDERED_NOTES } from "../../utils/constants";
-import { tagsForNotes } from "../../utils/yaml";
-import { NoteListItem } from "./NoteListItem";
+import { NoteListItem } from "./NoteListItem/NoteListItem";
 import { NoteListDropdown } from "./NoteListDropdown";
-import { filterNotes, filterNotesFuzzy } from "../../utils/search";
-import { getObsidianTarget, ObsidianTargetType } from "../../utils/utils";
 import { SearchNotePreferences } from "../../utils/preferences";
-import { useNotesContext } from "../../utils/hooks";
+import { CreateNoteView } from "./CreateNoteView";
+import { loadMiniSearchIndex } from "../../api/vault/search/search.service";
+import { Note } from "../../api/vault/notes/notes.types";
+import MiniSearch from "minisearch";
+
+function findNotesByPaths(paths: string[], allNotes: Note[]): Note[] {
+  const pathSet = new Set(paths);
+  return allNotes.filter((note) => pathSet.has(note.path));
+}
 
 export function NoteList(props: NoteListProps) {
-  const { notes, vault, title, searchArguments, action } = props;
+  const { notes, vault, title, searchArguments, action, isLoading: initialLoading } = props;
 
   const pref = getPreferenceValues<SearchNotePreferences>();
-  const allNotes = useNotesContext();
-  const [searchText, setSearchText] = useState(searchArguments.searchArgument ?? "");
-  const searchFunction = pref.fuzzySearch ? filterNotesFuzzy : filterNotes;
-  const list = useMemo(() => searchFunction(notes ?? [], searchText, pref.searchContent), [notes, searchText]);
-  const _notes = list.slice(0, MAX_RENDERED_NOTES);
+  const [searchText, setSearchText] = useState(searchArguments.searchArgument || "");
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+  const [searchIndex, setSearchIndex] = useState<MiniSearch | null>(null);
+  const [indexLoading, setIndexLoading] = useState(true);
 
-  const tags = tagsForNotes(allNotes);
+  // Effect to load the index once on mount
+  useEffect(() => {
+    let isMounted = true;
+    setIndexLoading(true);
+    loadMiniSearchIndex(vault)
+      .then((index) => {
+        if (isMounted) {
+          setSearchIndex(index);
+          setIndexLoading(false);
+        }
+      })
+      .catch((error) => {
+        console.error("Failed to load search index:", error);
+        if (isMounted) {
+          setIndexLoading(false);
+        }
+      });
 
-  function onNoteCreation() {
-    const target = getObsidianTarget({ type: ObsidianTargetType.NewNote, vault: vault, name: searchText });
-    open(target);
-    //TODO: maybe dispatch here. But what if the user cancels the creation in Obsidian or renames it there? Then the cache would be out of sync.
-  }
+    return () => {
+      isMounted = false;
+    };
+  }, [vault, notes]);
 
-  const isNotesUndefined = notes === undefined;
-  if (_notes.length == 0) {
-    return (
-      <List
-        navigationTitle={title}
-        onSearchTextChange={(value) => {
-          setSearchText(value);
-        }}
-      >
-        <List.Item
-          title={`🗒️ Create Note "${searchText}"`}
-          actions={
-            <ActionPanel>
-              <Action title="Create Note" onAction={onNoteCreation} />
-            </ActionPanel>
-          }
-        />
-      </List>
-    );
+  // const filteredNotes = searchIndex
+  //   ? findNotesByPaths(
+  //       searchIndex.search(searchText).map((res) => res.id as string),
+  //       notes
+  //     )
+  //   : [];
+  const paginatedSearchedNotes = notes.slice(0, MAX_RENDERED_NOTES);
+  const overallLoading = initialLoading || indexLoading;
+
+  // const tags = tagsForNotes(filteredNotes);
+
+  if (!overallLoading && paginatedSearchedNotes.length === 0 && searchText.trim() !== "") {
+    return <CreateNoteView title={title || ""} searchText={searchText} onSearchChange={setSearchText} vault={vault} />;
   }
 
   return (
     <List
       throttle={true}
-      isLoading={isNotesUndefined}
+      isLoading={overallLoading}
       isShowingDetail={pref.showDetail}
-      onSearchTextChange={(value) => {
-        setSearchText(value);
-      }}
+      onSearchTextChange={setSearchText}
+      onSelectionChange={setSelectedItemId}
       navigationTitle={title}
       searchText={searchText}
-      searchBarAccessory={<NoteListDropdown tags={tags} searchArguments={searchArguments} />}
+      searchBarAccessory={<NoteListDropdown tags={[]} searchArguments={searchArguments} />}
     >
-      {_notes?.map((note) => (
-        <NoteListItem note={note} vault={vault} key={note.path} pref={pref} action={action} />
+      {paginatedSearchedNotes.map((note) => (
+        <NoteListItem
+          note={note}
+          vault={vault}
+          key={note.path}
+          pref={pref}
+          action={action}
+          selectedItemId={selectedItemId}
+        />
       ))}
     </List>
   );

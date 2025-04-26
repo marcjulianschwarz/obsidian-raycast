@@ -610,6 +610,8 @@
     "@types/uuid": "^8.3.4",
     "fuse.js": "^7.0.0",
     "luxon": "^3.4.4",
+    "minisearch": "^7.1.2",
+    "pako": "^2.1.0",
     "uuid": "^8.3.2",
     "yaml": "^2.1.1"
   },
@@ -617,6 +619,7 @@
     "@raycast/eslint-config": "^1.0.6",
     "@types/luxon": "^3.4.2",
     "@types/node": "^22.14.1",
+    "@types/pako": "^2.0.3",
     "@types/react": "^17.0.52",
     "eslint": "^8.42.0",
     "prettier": "^2.8.8",
