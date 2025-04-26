@@ -1,8 +1,8 @@
 import { expect, test } from "vitest";
-import { templateMap } from "./templates";
-import { applyTemplates } from "./templating.service";
+import { templateMap } from "../api/templating/templates";
+import { applyTemplates } from "../api/templating/templating.service";
 
-test("applying all templates", async () => {
+test("should apply all templates", async () => {
   const allTemplates = Array.from(templateMap.keys()).join("\n");
   const result = await applyTemplates(allTemplates);
   expect(result).toBeDefined();
