@@ -1,43 +1,26 @@
 import { List, ActionPanel } from "@raycast/api";
-import React, { useEffect, useState } from "react";
 import fs from "fs";
-
 import { readingTime, wordCount, trimPathToMaxLength, createdDateFor, fileSizeFor } from "../../../utils/utils";
 import { yamlPropertyForString } from "../../../utils/yaml";
 import { SearchNotePreferences } from "../../../utils/preferences";
 import { Note } from "../../../api/vault/notes/notes.types";
 import { Vault } from "../../../api/vault/vault.types";
-import { filterContent, getNoteFileContent } from "../../../api/vault/vault.service";
+import { filterContent } from "../../../api/vault/vault.service";
 import { renewCache } from "../../../api/cache/cache.service";
+import { NoteActions, OpenNoteActions } from "../../../utils/actions";
+import { useNoteContent } from "../../../utils/hooks";
 
 export function NoteListItem(props: {
   note: Note;
   vault: Vault;
   key: string;
   pref: SearchNotePreferences;
-  action?: (note: Note, vault: Vault) => React.ReactFragment;
   selectedItemId: string | null;
 }) {
-  const { note, vault, pref, action } = props;
-  const [noteContent, setNoteContent] = useState<string>();
-  const [isLoading, setIsLoading] = useState(false);
+  const { note, vault, pref } = props;
 
-  useEffect(() => {
-    if (props.selectedItemId === note.path && !noteContent) {
-      setIsLoading(true);
-      const loadNoteContent = async () => {
-        try {
-          const content = await getNoteFileContent(note.path);
-          setNoteContent(content);
-        } catch (error) {
-          console.error("Failed to load note content:", error);
-        } finally {
-          setIsLoading(false);
-        }
-      };
-      loadNoteContent();
-    }
-  }, [props.selectedItemId, note.path, noteContent]);
+  const isSelected = props.selectedItemId === note.path;
+  const { noteContent, isLoading } = useNoteContent(note, { enabled: isSelected });
 
   const noteHasBeenMoved = !fs.existsSync(note.path);
   if (noteHasBeenMoved) {
@@ -71,7 +54,7 @@ export function NoteListItem(props: {
 
   function renderMetadata() {
     if (!noteContent || !pref.showMetadata) {
-      return <React.Fragment />;
+      return <></>;
     }
 
     return (
@@ -117,7 +100,8 @@ export function NoteListItem(props: {
       }
       actions={
         <ActionPanel>
-          <React.Fragment>{action && action(note, vault)}</React.Fragment>
+          <OpenNoteActions note={{ content: noteContent ?? "", ...note }} vault={vault} />
+          <NoteActions note={{ content: noteContent ?? "", ...note }} vault={vault} />
         </ActionPanel>
       }
     />

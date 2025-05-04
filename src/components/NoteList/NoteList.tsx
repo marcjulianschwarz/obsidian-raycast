@@ -8,7 +8,7 @@ import { SearchNotePreferences } from "../../utils/preferences";
 import { CreateNoteView } from "./CreateNoteView";
 
 export function NoteList(props: NoteListProps) {
-  const { notes, vault, title, searchArguments, action, isLoading } = props;
+  const { notes, vault, title, searchArguments, isLoading } = props;
 
   const pref = getPreferenceValues<SearchNotePreferences>();
   const [searchText, setSearchText] = useState(searchArguments.searchArgument || "");
@@ -37,14 +37,13 @@ export function NoteList(props: NoteListProps) {
       searchText={searchText}
       searchBarAccessory={<NoteListDropdown tags={[]} searchArguments={searchArguments} />}
     >
-      {filteredNotes.map((note) => (
+      {filteredNotes.map((note, idx) => (
         <NoteListItem
           note={note}
           vault={vault}
           key={note.path}
           pref={pref}
-          action={action}
-          selectedItemId={selectedItemId}
+          selectedItemId={!selectedItemId ? (idx === 0 ? note.path : null) : selectedItemId}
         />
       ))}
     </List>
