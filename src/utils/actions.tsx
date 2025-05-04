@@ -10,12 +10,11 @@ import {
 } from "@raycast/api";
 import React, { useEffect, useState } from "react";
 import { appendSelectedTextTo, getCodeBlocks } from "../api/vault/notes/notes.service";
-import { Note } from "../api/vault/notes/notes.types";
+import { Note, NoteWithContent } from "../api/vault/notes/notes.types";
 import { vaultPluginCheck } from "../api/vault/plugins/plugins.service";
 import { Vault } from "../api/vault/vault.types";
 import { AppendNoteForm } from "../components/AppendNoteForm";
 import { EditNote } from "../components/EditNote";
-import { NoteList } from "../components/NoteList/NoteList";
 import { NoteQuickLook } from "../components/NoteQuickLook";
 import { ObsidianIcon, PrimaryAction } from "./constants";
 import { useNotesDispatchContext } from "./hooks";
@@ -39,7 +38,7 @@ export function ShowPathInFinderAction(props: { path: string }) {
   );
 }
 
-export function EditNoteAction(props: { note: Note; vault: Vault }) {
+export function EditNoteAction(props: { note: NoteWithContent; vault: Vault }) {
   const { note, vault } = props;
   const dispatch = useNotesDispatchContext();
 
@@ -158,18 +157,18 @@ export function DeleteNoteAction(props: { note: Note; vault: Vault }) {
   );
 }
 
-export function QuickLookAction(props: { note: Note; notes: Note[]; vault: Vault }) {
-  const { note, notes, vault } = props;
+export function QuickLookAction(props: { note: NoteWithContent; vault: Vault }) {
+  const { note, vault } = props;
   return (
     <Action.Push
       title="Quick Look"
-      target={<NoteQuickLook note={note} showTitle={true} allNotes={notes} vault={vault} />}
+      target={<NoteQuickLook note={note} showTitle={true} vault={vault} />}
       icon={Icon.Eye}
     />
   );
 }
 
-export function OpenInDefaultAppAction(props: { note: Note; notes: Note[]; vault: Vault }) {
+export function OpenInDefaultAppAction(props: { note: Note; vault: Vault }) {
   const { note } = props;
   const [defaultApp, setDefaultApp] = useState<string>("Default App");
   useEffect(() => {
@@ -244,35 +243,36 @@ export function ShowVaultInFinderAction(props: { vault: Vault }) {
   return <Action.ShowInFinder title="Show in Finder" icon={Icon.Finder} path={vault.path} />;
 }
 
-export function ShowMentioningNotesAction(props: { vault: Vault; str: string; notes: Note[] }) {
-  const { vault, str, notes } = props;
-  const filteredNotes = notes.filter((note: Note) => note.content.includes(str));
-  const count = filteredNotes.length;
-  if (count > 0) {
-    const list = (
-      <NoteList
-        vault={vault}
-        notes={filteredNotes}
-        searchArguments={{ searchArgument: "", tagArgument: "" }}
-        title={`${count} notes mentioning "${str}"`}
-        action={(note: Note, vault: Vault) => {
-          return (
-            <React.Fragment>
-              <OpenNoteActions note={note} notes={notes} vault={vault} />
-              <NoteActions note={note} notes={notes} vault={vault} />
-            </React.Fragment>
-          );
-        }}
-      />
-    );
-    return <Action.Push title={`Show Mentioning Notes (${count})`} target={list} icon={Icon.Megaphone} />;
-  } else {
-    return <React.Fragment></React.Fragment>;
-  }
-}
+// export function ShowMentioningNotesAction(props: { vault: Vault; str: string; notes: Note[] }) {
+//   const { vault, str, notes } = props;
+//   const filteredNotes = notes.filter((note: Note) => note.content.includes(str));
+//   const count = filteredNotes.length;
+//   if (count > 0) {
+//     const list = (
+//       <NoteList
+//         vault={vault}
+//         notes={filteredNotes}
+//         searchArguments={{ searchArgument: "", tagArgument: "" }}
+//         title={`${count} notes mentioning "${str}"`}
+//         action={(note: Note, vault: Vault) => {
+//           return (
+//             <React.Fragment>
+//               <OpenNoteActions note={note} notes={notes} vault={vault} />
+//               <NoteActions note={note} notes={notes} vault={vault} />
+//             </React.Fragment>
+//           );
+//         }}
+//       />
+//     );
+//     return <Action.Push title={`Show Mentioning Notes (${count})`} target={list} icon={Icon.Megaphone} />;
+//   } else {
+//     return <React.Fragment></React.Fragment>;
+//   }
+// }
 
-export function CopyCodeAction(props: { note: Note }) {
+export function CopyCodeAction(props: { note: NoteWithContent }) {
   const { note } = props;
+
   const codeBlocks = getCodeBlocks(note.content);
 
   if (codeBlocks.length === 1) {
@@ -313,13 +313,13 @@ export function CopyCodeAction(props: { note: Note }) {
   }
 }
 
-export function NoteActions(props: { notes: Note[]; note: Note; vault: Vault }) {
-  const { notes, note, vault } = props;
+export function NoteActions(props: { note: NoteWithContent; vault: Vault }) {
+  const { note, vault } = props;
 
   return (
-    <React.Fragment>
+    <>
       <ShowPathInFinderAction path={note.path} />
-      <ShowMentioningNotesAction vault={vault} str={note.title} notes={notes} />
+      {/* <ShowMentioningNotesAction vault={vault} str={note.title} notes={notes} /> */}
       {note.bookmarked ? (
         <UnbookmarkNoteAction note={note} vault={vault} />
       ) : (
@@ -336,18 +336,18 @@ export function NoteActions(props: { notes: Note[]; note: Note; vault: Vault }) 
       <CopyObsidianURIAction note={note} />
       <DeleteNoteAction note={note} vault={vault} />
       <AppendTaskAction note={note} vault={vault} />
-    </React.Fragment>
+    </>
   );
 }
 
-export function OpenNoteActions(props: { note: Note; notes: Note[]; vault: Vault }) {
-  const { note, notes, vault } = props;
+export function OpenNoteActions(props: { note: NoteWithContent; vault: Vault }) {
+  const { note, vault } = props;
   const { primaryAction } = getPreferenceValues<SearchNotePreferences>();
 
   const [vaultsWithPlugin] = vaultPluginCheck([vault], "obsidian-advanced-uri");
 
-  const quicklook = <QuickLookAction note={note} notes={notes} vault={vault} />;
-  const openInDefaultApp = <OpenInDefaultAppAction note={note} notes={notes} vault={vault} />;
+  const quicklook = <QuickLookAction note={note} vault={vault} />;
+  const openInDefaultApp = <OpenInDefaultAppAction note={note} vault={vault} />;
   const obsidian = <OpenPathInObsidianAction path={note.path} />;
   const obsidianNewPane = vaultsWithPlugin.includes(vault) ? (
     <OpenNoteInObsidianNewPaneAction note={note} vault={vault} />
