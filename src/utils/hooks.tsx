@@ -11,6 +11,7 @@ import {
   getVaultsFromObsidianJSON,
   getExistingVaultsFromPreferences,
   getNotes,
+  getNoteFileContent,
 } from "../api/vault/vault.service";
 import { Logger } from "../api/logger/logger.service";
 
@@ -29,6 +30,7 @@ export function useNotes(vault: Vault, bookmarked = false) {
       try {
         setLoading(true);
         const loadedNotes = await getNotes(vault);
+        // await new Promise((resolve) => setTimeout(resolve, 5000));
         if (!cancelled) setNotes(loadedNotes);
       } catch {
         console.log("error in useNotes");
@@ -106,4 +108,27 @@ export function useObsidianVaults(): ObsidianVaultsState {
   }, []);
 
   return state;
+}
+
+/** Reads the file content for a note if enabled is set to true and exposes a loading state */
+export function useNoteContent(note: Note, options = { enabled: true }) {
+  const [noteContent, setNoteContent] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (!options.enabled) return;
+    setIsLoading(true);
+    getNoteFileContent(note.path)
+      .then((content) => {
+        setNoteContent(content);
+      })
+      .catch(() => {
+        logger.debug("Failed to load note content.");
+        setNoteContent(null);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+  }, [note, options.enabled]);
+  return { noteContent, isLoading };
 }
