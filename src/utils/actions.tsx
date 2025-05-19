@@ -9,6 +9,7 @@ import {
   List,
 } from "@raycast/api";
 import React, { useEffect, useState } from "react";
+import { bookmarkNote, unbookmarkNote } from "../api/vault/notes/bookmarks/bookmarks.service";
 import { appendSelectedTextTo, getCodeBlocks } from "../api/vault/notes/notes.service";
 import { Note, NoteWithContent } from "../api/vault/notes/notes.types";
 import { vaultPluginCheck } from "../api/vault/plugins/plugins.service";
@@ -184,30 +185,30 @@ export function OpenInDefaultAppAction(props: { note: Note; vault: Vault }) {
   return <Action.Open title={`Open in ${defaultApp}`} target={note.path} icon={Icon.AppWindow} />;
 }
 
-export function BookmarkNoteAction(props: { note: Note; vault: Vault }) {
-  const { note, vault } = props;
-  const dispatch = useNotesDispatchContext();
+export function BookmarkNoteAction(props: { note: Note; vault: Vault; onBookmark?: () => void }) {
+  const { note, vault, onBookmark } = props;
   return (
     <Action
       title="Bookmark Note"
       shortcut={{ modifiers: ["opt"], key: "p" }}
       onAction={() => {
-        dispatch({ type: NoteReducerActionType.Bookmark, payload: { note: note, vault: vault } });
+        bookmarkNote(vault, note);
+        onBookmark?.();
       }}
       icon={Icon.Bookmark}
     />
   );
 }
 
-export function UnbookmarkNoteAction(props: { note: Note; vault: Vault }) {
-  const { note, vault } = props;
-  const dispatch = useNotesDispatchContext();
+export function UnbookmarkNoteAction(props: { note: Note; vault: Vault; onUnbookmark?: () => void }) {
+  const { note, vault, onUnbookmark } = props;
   return (
     <Action
       title="Unbookmark Note"
       shortcut={{ modifiers: ["opt"], key: "p" }}
       onAction={() => {
-        dispatch({ type: NoteReducerActionType.Unbookmark, payload: { note: note, vault: vault } });
+        unbookmarkNote(vault, note);
+        onUnbookmark?.();
       }}
       icon={Icon.Bookmark}
     />
@@ -313,17 +314,23 @@ export function CopyCodeAction(props: { note: NoteWithContent }) {
   }
 }
 
-export function NoteActions(props: { note: NoteWithContent; vault: Vault }) {
-  const { note, vault } = props;
+type NoteActionType = "bookmark" | "unbookmark" | "edit" | "append" | "appendSelected";
+
+export function NoteActions(props: {
+  note: NoteWithContent;
+  vault: Vault;
+  onNoteAction?: (actionType: NoteActionType) => void;
+}) {
+  const { note, vault, onNoteAction } = props;
 
   return (
     <>
       <ShowPathInFinderAction path={note.path} />
       {/* <ShowMentioningNotesAction vault={vault} str={note.title} notes={notes} /> */}
       {note.bookmarked ? (
-        <UnbookmarkNoteAction note={note} vault={vault} />
+        <UnbookmarkNoteAction note={note} vault={vault} onUnbookmark={() => onNoteAction?.("unbookmark")} />
       ) : (
-        <BookmarkNoteAction note={note} vault={vault} />
+        <BookmarkNoteAction note={note} vault={vault} onBookmark={() => onNoteAction?.("bookmark")} />
       )}
       <CopyCodeAction note={note} />
       <EditNoteAction note={note} vault={vault} />

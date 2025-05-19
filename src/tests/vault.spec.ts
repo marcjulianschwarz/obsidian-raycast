@@ -46,7 +46,7 @@ describe("vault", () => {
   describe("getNoteEntries", () => {
     it("should get note entries", async () => {
       const noteMetadataEntries = await getNotes(tempVaultData.vault);
-      console.log(noteMetadataEntries);
+      expect(noteMetadataEntries.length).toBe(2);
     });
   });
 });

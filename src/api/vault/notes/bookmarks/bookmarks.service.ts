@@ -1,6 +1,6 @@
 import { getPreferenceValues } from "@raycast/api";
 import { Vault } from "../../vault.types";
-import { BookmarkEntry, BookmarkFile, BookMarkJson } from "./bookmarks.types";
+import { BookmarkEntry, BookmarkFile, BookmarkJson } from "./bookmarks.types";
 import fs from "fs";
 import path from "path";
 import { Note } from "../notes.types";
@@ -16,7 +16,7 @@ function* flattenBookmarks(bookmarkEntries: BookmarkEntry[]): Generator<Bookmark
   }
 }
 
-function getBookmarksJson(vault: Vault): BookMarkJson | undefined {
+export function getBookmarksJson(vault: Vault): BookmarkJson | undefined {
   const { configFileName } = getPreferenceValues();
   const bookmarksJsonPath = `${vault.path}/${configFileName || ".obsidian"}/bookmarks.json`;
   if (!fs.existsSync(bookmarksJsonPath)) {
@@ -24,18 +24,18 @@ function getBookmarksJson(vault: Vault): BookMarkJson | undefined {
     return;
   }
   const fileContent = fs.readFileSync(bookmarksJsonPath, "utf-8");
-  const bookmarkJson = JSON.parse(fileContent) as BookMarkJson;
+  const bookmarkJson = JSON.parse(fileContent) as BookmarkJson;
   logger.info(bookmarkJson);
   return bookmarkJson;
 }
 
-function writeBookmarksJson(vault: Vault, bookmarksJson: BookMarkJson) {
+function writeBookmarksJson(vault: Vault, bookmarksJson: BookmarkJson) {
   const { configFileName } = getPreferenceValues();
   const bookmarksJsonPath = `${vault.path}/${configFileName || ".obsidian"}/bookmarks.json`;
   fs.writeFileSync(bookmarksJsonPath, JSON.stringify(bookmarksJson, null, 2));
 }
 
-function getAllBookmarkFiles(vault: Vault): BookmarkFile[] {
+export function getAllBookmarkFiles(vault: Vault): BookmarkFile[] {
   const bookmarkJson = getBookmarksJson(vault);
   if (!bookmarkJson) return [];
   return Array.from(flattenBookmarks(bookmarkJson.items));
@@ -69,7 +69,7 @@ export function bookmarkNote(vault: Vault, note: Note) {
 
   // If no bookmarks.json exists, create a new one with just this note
   if (!bookmarksJson) {
-    const newBookmarksJson: BookMarkJson = {
+    const newBookmarksJson: BookmarkJson = {
       items: [bookmarkedNote],
     };
     writeBookmarksJson(vault, newBookmarksJson);
