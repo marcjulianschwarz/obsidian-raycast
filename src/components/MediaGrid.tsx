@@ -1,14 +1,13 @@
 import { Action, ActionPanel, getPreferenceValues, Grid, Image } from "@raycast/api";
 import { useEffect, useMemo, useState } from "react";
-
 import { Media, MediaSearchArguments } from "../utils/interfaces";
 import { OpenPathInObsidianAction, ShowPathInFinderAction } from "../utils/actions";
 import { getListOfMediaFileExtensions } from "../utils/utils";
 import { IMAGE_SIZE_MAPPING } from "../utils/constants";
-import { filterMedia } from "../utils/search";
 import { useMedia } from "../utils/hooks";
 import { SearchMediaPreferences } from "../utils/preferences";
 import { Vault } from "../api/vault/vault.types";
+import { filterMedia } from "../api/search/search.service";
 
 export function MediaGrid(props: { vault: Vault; searchArguments: MediaSearchArguments }) {
   const { vault, searchArguments } = props;
@@ -28,7 +27,7 @@ export function MediaGrid(props: { vault: Vault; searchArguments: MediaSearchArg
   const { imageSize } = getPreferenceValues<SearchMediaPreferences>();
 
   const [searchText, setSearchText] = useState(searchArguments?.searchArgument ?? "");
-  const list = useMemo(() => filterMedia(mediaList, searchText, []), [mediaList, searchText]);
+  const list = useMemo(() => filterMedia(mediaList, searchText), [mediaList, searchText]);
 
   return (
     <Grid

@@ -6,6 +6,7 @@ import { NoteListItem } from "./NoteListItem/NoteListItem";
 import { NoteListDropdown } from "./NoteListDropdown";
 import { SearchNotePreferences } from "../../utils/preferences";
 import { CreateNoteView } from "./CreateNoteView";
+import { filterNotesFuzzy } from "../../api/search/search.service";
 
 const MemoizedNoteListItem = memo(NoteListItem);
 
@@ -21,8 +22,7 @@ export function NoteList(props: NoteListProps) {
       return notes.slice(0, MAX_RENDERED_NOTES);
     }
 
-    const lowerSearchText = inputText.toLowerCase();
-    return notes.filter((note) => note.title.toLowerCase().includes(lowerSearchText)).slice(0, MAX_RENDERED_NOTES);
+    return filterNotesFuzzy(notes, inputText, false).slice(0, MAX_RENDERED_NOTES);
   }, [notes, inputText]);
 
   if (filteredNotes.length === 0 && inputText.trim() !== "") {

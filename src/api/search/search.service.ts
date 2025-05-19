@@ -1,6 +1,6 @@
-import { Media } from "./interfaces";
 import Fuse from "fuse.js";
-import { Note } from "../api/vault/notes/notes.types";
+import { Media } from "../../utils/interfaces";
+import { Note } from "../vault/notes/notes.types";
 
 export function filterNotesFuzzy(notes: Note[], input: string, byContent: boolean) {
   if (input.length === 0) {
@@ -38,21 +38,19 @@ export function filterNotesFuzzy(notes: Note[], input: string, byContent: boolea
  * @param input - Search input
  * @returns - A list of media filtered according to the input search string
  */
-export function filterMedia(mediaList: Media[], input: string, notes: Note[]) {
+export function filterMedia(mediaList: Media[], input: string) {
   if (input?.length === 0) {
     return mediaList;
   }
 
   input = input.toLowerCase();
 
-  notes = notes.filter((note) => note.title.toLowerCase().includes(input));
+  // notes = notes.filter((note) => note.title.toLowerCase().includes(input));
 
   return mediaList.filter((media) => {
-    return (
-      media.title.toLowerCase().includes(input) ||
-      media.path.toLowerCase().includes(input) ||
-      // Filter media that is mentioned in a note which has the searched title
-      notes.some((note) => note.content.includes(media.title))
-    );
+    return media.title.toLowerCase().includes(input) || media.path.toLowerCase().includes(input);
+    // Filter media that is mentioned in a note which has the searched title
+    // TODO: add information about where the media is linked during indexing
+    // notes.some((note) => note.content.includes(media.title))
   });
 }
