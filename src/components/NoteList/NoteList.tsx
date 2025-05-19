@@ -1,5 +1,5 @@
 import { List, getPreferenceValues } from "@raycast/api";
-import { useMemo, useState } from "react";
+import { memo, useMemo, useState } from "react";
 import { NoteListProps } from "../../utils/interfaces";
 import { MAX_RENDERED_NOTES } from "../../utils/constants";
 import { NoteListItem } from "./NoteListItem/NoteListItem";
@@ -7,23 +7,26 @@ import { NoteListDropdown } from "./NoteListDropdown";
 import { SearchNotePreferences } from "../../utils/preferences";
 import { CreateNoteView } from "./CreateNoteView";
 
+const MemoizedNoteListItem = memo(NoteListItem);
+
 export function NoteList(props: NoteListProps) {
   const { notes, vault, title, searchArguments, isLoading } = props;
 
   const pref = getPreferenceValues<SearchNotePreferences>();
-  const [searchText, setSearchText] = useState(searchArguments.searchArgument || "");
+  const [inputText, setInputText] = useState(searchArguments.searchArgument || "");
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
 
-  const filteredNotes = useMemo(
-    () =>
-      notes.filter((note) => note.title.toLowerCase().includes(searchText.toLowerCase())).slice(0, MAX_RENDERED_NOTES),
-    [notes, searchText]
-  );
+  const filteredNotes = useMemo(() => {
+    if (!inputText.trim()) {
+      return notes.slice(0, MAX_RENDERED_NOTES);
+    }
 
-  // const tags = tagsForNotes(filteredNotes);
+    const lowerSearchText = inputText.toLowerCase();
+    return notes.filter((note) => note.title.toLowerCase().includes(lowerSearchText)).slice(0, MAX_RENDERED_NOTES);
+  }, [notes, inputText]);
 
-  if (filteredNotes.length === 0 && searchText.trim() !== "") {
-    return <CreateNoteView title={title || ""} searchText={searchText} onSearchChange={setSearchText} vault={vault} />;
+  if (filteredNotes.length === 0 && inputText.trim() !== "") {
+    return <CreateNoteView title={title || ""} searchText={inputText} onSearchChange={setInputText} vault={vault} />;
   }
 
   return (
@@ -31,14 +34,13 @@ export function NoteList(props: NoteListProps) {
       isLoading={isLoading}
       throttle={true}
       isShowingDetail={pref.showDetail}
-      onSearchTextChange={setSearchText}
+      onSearchTextChange={setInputText}
       onSelectionChange={setSelectedItemId}
       navigationTitle={title}
-      searchText={searchText}
       searchBarAccessory={<NoteListDropdown tags={[]} searchArguments={searchArguments} />}
     >
       {filteredNotes.map((note, idx) => (
-        <NoteListItem
+        <MemoizedNoteListItem
           note={note}
           vault={vault}
           key={note.path}
