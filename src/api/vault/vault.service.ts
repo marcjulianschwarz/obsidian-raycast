@@ -10,6 +10,7 @@ import { ObsidianJSON, Vault } from "./vault.types";
 import { getFilePaths } from "../file/file.service";
 import { Logger } from "../logger/logger.service";
 import { Note } from "./notes/notes.types";
+import { getBookmarkedNotePaths } from "./notes/bookmarks/bookmarks.service";
 
 const logger: Logger = new Logger("Vaults");
 
@@ -171,18 +172,18 @@ function getIconFor(filePath: string) {
 
 export async function getNotes(vault: Vault): Promise<Note[]> {
   const filePaths = await getMarkdownFilePathsFromVault(vault);
-
+  const bookmarkedFilePaths = getBookmarkedNotePaths(vault);
   const notes: Note[] = [];
 
   for (const filePath of filePaths) {
     const title = path.basename(filePath, path.extname(filePath));
-    // const relativePath = path.relative(vault.path, filePath);
+    const relativePath = path.relative(vault.path, filePath);
 
     notes.push({
       title: title,
       path: filePath,
       lastModified: fs.statSync(filePath).mtime,
-      bookmarked: false, //bookmarkedFilePaths.includes(relativePath),
+      bookmarked: bookmarkedFilePaths.includes(relativePath),
     });
   }
   return notes;

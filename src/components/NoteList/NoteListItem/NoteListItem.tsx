@@ -9,6 +9,7 @@ import { filterContent } from "../../../api/vault/vault.service";
 import { renewCache } from "../../../api/cache/cache.service";
 import { NoteActions, OpenNoteActions } from "../../../utils/actions";
 import { useNoteContent } from "../../../utils/hooks";
+import { useState } from "react";
 
 export function NoteListItem(props: {
   note: Note;
@@ -19,6 +20,7 @@ export function NoteListItem(props: {
 }) {
   const { note, vault, pref } = props;
 
+  const [isBookmarked, setIsBookmarked] = useState(note.bookmarked);
   const isSelected = props.selectedItemId === note.path;
   const { noteContent, isLoading } = useNoteContent(note, { enabled: isSelected });
 
@@ -26,6 +28,9 @@ export function NoteListItem(props: {
   if (noteHasBeenMoved) {
     renewCache(vault);
   }
+
+  // Create a modified note object with the current bookmark state
+  const updatedNote = { ...note, bookmarked: isBookmarked };
 
   function TagList() {
     return null;
@@ -68,11 +73,14 @@ export function NoteListItem(props: {
         <TagList />
         <Link />
         <List.Item.Detail.Metadata.Separator />
-        <List.Item.Detail.Metadata.Label title="Creation Date" text={createdDateFor(note).toLocaleDateString()} />
-        <List.Item.Detail.Metadata.Label title="File Size" text={fileSizeFor(note).toFixed(2) + " KB"} />
+        <List.Item.Detail.Metadata.Label
+          title="Creation Date"
+          text={createdDateFor(updatedNote).toLocaleDateString()}
+        />
+        <List.Item.Detail.Metadata.Label title="File Size" text={fileSizeFor(updatedNote).toFixed(2) + " KB"} />
         <List.Item.Detail.Metadata.Label
           title="Note Path"
-          text={trimPathToMaxLength(note.path.split(vault.path)[1], 55)}
+          text={trimPathToMaxLength(updatedNote.path.split(vault.path)[1], 55)}
         />
       </List.Item.Detail.Metadata>
     );
@@ -80,11 +88,11 @@ export function NoteListItem(props: {
 
   return !noteHasBeenMoved ? (
     <List.Item
-      title={note.title}
-      id={note.path}
+      title={updatedNote.title}
+      id={updatedNote.path}
       accessories={[
         {
-          icon: note.bookmarked
+          icon: isBookmarked
             ? {
                 source: "bookmark.svg",
               }
@@ -100,8 +108,21 @@ export function NoteListItem(props: {
       }
       actions={
         <ActionPanel>
-          <OpenNoteActions note={{ content: noteContent ?? "", ...note }} vault={vault} />
-          <NoteActions note={{ content: noteContent ?? "", ...note }} vault={vault} />
+          <OpenNoteActions note={{ content: noteContent ?? "", ...updatedNote }} vault={vault} />
+          <NoteActions
+            note={{ content: noteContent ?? "", ...updatedNote }}
+            vault={vault}
+            onNoteAction={(actionType) => {
+              switch (actionType) {
+                case "bookmark":
+                  setIsBookmarked(true);
+                  break;
+                case "unbookmark":
+                  setIsBookmarked(false);
+                  break;
+              }
+            }}
+          />
         </ActionPanel>
       }
     />
