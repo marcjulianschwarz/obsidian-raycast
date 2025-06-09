@@ -347,8 +347,8 @@ export function NoteActions(props: {
   );
 }
 
-export function OpenNoteActions(props: { note: NoteWithContent; vault: Vault }) {
-  const { note, vault } = props;
+export function OpenNoteActions(props: { note: NoteWithContent; vault: Vault; showQuickLook?: boolean }) {
+  const { note, vault, showQuickLook = true } = props;
   const { primaryAction } = getPreferenceValues<SearchNotePreferences>();
 
   const [vaultsWithPlugin] = vaultPluginCheck({ vaults: [vault], communityPlugins: ["obsidian-advanced-uri"] });
@@ -363,7 +363,7 @@ export function OpenNoteActions(props: { note: NoteWithContent; vault: Vault }) 
   if (primaryAction == PrimaryAction.QuickLook) {
     return (
       <React.Fragment>
-        {quicklook}
+        {showQuickLook && quicklook}
         {obsidian}
         {obsidianNewPane}
         {openInDefaultApp}
