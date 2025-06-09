@@ -344,6 +344,15 @@
           "default": false
         },
         {
+          "name": "focusContentArea",
+          "type": "checkbox",
+          "label": "Auto Focus Content Field",
+          "title": "Auto Focus Content Field",
+          "required": false,
+          "description": "Let's you auto focus on the content field rather than the name field",
+          "default": false
+        },
+        {
           "name": "openOnCreate",
           "type": "checkbox",
           "title": "Open Note on Creation",

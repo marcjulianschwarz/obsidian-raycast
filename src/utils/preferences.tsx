@@ -21,6 +21,7 @@ export interface NoteFormPreferences extends GlobalPreferences {
   tags: string;
   openOnCreate: boolean;
   folderActions: string;
+  focusContentArea: boolean;
 }
 
 export interface SearchNotePreferences extends GlobalPreferences, AppendNotePreferences {
