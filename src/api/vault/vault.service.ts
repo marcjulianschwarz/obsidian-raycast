@@ -11,6 +11,7 @@ import { getFilePaths } from "../file/file.service";
 import { Logger } from "../logger/logger.service";
 import { Note } from "./notes/notes.types";
 import { getBookmarkedNotePaths } from "./notes/bookmarks/bookmarks.service";
+import { parseExcludedFoldersPreferences } from "../preferences/preferences.service";
 
 const logger: Logger = new Logger("Vaults");
 
@@ -50,18 +51,6 @@ export async function getVaultsFromObsidianJSON(): Promise<Vault[]> {
   }
 }
 
-/** Gets a list of folders that are marked as excluded inside of the Raycast preferences */
-function getExcludedFoldersFromPreferences(): string[] {
-  const { configFileName } = getPreferenceValues();
-  const preferences = getPreferenceValues<SearchNotePreferences>();
-  const foldersString = preferences.excludedFolders;
-  if (!foldersString) return [];
-
-  const folders = foldersString.split(",").map((folder) => folder.trim());
-  folders.push(configFileName);
-  return folders;
-}
-
 /** Gets a list of folders that are ignored by the user inside of Obsidian */
 function getExcludedFoldersFromObsidian(vault: Vault): string[] {
   const { configFileName } = getPreferenceValues<GlobalPreferences>();
@@ -76,9 +65,11 @@ function getExcludedFoldersFromObsidian(vault: Vault): string[] {
 
 /** Returns a list of file paths for all notes inside of the given vault, filtered by Raycast and Obsidian exclusions. */
 export async function getMarkdownFilePathsFromVault(vault: Vault): Promise<string[]> {
-  const excludedFolders = getExcludedFoldersFromPreferences();
+  const { configFileName } = getPreferenceValues();
+  const pref = getPreferenceValues<SearchNotePreferences>();
+  const excludedFolders = parseExcludedFoldersPreferences(pref.excludedFolders);
   const userIgnoredFolders = getExcludedFoldersFromObsidian(vault);
-  excludedFolders.push(...userIgnoredFolders);
+  excludedFolders.push(...userIgnoredFolders, configFileName);
   const files = await getFilePaths({
     path: vault.path,
     excludedFolders,
@@ -123,7 +114,12 @@ export async function getNoteFileContent(path: string, filter = false) {
 
 /** Gets a list of file paths for all media. */
 async function getMediaFilePaths(vault: Vault) {
-  const excludedFolders = getExcludedFoldersFromPreferences();
+  const { configFileName } = getPreferenceValues();
+  const pref = getPreferenceValues<SearchNotePreferences>();
+  const excludedFolders = parseExcludedFoldersPreferences(pref.excludedFolders);
+  const userIgnoredFolders = getExcludedFoldersFromObsidian(vault);
+  excludedFolders.push(...userIgnoredFolders, configFileName);
+
   const files = await getFilePaths({
     path: vault.path,
     excludedFolders,
