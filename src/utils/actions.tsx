@@ -85,7 +85,7 @@ export function AppendSelectedTextToNoteAction(props: { note: Note; vault: Vault
   );
 }
 
-export function CopyNoteAction(props: { note: Note }) {
+export function CopyNoteAction(props: { note: NoteWithContent }) {
   const { note } = props;
   return (
     <Action.CopyToClipboard
@@ -103,7 +103,7 @@ export function CopyNoteTitleAction(props: { note: Note }) {
   );
 }
 
-export function PasteNoteAction(props: { note: Note }) {
+export function PasteNoteAction(props: { note: NoteWithContent }) {
   const { note } = props;
   return <Action.Paste title="Paste Note Content" content={note.content} shortcut={{ modifiers: ["opt"], key: "v" }} />;
 }
