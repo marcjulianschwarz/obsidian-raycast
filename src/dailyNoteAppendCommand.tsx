@@ -2,7 +2,6 @@ import { Action, ActionPanel, closeMainWindow, getPreferenceValues, List, open, 
 import { useEffect, useState } from "react";
 import AdvancedURIPluginNotInstalled from "./components/Notifications/AdvancedURIPluginNotInstalled";
 import { NoVaultFoundMessage } from "./components/Notifications/NoVaultFoundMessage";
-import { vaultsWithoutAdvancedURIToast } from "./components/Toasts";
 import { DailyNoteAppendPreferences } from "./utils/preferences";
 import { getObsidianTarget, ObsidianTargetType } from "./utils/utils";
 import { useObsidianVaults } from "./utils/hooks";
@@ -18,7 +17,7 @@ export default function DailyNoteAppend(props: { arguments: DailyNoteAppendArgs 
   const { vaults, ready } = useObsidianVaults();
   const { text } = props.arguments;
   const { appendTemplate, heading, vaultName, prepend, silent } = getPreferenceValues<DailyNoteAppendPreferences>();
-  const [vaultsWithPlugin, vaultsWithoutPlugin] = vaultPluginCheck({
+  const [vaultsWithPlugin] = vaultPluginCheck({
     vaults: vaults,
     communityPlugins: ["obsidian-advanced-uri"],
     corePlugins: ["daily-notes"],
