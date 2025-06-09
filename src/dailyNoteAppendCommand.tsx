@@ -68,9 +68,6 @@ export default function DailyNoteAppend(props: { arguments: DailyNoteAppendArgs 
     return <NoVaultFoundMessage />;
   }
 
-  if (vaultsWithoutPlugin.length > 0) {
-    vaultsWithoutAdvancedURIToast(vaultsWithoutPlugin);
-  }
   if (vaultsWithPlugin.length === 0) {
     return <AdvancedURIPluginNotInstalled />;
   }
