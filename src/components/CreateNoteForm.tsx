@@ -18,8 +18,8 @@ export function CreateNoteForm(props: { vault: Vault; showTitle: boolean }) {
     tags.push(prefTag);
   }
 
-  async function createNewNote(params: CreateNoteParams, path: string | undefined = undefined) {
-    if (path !== undefined) {
+  async function createNewNote(params: CreateNoteParams, path?: string) {
+    if (path) {
       params.path = path;
     }
     const saved = await createNote(vault, params);
