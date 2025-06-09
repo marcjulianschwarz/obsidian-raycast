@@ -2,7 +2,6 @@ import { Action, ActionPanel, closeMainWindow, List, open, popToRoot } from "@ra
 
 import { getObsidianTarget, ObsidianTargetType } from "./utils/utils";
 import { NoVaultFoundMessage } from "./components/Notifications/NoVaultFoundMessage";
-import { vaultsWithoutAdvancedURIToast } from "./components/Toasts";
 import AdvancedURIPluginNotInstalled from "./components/Notifications/AdvancedURIPluginNotInstalled";
 import { useObsidianVaults } from "./utils/hooks";
 import { vaultPluginCheck } from "./api/vault/plugins/plugins.service";
@@ -16,11 +15,12 @@ export default function Command() {
     return <NoVaultFoundMessage />;
   }
 
-  const [vaultsWithPlugin, vaultsWithoutPlugin] = vaultPluginCheck(vaults, "obsidian-advanced-uri");
+  const [vaultsWithPlugin] = vaultPluginCheck({
+    vaults: vaults,
+    communityPlugins: ["obsidian-advanced-uri"],
+    corePlugins: ["daily-notes"],
+  });
 
-  if (vaultsWithoutPlugin.length > 0) {
-    vaultsWithoutAdvancedURIToast(vaultsWithoutPlugin);
-  }
   if (vaultsWithPlugin.length == 0) {
     return <AdvancedURIPluginNotInstalled />;
   }

@@ -18,7 +18,11 @@ export default function DailyNoteAppend(props: { arguments: DailyNoteAppendArgs 
   const { vaults, ready } = useObsidianVaults();
   const { text } = props.arguments;
   const { appendTemplate, heading, vaultName, prepend, silent } = getPreferenceValues<DailyNoteAppendPreferences>();
-  const [vaultsWithPlugin, vaultsWithoutPlugin] = vaultPluginCheck(vaults, "obsidian-advanced-uri");
+  const [vaultsWithPlugin, vaultsWithoutPlugin] = vaultPluginCheck({
+    vaults: vaults,
+    communityPlugins: ["obsidian-advanced-uri"],
+    corePlugins: ["daily-notes"],
+  });
   const [content, setContent] = useState("");
   const [isAppending, setIsAppending] = useState(false);
 

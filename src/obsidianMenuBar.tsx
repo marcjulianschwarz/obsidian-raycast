@@ -34,7 +34,11 @@ function BookmarkedNotesVaultSelection(props: { vaults: Vault[] }) {
 }
 
 function DailyNoteVaultSelection(props: { vaults: Vault[] }) {
-  const [withPlugin] = vaultPluginCheck(props.vaults, "obsidian-advanced-uri");
+  const [withPlugin] = vaultPluginCheck({
+    vaults: props.vaults,
+    communityPlugins: ["obsidian-advanced-uri"],
+    corePlugins: ["daily-notes"],
+  });
   return (
     <MenuBarExtra.Submenu title="Daily Note" key={"Daily Note"}>
       {withPlugin.map((vault) => (

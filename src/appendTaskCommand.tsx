@@ -24,7 +24,10 @@ export default function AppendTask(props: { arguments: appendTaskArgs }) {
 
   const { appendTemplate, heading, notePath, noteTag, vaultName, silent, creationDate } =
     getPreferenceValues<appendTaskPreferences>();
-  const [vaultsWithPlugin, vaultsWithoutPlugin] = vaultPluginCheck(vaults, "obsidian-advanced-uri");
+  const [vaultsWithPlugin, vaultsWithoutPlugin] = vaultPluginCheck({
+    vaults: vaults,
+    communityPlugins: ["obsidian-advanced-uri"],
+  });
   const [content, setContent] = useState<string | null>(null);
 
   useEffect(() => {

@@ -351,7 +351,7 @@ export function OpenNoteActions(props: { note: NoteWithContent; vault: Vault }) 
   const { note, vault } = props;
   const { primaryAction } = getPreferenceValues<SearchNotePreferences>();
 
-  const [vaultsWithPlugin] = vaultPluginCheck([vault], "obsidian-advanced-uri");
+  const [vaultsWithPlugin] = vaultPluginCheck({ vaults: [vault], communityPlugins: ["obsidian-advanced-uri"] });
 
   const quicklook = <QuickLookAction note={note} vault={vault} />;
   const openInDefaultApp = <OpenInDefaultAppAction note={note} vault={vault} />;
