@@ -152,8 +152,8 @@ async function getMediaFilePaths(vault: Vault) {
   return files;
 }
 
-/** Loads media (images, pdfs, video, audio, etc.) for a given vault from disk. utils.useMedia() is the preferred way of loading media. */
-export async function loadMedia(vault: Vault): Promise<Media[]> {
+/** Gets media (images, pdfs, video, audio, etc.) for a given vault from disk. utils.useMedia() is the preferred way of loading media. */
+export async function getMedia(vault: Vault): Promise<Media[]> {
   const medias: Media[] = [];
   const filePaths = await getMediaFilePaths(vault);
 

@@ -7,7 +7,7 @@ import fs from "fs";
 import { ObsidianVaultsState, Vault } from "../api/vault/vault.types";
 import { Note } from "../api/vault/notes/notes.types";
 import {
-  loadMedia,
+  getMedia,
   getVaultsFromObsidianJSON,
   getExistingVaultsFromPreferences,
   getNotes,
@@ -66,7 +66,7 @@ export function useMedia(vault: Vault) {
         try {
           await fs.promises.access(vault.path + "/.");
 
-          const media = loadMedia(vault).sort((m1, m2) => sortByAlphabet(m1.title, m2.title));
+          const media = (await getMedia(vault)).sort((m1, m2) => sortByAlphabet(m1.title, m2.title));
 
           setMedia({ ready: true, media });
         } catch (error) {

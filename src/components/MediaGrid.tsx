@@ -26,7 +26,12 @@ export function MediaGrid(props: { vault: Vault; searchArguments: MediaSearchArg
   const extensions = getListOfMediaFileExtensions(allMedia);
   const { imageSize } = getPreferenceValues<SearchMediaPreferences>();
 
-  const [searchText, setSearchText] = useState(searchArguments?.searchArgument ?? "");
+  const [searchText, setSearchText] = useState(searchArguments.searchArgument);
+  let mediaType = searchArguments.typeArgument;
+  if (!mediaType) mediaType = "all";
+  else if (!mediaType.startsWith(".")) {
+    mediaType = `.${mediaType}`;
+  }
   const list = useMemo(() => filterMedia(mediaList, searchText), [mediaList, searchText]);
 
   return (
@@ -40,7 +45,7 @@ export function MediaGrid(props: { vault: Vault; searchArguments: MediaSearchArg
       searchBarAccessory={
         <Grid.Dropdown
           tooltip="Filter by type"
-          defaultValue={searchArguments.typeArgument}
+          defaultValue={mediaType}
           onChange={(value) => {
             if (value != "all") {
               setMediaList(allMedia.filter((media) => media.path.endsWith(value)));
