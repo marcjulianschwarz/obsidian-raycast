@@ -79,6 +79,22 @@ export async function getMarkdownFilePathsFromVault(vault: Vault): Promise<strin
   return files;
 }
 
+/** Returns a list of file paths for all canvases inside of the given vault, filtered by Raycast and Obsidian exclusions. */
+export async function getCanvasFilePathsFromVault(vault: Vault): Promise<string[]> {
+  const { configFileName } = getPreferenceValues();
+  const pref = getPreferenceValues<SearchNotePreferences>();
+  const excludedFolders = parseExcludedFoldersPreferences(pref.excludedFolders);
+  const userIgnoredFolders = getExcludedFoldersFromObsidian(vault);
+  excludedFolders.push(...userIgnoredFolders, configFileName);
+  const files = await getFilePaths({
+    path: vault.path,
+    excludedFolders,
+    includedFileExtensions: [".canvas"],
+  });
+  logger.info(`${files.length} canvas files in ${vault.name}.`);
+  return files;
+}
+
 export function filterContent(content: string) {
   const pref: GlobalPreferences = getPreferenceValues();
 
@@ -182,5 +198,20 @@ export async function getNotes(vault: Vault): Promise<Note[]> {
       bookmarked: bookmarkedFilePaths.includes(relativePath),
     });
   }
+
+  // Add canvas files in a second pass. Canvas specific changes can be made here
+  const canvasFilePaths = await getCanvasFilePathsFromVault(vault);
+  for (const canvasFilePath of canvasFilePaths) {
+    const title = path.basename(canvasFilePath, path.extname(canvasFilePath));
+    const relativePath = path.relative(vault.path, canvasFilePath);
+
+    notes.push({
+      title: title,
+      path: canvasFilePath,
+      lastModified: fs.statSync(canvasFilePath).mtime,
+      bookmarked: bookmarkedFilePaths.includes(relativePath),
+    });
+  }
+
   return notes;
 }
