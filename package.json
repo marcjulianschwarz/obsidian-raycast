@@ -608,6 +608,8 @@
     "@raycast/api": "^1.94.0",
     "@types/uuid": "^8.3.4",
     "fuse.js": "^7.0.0",
+    "gray-matter": "^4.0.3",
+    "lunr": "^2.3.9",
     "luxon": "^3.4.4",
     "uuid": "^8.3.2",
     "yaml": "^2.1.1"
