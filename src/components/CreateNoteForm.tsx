@@ -27,19 +27,22 @@ export function CreateNoteForm(props: { vault: Vault; showTitle: boolean }) {
 
   const [copyToClipboard, setCopyToClipboard] = useState(false);
   const [allNotes] = useNotes(vault, false);
-
   const availableTags = useMemo(() => {
     if (!allNotes) return [];
     const tags = Array.from(new Set(allNotes.flatMap((note) => note.tags ?? [])));
-    return tags.map(tag => tag.startsWith("#") ? tag.substring(1) : tag);
+    return tags
+      .map(tag => tag.startsWith("#") ? tag.substring(1) : tag)
+      .filter(tag => tag.trim() !== "");  // Remove empty tags
   }, [allNotes]);
+
+  console.log("Available tags:", availableTags);
 
   function parseTags() {
     if (!tags) {
       if (prefTag) {
         return [{ name: prefTag, key: prefTag }];
       }
-      return [];
+      return []; 
     }
     const parsedTags = tags
       .split(",")
@@ -94,7 +97,7 @@ export function CreateNoteForm(props: { vault: Vault; showTitle: boolean }) {
         </ActionPanel>
       }
     >
-      <Form.TextField
+       <Form.TextField
         title="JDex"
         id="jdex"
         placeholder="AC.ID"
@@ -117,11 +120,13 @@ export function CreateNoteForm(props: { vault: Vault; showTitle: boolean }) {
         defaultValue={prefPath ? prefPath : ""}
         placeholder="path/to/note (optional)"
       />
-      <Form.TagPicker id="tags" title="Tags" defaultValue={prefTag ? [prefTag] : []}>
-        {parseTags()?.map((tag) => (
-          <Form.TagPicker.Item value={tag.name} title={tag.name} key={tag.key} />
-        ))}
-      </Form.TagPicker>
+      {availableTags.length > 0 && (
+        <Form.TagPicker id="tags" title="Tags" defaultValue={[prefTag]}>
+          {availableTags.map((tag) => (
+            <Form.TagPicker.Item value={tag} title={tag} key={tag} />
+          ))}
+        </Form.TagPicker>
+      )}
       <Form.TextArea
         title="Content:"
         id="content"
