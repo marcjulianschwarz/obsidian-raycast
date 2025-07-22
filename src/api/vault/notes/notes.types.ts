@@ -15,6 +15,8 @@ export type CreateNoteParams = {
   name: string;
   content: string;
   tags: string[];
+  availableTags?: string[];
+  fullName?: string;
 };
 
 export interface CodeBlock {

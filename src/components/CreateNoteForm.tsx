@@ -4,6 +4,8 @@ import { createNote } from "../api/vault/notes/notes.service";
 import { CreateNoteParams } from "../api/vault/notes/notes.types";
 import { Vault } from "../api/vault/vault.types";
 import { NoteFormPreferences } from "../utils/preferences";
+import { useMemo } from "react";
+import { useNotes } from "../utils/hooks";
 
 export function CreateNoteForm(props: { vault: Vault; showTitle: boolean }) {
   const { vault, showTitle } = props;
@@ -21,6 +23,14 @@ export function CreateNoteForm(props: { vault: Vault; showTitle: boolean }) {
     }
     return [];
   }
+
+  const [allNotes] = useNotes(vault, false);
+
+  const availableTags = useMemo(() => {
+    if (!allNotes) return [];
+    const tags = Array.from(new Set(allNotes.flatMap((note) => note.tags ?? [])));
+    return tags.map(tag => tag.startsWith("#") ? tag.substring(1) : tag);
+  }, [allNotes]);
 
   function parseTags() {
     if (!tags) {

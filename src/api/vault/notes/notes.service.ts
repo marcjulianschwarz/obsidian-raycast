@@ -60,6 +60,9 @@ export async function createNote(vault: Vault, params: CreateNoteParams) {
 
   let name = params.name == "" ? pref.prefNoteName : params.name;
   let content = fillDefaults ? pref.prefNoteContent : params.content;
+  let fullName = params.fullName;
+  let tags = params.tags;
+  let availableTags = params.availableTags;
 
   console.log(params.content);
 
