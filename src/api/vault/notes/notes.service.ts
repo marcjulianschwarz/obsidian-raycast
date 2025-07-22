@@ -63,14 +63,42 @@ export async function createNote(vault: Vault, params: CreateNoteParams) {
   let fullName = params.jdex + "_" + params.name;
   let tags = params.tags;
   let availableTags = params.availableTags;
+  let jdex = params.jdex;
 
-  params.fullName = fullName;
+  // Handle special case: exact match with "AC" (e.g., "12")
+  if (jdex.match(/^\d{2}$/)) {
+    const matchingNotes = (params.allNotes ?? [])
+      .map((note) => path.basename(note.path, ".md"))
+      .filter((noteName) => jdex && noteName.startsWith(jdex));
+
+    
+    let maxId = 10;
+    for (const noteName of matchingNotes) {
+      const numStr = noteName.substring(3, 5);
+      const parsed = parseInt(numStr, 10);
+      const id = isNaN(parsed) ? 0 : parsed;
+      maxId = Math.max(maxId, id);
+      console.log("→ maxId: ", noteName);
+      console.log("→ maxId: ", maxId);
+    }
+
+    if (maxId > 99) {
+      showToast({ title: "ID limit reached", message: "Cannot create more than 99 notes in this category.", style: Toast.Style.Failure });
+      return false;
+    }
+
+    const newId = String(maxId + 1);
+    fullName = `${jdex}.${newId}_${name}`;
+    console.log("→ Generated new full name:", fullName);
+  }
 
   console.log(params.content);
 
   content = content + createObsidianProperties(params.tags);
   content = await applyTemplates(content);
-  name = await applyTemplates(fullName);
+  fullName = await applyTemplates(fullName);
+
+  params.fullName = fullName;
 
   const saved = await saveStringToDisk(vault.path, content, fullName, params.path);
 
