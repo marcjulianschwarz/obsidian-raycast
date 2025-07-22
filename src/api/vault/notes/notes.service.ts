@@ -92,6 +92,29 @@ export async function createNote(vault: Vault, params: CreateNoteParams) {
     console.log("→ Generated new full name:", fullName);
   }
 
+  const category = fullName.match(/^\d{2}/);
+
+  console.log("Category:",category); // Debug
+  if (category) {
+    console.log("Category:",category); // Debug
+
+    // Try to find a matching tag
+    const matchingTag = availableTags?.find(
+      tag => tag[2] === '-' && tag.includes(`/${category}_`)
+    );
+
+    console.log("Matching tag:",matchingTag);
+
+    if (matchingTag) {
+      console.log("→ Found matching tag:", matchingTag);
+      console.log("→ Before pushing:", [...params.tags]);
+      params.tags.push(matchingTag);
+      console.log("→ After pushing:", [...params.tags]);
+    } else {
+      params.tags.push("");
+    }
+  }
+
   console.log(params.content);
 
   content = content + createObsidianProperties(params.tags);
@@ -115,14 +138,16 @@ export async function createNote(vault: Vault, params: CreateNoteParams) {
 
 /** Gets the Obsidian Properties YAML frontmatter for a list of tags */
 function createObsidianProperties(tags: string[]): string {
-  let obsidianProperties = "";
+  let obsidianProperties = '---\n';
+  obsidianProperties += 'index: "[[00.00_Index]]"\n';
   if (tags.length > 0) {
-    obsidianProperties = "---\ntags: [";
+    obsidianProperties+= "tags: [";
     for (let i = 0; i < tags.length - 1; i++) {
       obsidianProperties += '"' + tags[i] + '",';
     }
-    obsidianProperties += '"' + tags[tags.length - 1] + '"]\n---\n';
+    obsidianProperties += '"' + tags[tags.length - 1] + '"]\n';
   }
+  obsidianProperties += '---\n';
 
   return obsidianProperties;
 }
