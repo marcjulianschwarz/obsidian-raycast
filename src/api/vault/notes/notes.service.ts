@@ -77,7 +77,7 @@ export async function createNote(vault: Vault, params: CreateNoteParams) {
     if (saved) {
       setTimeout(() => {
         open(target);
-      }, 200);
+      }, 2000);
     }
   }
   return saved;
