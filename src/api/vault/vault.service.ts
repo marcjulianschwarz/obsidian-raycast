@@ -11,6 +11,8 @@ import { tagsForString } from "../../utils/yaml";
 import { getBookmarkedNotePaths } from "./notes/bookmarks/bookmarks.service";
 import { Note } from "./notes/notes.types";
 import { ObsidianJSON, Vault } from "./vault.types";
+import matter from "gray-matter";
+import { statSync } from "fs";
 
 function getVaultNameFromPath(vaultPath: string): string {
   const name = vaultPath
@@ -180,13 +182,28 @@ export function loadNotes(vault: Vault): Note[] {
     const content = getNoteFileContent(filePath, false);
     const relativePath = path.relative(vault.path, filePath);
 
+    const { data } = matter(content); // Parses YAML frontmatter
+    const aliases: string[] = 
+    Array.isArray(data?.aliases) ? data.aliases : 
+    typeof data?.aliases === "string" ? [data.aliases] :[];
+    const locations: string[] =
+    Array.isArray(data?.locations) ? data.locations :
+    typeof data?.locations === "string" ? [data.locations] : [];
+    const tags: string[] =
+    Array.isArray(data?.tags) ? data.tags :
+    typeof data?.tags === "string" ? [data.tags] : [];
+    const index: string = data?.index || "";
+
     const note: Note = {
-      title,
+      title: title,
       path: filePath,
       lastModified: fs.statSync(filePath).mtime,
-      tags: tagsForString(content),
-      content,
+      tags: tags, //tagsForString(content),
+      content: content,
       bookmarked: bookmarkedFilePaths.includes(relativePath),
+      aliases: aliases,
+      locations: locations,
+      index: index
     };
 
     notes.push(note);

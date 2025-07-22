@@ -5,6 +5,9 @@ export type Note = {
   tags: string[];
   content: string;
   bookmarked: boolean;
+  aliases: string[];
+  locations: string[];
+  index: string;
 };
 
 export type CreateNoteParams = {
