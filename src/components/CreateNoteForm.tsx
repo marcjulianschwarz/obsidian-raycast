@@ -53,6 +53,10 @@ export function CreateNoteForm(props: { vault: Vault; showTitle: boolean }) {
     if (path !== undefined) {
       params.path = path;
     }
+
+    params.availableTags = availableTags;
+    params.allNotes = allNotes;
+
     const saved = await createNote(vault, params);
     if (saved) {
       renewCache(vault);
@@ -78,6 +82,11 @@ export function CreateNoteForm(props: { vault: Vault; showTitle: boolean }) {
         </ActionPanel>
       }
     >
+      <Form.TextField
+        title="JDex"
+        id="jdex"
+        placeholder="AC.ID"
+      />
       <Form.TextField
         title="Name"
         id="name"

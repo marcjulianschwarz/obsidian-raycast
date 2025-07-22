@@ -13,10 +13,12 @@ export type Note = {
 export type CreateNoteParams = {
   path: string;
   name: string;
+  jdex: string;
+  fullName?: string;
   content: string;
   tags: string[];
   availableTags?: string[];
-  fullName?: string;
+  allNotes?: Note[];
 };
 
 export interface CodeBlock {

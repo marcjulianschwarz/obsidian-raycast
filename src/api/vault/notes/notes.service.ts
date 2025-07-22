@@ -60,7 +60,7 @@ export async function createNote(vault: Vault, params: CreateNoteParams) {
 
   let name = params.name == "" ? pref.prefNoteName : params.name;
   let content = fillDefaults ? pref.prefNoteContent : params.content;
-  let fullName = params.fullName;
+  let fullName = params.jdex + "_" + params.name;
   let tags = params.tags;
   let availableTags = params.availableTags;
 
@@ -68,12 +68,12 @@ export async function createNote(vault: Vault, params: CreateNoteParams) {
 
   content = content + createObsidianProperties(params.tags);
   content = await applyTemplates(content);
-  name = await applyTemplates(name);
+  name = await applyTemplates(fullName);
 
-  const saved = await saveStringToDisk(vault.path, content, name, params.path);
+  const saved = await saveStringToDisk(vault.path, content, fullName, params.path);
 
   if (pref.openOnCreate) {
-    const target = "obsidian://open?path=" + encodeURIComponent(path.join(vault.path, params.path, name + ".md"));
+    const target = "obsidian://open?path=" + encodeURIComponent(path.join(vault.path, params.path, fullName + ".md"));
     if (saved) {
       setTimeout(() => {
         open(target);
