@@ -64,6 +64,8 @@ export async function createNote(vault: Vault, params: CreateNoteParams) {
   let tags = params.tags;
   let availableTags = params.availableTags;
 
+  params.fullName = fullName;
+
   console.log(params.content);
 
   content = content + createObsidianProperties(params.tags);

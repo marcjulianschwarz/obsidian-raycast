@@ -1,4 +1,4 @@
-import { ActionPanel, Form, Action, getPreferenceValues, Keyboard, popToRoot, closeMainWindow } from "@raycast/api";
+import { ActionPanel, Form, Action, getPreferenceValues, Keyboard, popToRoot, closeMainWindow, Clipboard, showHUD } from "@raycast/api";
 import { renewCache } from "../api/cache/cache.service";
 import { createNote } from "../api/vault/notes/notes.service";
 import { CreateNoteParams } from "../api/vault/notes/notes.types";
@@ -6,6 +6,7 @@ import { Vault } from "../api/vault/vault.types";
 import { NoteFormPreferences } from "../utils/preferences";
 import { useMemo } from "react";
 import { useNotes } from "../utils/hooks";
+import { useState } from "react";
 
 export function CreateNoteForm(props: { vault: Vault; showTitle: boolean }) {
   const { vault, showTitle } = props;
@@ -24,6 +25,7 @@ export function CreateNoteForm(props: { vault: Vault; showTitle: boolean }) {
     return [];
   }
 
+  const [copyToClipboard, setCopyToClipboard] = useState(false);
   const [allNotes] = useNotes(vault, false);
 
   const availableTags = useMemo(() => {
@@ -61,6 +63,16 @@ export function CreateNoteForm(props: { vault: Vault; showTitle: boolean }) {
     if (saved) {
       renewCache(vault);
     }
+
+    if (!saved) {
+      console.log("Note creation was cancelled.");
+    } else {
+      if (copyToClipboard && params.fullName) {
+        await Clipboard.copy(params.fullName);
+        await showHUD(`Title "${params.fullName}" copied to clipboard`);
+      }
+    }
+
     popToRoot();
     closeMainWindow();
   }
@@ -92,6 +104,12 @@ export function CreateNoteForm(props: { vault: Vault; showTitle: boolean }) {
         id="name"
         placeholder="Name of note"
         defaultValue={pref.fillFormWithDefaults ? pref.prefNoteName : ""}
+      />
+      <Form.Checkbox
+        label="Copy title to clipboard"
+        id="copytitle"
+        defaultValue={false}
+        onChange={setCopyToClipboard}
       />
       <Form.TextField
         title="Path"
