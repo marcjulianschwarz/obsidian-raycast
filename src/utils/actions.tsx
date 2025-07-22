@@ -331,6 +331,7 @@ export function NoteActions(props: { notes: Note[]; note: Note; vault: Vault }) 
       <AppendSelectedTextToNoteAction note={note} vault={vault} />
       <CopyNoteAction note={note} />
       <CopyNoteTitleAction note={note} />
+      <CopyNoteJDexFromTitleAction note={note} />
       <PasteNoteAction note={note} />
       <CopyMarkdownLinkAction note={note} />
       <CopyObsidianURIAction note={note} />
@@ -412,5 +413,17 @@ export function AppendTaskAction(props: { note: Note; vault: Vault }) {
       shortcut={{ modifiers: ["opt"], key: "a" }}
       icon={Icon.Pencil}
     />
+  );
+}
+
+export function CopyNoteJDexFromTitleAction(props: { note: Note }) {
+  const { note } = props;
+  const title = note.title;
+  const index = title.indexOf("_");
+  const substring = index !== -1 ? title.substring(0, index) : title;
+  const formattedSubstring = `[${substring}]`;
+
+  return (
+    <Action.CopyToClipboard title="Copy JDex From Title" content={formattedSubstring} shortcut={{ modifiers: ["opt"], key: "j" }} />
   );
 }
