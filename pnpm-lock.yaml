@@ -36,6 +36,9 @@ importers:
       '@raycast/eslint-config':
         specifier: ^1.0.6
         version: 1.0.11(eslint@8.57.1)(prettier@2.8.8)(typescript@4.9.5)
+      '@types/lunr':
+        specifier: ^2.3.7
+        version: 2.3.7
       '@types/luxon':
         specifier: ^3.4.2
         version: 3.6.2
@@ -541,6 +544,9 @@ packages:
 
   '@types/json-schema@7.0.15':
     resolution: {integrity: sha512-5+fP8P8MFNC+AyZCDxrB2pkZFPGzqQWUzpSeuuVLvm8VMcorNYavBqoFcxK8bQz4Qsbn4oUEEem4wDLfcysGHA==}
+
+  '@types/lunr@2.3.7':
+    resolution: {integrity: sha512-Tb/kUm38e8gmjahQzdCKhbdsvQ9/ppzHFfsJ0dMs3ckqQsRj+P5IkSAwFTBrBxdyr3E/LoMUUrZngjDYAjiE3A==}
 
   '@types/luxon@3.6.2':
     resolution: {integrity: sha512-R/BdP7OxEMc44l2Ex5lSXHoIXTB2JLNa3y2QISIbr58U/YcsffyQrYW//hZSdrfxrjRZj3GcUoxMPGdO8gSYuw==}
@@ -1924,6 +1930,8 @@ snapshots:
   '@types/estree@1.0.8': {}
 
   '@types/json-schema@7.0.15': {}
+
+  '@types/lunr@2.3.7': {}
 
   '@types/luxon@3.6.2': {}
 

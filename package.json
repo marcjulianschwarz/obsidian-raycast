@@ -616,6 +616,7 @@
   },
   "devDependencies": {
     "@raycast/eslint-config": "^1.0.6",
+    "@types/lunr": "^2.3.7",
     "@types/luxon": "^3.4.2",
     "@types/node": "^22.14.1",
     "@types/react": "^17.0.52",
