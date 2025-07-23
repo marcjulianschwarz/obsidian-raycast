@@ -100,7 +100,7 @@ export async function createNote(vault: Vault, params: CreateNoteParams) {
 
     // Try to find a matching tag
     const matchingTag = availableTags?.find(
-      tag => tag[2] === '-' && tag.includes(`/${category}_`)
+      tag => tag.startsWith("JDex/") && tag.includes(`/${category}_`)
     );
 
     console.log("Matching tag:",matchingTag);
