@@ -50,36 +50,15 @@ export function filterNotes(notes: Note[], pairs: { key: string; value: string }
     const term = value.toLowerCase();
 
     const matched = notes.filter((note) => {
-      const title = note.title.toLowerCase();
-      const aliases = (note.aliases || []).map((a) => a.toLowerCase());
-      const path = note.path?.toLowerCase() || "";
-      const index = note.index?.toLowerCase() || "";
-      const locations = (note.locations || []).map((a) => a.toLowerCase());
-      const content = note.content?.toLowerCase() || "";
-
-      switch (key) {
-        case "title":
-          return title.includes(term);
-        case "aliases":
-          return aliases.some(alias => alias.includes(term));
-        case "path":
-          return path.includes(term);
-        case "index":
-          return index.includes(term);
-        case "locations":
-          return locations.some(location => location.includes(term));
-        case "content":
-          return content.includes(term) || path.includes(term);
-        case "body":
-          return content.includes(term);
-        case "tags":
-          return note.tags?.some(tag => tag.toLowerCase().includes(term));
-        case "default":
-        default:
-          return (
-            title.includes(term) ||
-            aliases.some(alias => alias.includes(term))
-          );
+      const field = note[key];
+      if (typeof field === "string") {
+        return field.toLowerCase().includes(term);
+      } else if (Array.isArray(field)) {
+        return field.some(item =>
+          typeof item === "string" && item.toLowerCase().includes(term)
+        );
+      } else {
+        return String(field).toLowerCase().includes(term);
       }
     });
 

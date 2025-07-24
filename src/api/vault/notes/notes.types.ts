@@ -6,8 +6,7 @@ export type Note = {
   content: string;
   bookmarked: boolean;
   aliases: string[];
-  locations: string[];
-  index: string;
+  [key:string]: any; // Additional properties from YAML frontmatter
 };
 
 export type CreateNoteParams = {

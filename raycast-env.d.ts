@@ -40,6 +40,8 @@ declare namespace Preferences {
   "searchContent": boolean,
   /** Use Fuzzy Search - If fuzzy search should be used */
   "fuzzySearch": boolean,
+  /** Add YAML Properties - If fuzzy search should be used */
+  "yamlProperties"?: string,
   /** Primary Action - Select a primary action to be executed on enter */
   "primaryAction"?: "quicklook" | "obsidian" | "newpane" | "defaultapp"
 }

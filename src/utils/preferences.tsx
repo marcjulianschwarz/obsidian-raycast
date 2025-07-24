@@ -30,6 +30,7 @@ export interface SearchNotePreferences extends GlobalPreferences, AppendNotePref
   showMetadata: boolean;
   searchContent: boolean;
   fuzzySearch: boolean;
+  yamlProperties: string;
 }
 
 export interface RandomNotePreferences extends GlobalPreferences, AppendNotePreferences {}

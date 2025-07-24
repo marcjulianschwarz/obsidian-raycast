@@ -140,6 +140,14 @@
           "default": false
         },
         {
+          "name": "yamlProperties",
+          "type": "textfield",
+          "label": "Add YAML Properties",
+          "title": "Add YAML Properties",
+          "required": false,
+          "description": "If fuzzy search should be used"
+        },
+        {
           "name": "primaryAction",
           "type": "dropdown",
           "title": "Primary Action",
