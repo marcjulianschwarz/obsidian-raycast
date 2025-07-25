@@ -126,7 +126,7 @@ export function searchFunctionLunr(notes: Note[], pairs: { key: string; value: s
   const input = pairs
     .filter(({ key }) => !["sort", "logic", "content", "full"].includes(key))
     .flatMap(({ key, value }) => {
-      const escaped = value.replace(/-/g, "\\-");
+      const escaped = value.replace(/-/g, "\\-").replace(/ /g, "\\ ");
       return key === "default"
         ? [escaped]
         : [`${key}:${escaped}`];

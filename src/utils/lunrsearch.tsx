@@ -67,8 +67,13 @@ export class LunrSearchManager {
     //   return [original];> title:*Mac24\-Main*
     // };
 
-
-
+    
+    // IMPORTANT NOTE ON TOEKNIZATION:
+    // Design decision: Only split tokens on actual whitespace characters.
+    // Do not split on hyphens, underscores, or other symbols.
+    // Always include the full original string as a token, even if it contains spaces.
+    // Furthermore, spaces and hyphens are escaped (e.g., "\ ", "\-") automatically in search file
+    // so Lunr parses them correctly.
     return lunr((builder: lunr.Builder) => {
       // Configure tokenizer to preserve Unicode letters, numbers, hyphens, underscores, and periods
       // This prevents splitting on characters like ö or hyphenated words like Mac24-Main
@@ -98,16 +103,18 @@ export class LunrSearchManager {
       indexFields.forEach(field => builder.field(field));
     
       notes.forEach(note => {
-        const indexedNote: Record<string, string> = {
-          path: note.path,
+        const indexedNote: Record<string, string[]> = {
+          path: [note.path],
         };
     
         indexFields.forEach(field => {
           const value = note[field];
+          indexedNote[field] = value;
           if (Array.isArray(value)) {
-            indexedNote[field] = value.join(" ");
+            const extraTokens = value.flatMap(v => v.split(" "));
+            indexedNote[field] = [...value,...extraTokens];
           } else if (typeof value === "string") {
-            indexedNote[field] = value;
+            indexedNote[field] = [value, ...value.split(" ")];
           }
         });
     
