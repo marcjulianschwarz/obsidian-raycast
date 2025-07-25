@@ -113,8 +113,13 @@ export class LunrSearchManager {
           if (Array.isArray(value)) {
             const extraTokens = value.flatMap(v => v.split(" "));
             indexedNote[field] = [...value,...extraTokens];
-          } else if (typeof value === "string") {
-            indexedNote[field] = [value, ...value.split(" ")];
+          }
+          // Exclude the reference field. It must not be altered.
+          if (field.toString() !== "path") {
+            if (typeof value === "string") {
+              indexedNote[field] = [value, ...value.split(" ")];
+              console.log(`Indexed field "${field}" for note "${note.title}": ${value}`);
+            }
           }
         });
     
