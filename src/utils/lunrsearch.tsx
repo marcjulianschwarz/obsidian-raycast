@@ -70,12 +70,15 @@ export class LunrSearchManager {
 
 
     return lunr((builder: lunr.Builder) => {
-      // Configure tokenizer to preserve Unicode letters, numbers, hyphens, and periods
+      // Configure tokenizer to preserve Unicode letters, numbers, hyphens, underscores, and periods
       // This prevents splitting on characters like ö or hyphenated words like Mac24-Main
-      lunr.tokenizer.separator = /[^\p{L}\p{N}\-.]+/u
+      lunr.tokenizer.separator = /[^\p{L}\p{N}\-._]+/u
     
-      builder.ref("path");
+      // Disable stemming, e.g testing !== test
+      builder.pipeline.remove(lunr.stemmer);
+      builder.searchPipeline.remove(lunr.stemmer);
 
+      builder.ref("path");
     
       const pref = getPreferenceValues<SearchNotePreferences>();
       const yamlProps = pref.yamlProperties

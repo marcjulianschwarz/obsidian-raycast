@@ -128,7 +128,7 @@ export function searchFunctionLunr(notes: Note[], pairs: { key: string; value: s
     .flatMap(({ key, value }) => {
       const escaped = value.replace(/-/g, "\\-");
       return key === "default"
-        ? [`title:${escaped}`, `aliases:${escaped}`]
+        ? [escaped]
         : [`${key}:${escaped}`];
     })
     .join(" ");
