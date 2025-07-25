@@ -1,4 +1,6 @@
 import lunr from 'lunr';
+import { SearchNotePreferences } from "./preferences";
+import { getPreferenceValues } from "@raycast/api";
 
 import { Note } from "../api/vault/notes/notes.types";
 
@@ -68,33 +70,45 @@ export class LunrSearchManager {
 
 
     return lunr((builder: lunr.Builder) => {
-      // Register and add the hyphenator pipeline function before the stemmer
-      // lunr.Pipeline.registerFunction(hyphenator, "hyphenator");
-      // builder.pipeline.before(lunr.stemmer, hyphenator);
-      // builder.searchPipeline.before(lunr.stemmer, hyphenator);
-
-      // Use the default separator but exclude hyphen from splitting
-      lunr.tokenizer.separator = /[^\w\-]+/;
-
+      // Configure tokenizer to preserve Unicode letters, numbers, hyphens, and periods
+      // This prevents splitting on characters like ö or hyphenated words like Mac24-Main
+      lunr.tokenizer.separator = /[^\p{L}\p{N}\-.]+/u
+    
       builder.ref("path");
-      builder.field("title");
-      builder.field("content");
-      builder.field("aliases");
-      builder.field("name");
+
+    
+      const pref = getPreferenceValues<SearchNotePreferences>();
+      const yamlProps = pref.yamlProperties
+      ? pref.yamlProperties.split(",").map(s => s.trim()).filter(Boolean)
+      : [];
+
+    
+      const indexFields = Array.from(new Set([
+        "aliases",
+        "title",
+        "path",
+        "locations",
+        "tags",
+        ...yamlProps,
+      ]));
+
+      indexFields.forEach(field => builder.field(field));
     
       notes.forEach(note => {
-        const title = note.title ?? "";
-        const aliases = Array.isArray(note.aliases)
-          ? note.aliases.join(" ")
-          : (note.aliases ?? "");
-        const name = `${title} ${aliases}`;
-
-        // console.log(`Indexing:\n  title: ${title}\n  aliases: ${aliases}\n  name: ${name}`);
+        const indexedNote: Record<string, string> = {
+          path: note.path,
+        };
     
-        builder.add({
-          ...note,
-          name,
+        indexFields.forEach(field => {
+          const value = note[field];
+          if (Array.isArray(value)) {
+            indexedNote[field] = value.join(" ");
+          } else if (typeof value === "string") {
+            indexedNote[field] = value;
+          }
         });
+    
+        builder.add(indexedNote);
       });
     });
   }

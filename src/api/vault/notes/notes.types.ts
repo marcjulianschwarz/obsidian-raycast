@@ -1,7 +1,8 @@
 export type Note = {
   title: string;
   path: string;
-  lastModified: Date;
+  created: Date;
+  modified: Date;
   tags: string[];
   content: string;
   bookmarked: boolean;

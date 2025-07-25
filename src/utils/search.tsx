@@ -2,25 +2,21 @@ import { Media } from "./interfaces";
 import Fuse from "fuse.js";
 import { Note } from "../api/vault/notes/notes.types";
 import { LunrSearchManager } from "./lunrsearch";
-
+ 
 export function searchFunction(notes: Note[], input: string, byContent: boolean, fuzzySearch: boolean): Note[] {
-  const isLunrSearch = input.startsWith("> ");
-  const isFuzzy = input.startsWith("f: ");
+  const isLunrSearch = input.startsWith(">");
+  const isFuzzy = input.startsWith("~");
 
-  let cleanedInput = input;
-  if (isLunrSearch) {
-    cleanedInput = input.slice(1).trim();
-  } else if (isFuzzy) {
-    cleanedInput = input.slice(2).trim();
+  if (isLunrSearch || isFuzzy) {
+    input = input.slice(1).trim();
   }
-
-  const { pairs } = parseSearchQuery(cleanedInput);
+  
+  const { pairs } = parseSearchQuery(input);
 
   let results: Note[] = [];
 
-
   if (isLunrSearch) {
-    results = searchFunctionLunr(notes, cleanedInput);
+    results = searchFunctionLunr(notes, pairs);
   } else if (isFuzzy) {
     results = filterNotesFuzzy(notes, pairs);
   } else {
@@ -50,6 +46,18 @@ export function filterNotes(notes: Note[], pairs: { key: string; value: string }
     const term = value.toLowerCase();
 
     const matched = notes.filter((note) => {
+      if (key === "default") {
+        return (
+          note.title.toLowerCase().includes(term) ||
+          (note.aliases?.some(alias => alias.toLowerCase().includes(term)))
+        );
+      }
+      if (key === "full") {
+        return (
+          note.content.toLowerCase().includes(term) ||
+          note.path.toLowerCase().includes(term)
+        );
+      }
       const field = note[key];
       if (typeof field === "string") {
         return field.toLowerCase().includes(term);
@@ -67,6 +75,8 @@ export function filterNotes(notes: Note[], pairs: { key: string; value: string }
 
   const result = combineMatches(notes, matchingSets, pairs);
 
+  // console.log("Filtered notes:", result.length, "from", notes.length, "using pairs:", pairs);
+
   return sortNotes(result, pairs);
 }
 
@@ -83,10 +93,7 @@ export function filterNotesFuzzy(notes: Note[], pairs: { key: string; value: str
       case "default":
         fuseKeys = ["title", "aliases"];
         break;
-      case "body":
-        fuseKeys = ["content"];
-        break;
-      case "content":
+      case "full":
         fuseKeys = ["content", "path"];
         break;
       default:
@@ -115,41 +122,27 @@ export function filterNotesFuzzy(notes: Note[], pairs: { key: string; value: str
 
 // https://lunrjs.com/guides/searching.html
 // Lunr search is applied to any fileds when no specific field is specified
-export function searchFunctionLunr(notes: Note[], input: string) {
-  // Extract and remove sort directive (default to "za")
-  let sortOrder: "az" | "za" | "no" | "on" = "za";
-  const sortMatch = input.match(/sort:(az|za|no|on)/i);
-  if (sortMatch) {
-    sortOrder = sortMatch[1].toLowerCase() as "az" | "za" | "no" | "on";
-    input = input.replace(/sort:(az|za|no|on)/i, "").trim();
-  }
+export function searchFunctionLunr(notes: Note[], pairs: { key: string; value: string }[]) {
+  const input = pairs
+    .filter(({ key }) => !["sort", "logic", "content", "full"].includes(key))
+    .flatMap(({ key, value }) => {
+      const escaped = value.replace(/-/g, "\\-");
+      return key === "default"
+        ? [`title:${escaped}`, `aliases:${escaped}`]
+        : [`${key}:${escaped}`];
+    })
+    .join(" ");
 
   const manager = new LunrSearchManager(notes);
   const index = manager['index'];
   // console.log(index);
-  const escapedInput = input.replace(/(?<!\s)-/g, "\\-");
-  const results = safeSearch(index, escapedInput);
+
+  const results = safeSearch(index, input);
   
   const mappedResults = results
     .map((r) => notes.find((n) => n.path === r.ref)!).filter(Boolean);
 
-    switch (sortOrder) {
-      case "az":
-        mappedResults.sort((a, b) => a.title.localeCompare(b.title));
-        break;
-      case "za":
-        mappedResults.sort((a, b) => b.title.localeCompare(a.title));
-        break;
-      case "no":
-        mappedResults.sort((a, b) => new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime());
-        break;
-      case "on":
-        mappedResults.sort((a, b) => new Date(a.lastModified).getTime() - new Date(b.lastModified).getTime());
-        break;
-    }
-
-
-  return mappedResults;
+  return sortNotes(mappedResults, pairs);
 }
 
 function safeSearch(index: lunr.Index, input: string): lunr.Index.Result[] {
@@ -225,12 +218,18 @@ function sortNotes(notes: Note[], pairs: { key: string; value: string }[]): Note
   const sortValue = sortPair?.value;
 
   switch (sortValue) {
+    case "score" :
+      return notes;
+    case "cno":
+      return notes.sort((a, b) => new Date(b.created).getTime() - new Date(a.created).getTime());
+    case "con":
+      return notes.sort((a, b) => new Date(a.created).getTime() - new Date(b.created).getTime());
+    case "mno":
+      return notes.sort((a, b) => new Date(b.modified).getTime() - new Date(a.modified).getTime());
+    case "mon":
+      return notes.sort((a, b) => new Date(a.modified).getTime() - new Date(b.modified).getTime());
     case "az":
       return notes.sort((a, b) => a.title.localeCompare(b.title));
-    case "no":
-      return notes.sort((a, b) => new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime());
-    case "on":
-      return notes.sort((a, b) => new Date(a.lastModified).getTime() - new Date(b.lastModified).getTime());
     case "za":
     default:
       return notes.sort((a, b) => b.title.localeCompare(a.title));
@@ -239,7 +238,6 @@ function sortNotes(notes: Note[], pairs: { key: string; value: string }[]): Note
 
 function getSetLogic(pairs: { key: string; value: string }[]): boolean {
   const logicPair = pairs.find(p => p.key === "logic");
-  const logicValue = logicPair?.value;
 
   if (logicPair?.value === "or") {
     return true;

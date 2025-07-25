@@ -212,7 +212,8 @@ export function loadNotes(vault: Vault): Note[] {
     const note: Note = {
       title: title,
       path: filePath,
-      lastModified: fs.statSync(filePath).mtime,
+      created: fs.statSync(filePath).birthtime,
+      modified: fs.statSync(filePath).mtime,
       tags: tags, //tagsForString(content),
       content: content,
       bookmarked: bookmarkedFilePaths.includes(relativePath),
@@ -220,6 +221,7 @@ export function loadNotes(vault: Vault): Note[] {
       locations: locations,
       ...yamlProps,
     };
+    // console.log("Note keys:", Object.keys(note));
 
     notes.push(note);
   }
@@ -227,7 +229,7 @@ export function loadNotes(vault: Vault): Note[] {
   const end = performance.now();
   console.log(`Finished loading ${notes.length} notes in ${end - start} ms.`);
 
-  return notes.sort((a, b) => b.lastModified.getTime() - a.lastModified.getTime());
+  return notes;
 }
 
 /** Gets a list of file paths for all media. */
