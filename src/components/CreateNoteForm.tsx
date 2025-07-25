@@ -34,6 +34,11 @@ export function CreateNoteForm(props: { vault: Vault; showTitle: boolean }) {
       .map(tag => tag.startsWith("#") ? tag.substring(1) : tag)
       .filter(tag => tag.trim() !== "");  // Remove empty tags
   }, [allNotes]);
+  const availableLocations = useMemo(() => {
+    if (!allNotes) return [];
+    const locations = Array.from(new Set(allNotes.flatMap((note) => note.locations ?? [])));
+    return locations
+  }, [allNotes]);
 
   console.log("Available tags:", availableTags);
 
@@ -124,6 +129,13 @@ export function CreateNoteForm(props: { vault: Vault; showTitle: boolean }) {
         <Form.TagPicker id="tags" title="Tags" defaultValue={[prefTag]}>
           {availableTags.map((tag) => (
             <Form.TagPicker.Item value={tag} title={tag} key={tag} />
+          ))}
+        </Form.TagPicker>
+      )}
+      {availableLocations.length > 0 && (
+        <Form.TagPicker id="locations" title="Locations">
+          {availableLocations.map((location) => (
+            <Form.TagPicker.Item value={location} title={location} key={location} />
           ))}
         </Form.TagPicker>
       )}

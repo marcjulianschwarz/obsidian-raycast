@@ -58,12 +58,11 @@ export async function createNote(vault: Vault, params: CreateNoteParams) {
   const pref = getPreferenceValues<NoteFormPreferences>();
   const fillDefaults = !pref.fillFormWithDefaults && params.content.length == 0;
 
+  let jdex = params.jdex;
   let name = params.name == "" ? pref.prefNoteName : params.name;
   let content = fillDefaults ? pref.prefNoteContent : params.content;
-  let fullName = params.jdex + "_" + params.name;
-  let tags = params.tags;
+  let fullName = jdex ? `${jdex}_${name}` : name;
   let availableTags = params.availableTags;
-  let jdex = params.jdex;
 
   // Handle special case: exact match with "AC" (e.g., "12")
   if (jdex.match(/^\d{2}$/)) {
@@ -108,16 +107,14 @@ export async function createNote(vault: Vault, params: CreateNoteParams) {
     if (matchingTag) {
       console.log("→ Found matching tag:", matchingTag);
       console.log("→ Before pushing:", [...params.tags]);
-      params.tags.push(matchingTag);
+      params.tags.unshift(matchingTag);
       console.log("→ After pushing:", [...params.tags]);
-    } else {
-      params.tags.push("");
-    }
+    } 
   }
 
   console.log(params.content);
 
-  content = content + createObsidianProperties(params.tags);
+  content = createObsidianProperties(params) + content;
   content = await applyTemplates(content);
   fullName = await applyTemplates(fullName);
 
@@ -137,18 +134,24 @@ export async function createNote(vault: Vault, params: CreateNoteParams) {
 }
 
 /** Gets the Obsidian Properties YAML frontmatter for a list of tags */
-function createObsidianProperties(tags: string[]): string {
+/** Gets the Obsidian Properties YAML frontmatter for a list of tags */
+function createObsidianProperties(params: CreateNoteParams): string {
+  const entries: [string, string[]][] = [
+    ["tags", params.tags],
+    ["locations", params.locations],
+  ];
+
   let obsidianProperties = '---\n';
   obsidianProperties += 'index: "[[00.00_Index]]"\n';
-  if (tags.length > 0) {
-    obsidianProperties+= "tags: [";
-    for (let i = 0; i < tags.length - 1; i++) {
-      obsidianProperties += '"' + tags[i] + '",';
-    }
-    obsidianProperties += '"' + tags[tags.length - 1] + '"]\n';
-  }
-  obsidianProperties += '---\n';
 
+  for (const [key, values] of entries) {
+    if (values.length > 0) {
+      const quoted = values.map(value => `"${value}"`).join(",");
+      obsidianProperties += `${key}: [${quoted}]\n`;
+    }
+  }
+
+  obsidianProperties += '---\n\n';
   return obsidianProperties;
 }
 

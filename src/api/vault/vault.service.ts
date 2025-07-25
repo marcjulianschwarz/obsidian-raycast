@@ -177,8 +177,6 @@ export function loadNotes(vault: Vault): Note[] {
   const bookmarkedFilePaths = getBookmarkedNotePaths(vault);
   const pref: SearchNotePreferences = getPreferenceValues<SearchNotePreferences>();
 
-  pref.yamlProperties;
-
   for (const filePath of filePaths) {
     const fileName = path.basename(filePath);
     const title = fileName.replace(/\.md$/, "") || "default";
@@ -192,10 +190,9 @@ export function loadNotes(vault: Vault): Note[] {
 
     const { data } = matter(content); // Parses YAML frontmatter
 
-    const fixedKeys = ["title", "path", "lastModified", "tags", "content", "bookmarked", "aliases"];
     const yamlProps: Record<string, any> = {};
     for (const key of yamlKeys) {
-      if (!fixedKeys.includes(key) && data && Object.prototype.hasOwnProperty.call(data, key)) {
+      if (data && Object.prototype.hasOwnProperty.call(data, key)) {
         yamlProps[key] = data[key];
       }
     }
@@ -203,9 +200,14 @@ export function loadNotes(vault: Vault): Note[] {
     const aliases: string[] = 
     Array.isArray(data?.aliases) ? data.aliases : 
     typeof data?.aliases === "string" ? [data.aliases] :[];
+    
     const tags: string[] =
     Array.isArray(data?.tags) ? data.tags :
     typeof data?.tags === "string" ? [data.tags] : [];
+    
+    const locations: string[] =
+    Array.isArray(data?.locations) ? data.locations :
+    typeof data?.locations === "string" ? [data.locations] : [];
 
     const note: Note = {
       title: title,
@@ -215,6 +217,7 @@ export function loadNotes(vault: Vault): Note[] {
       content: content,
       bookmarked: bookmarkedFilePaths.includes(relativePath),
       aliases: aliases,
+      locations: locations,
       ...yamlProps,
     };
 
