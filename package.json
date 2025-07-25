@@ -404,6 +404,15 @@
           "description": "Fill form with default values"
         },
         {
+          "name": "jdexRootTag",
+          "type": "textfield",
+          "label": "JDex Root Tag",
+          "title": "JDex Root Tag",
+          "required": false,
+          "description": "Root tag of your JDex tags",
+          "default": "JDex"
+        },
+        {
           "name": "prefTag",
           "type": "textfield",
           "placeholder": "untagged",
