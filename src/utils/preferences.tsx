@@ -17,7 +17,7 @@ export interface NoteFormPreferences extends GlobalPreferences {
   prefNoteName: string;
   prefNoteContent: string;
   fillFormWithDefaults: boolean;
-  prefTag: string;
+  prefTag?: string;
   tags: string;
   openOnCreate: boolean;
   folderActions: string;

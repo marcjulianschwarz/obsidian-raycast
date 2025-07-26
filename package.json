@@ -529,8 +529,7 @@
           "placeholder": "untagged",
           "title": "Default Tag",
           "required": false,
-          "description": "The default selected tag",
-          "default": ""
+          "description": "The default selected tag"
         },
         {
           "name": "folderActions",

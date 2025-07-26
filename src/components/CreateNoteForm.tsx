@@ -109,7 +109,7 @@ export function CreateNoteForm(props: { vault: Vault; showTitle: boolean }) {
         placeholder="path/to/note (optional)"
       />
       {availableTags.length > 0 && (
-        <Form.TagPicker id="tags" title="Tags" defaultValue={[prefTag]}>
+        <Form.TagPicker id="tags" title="Tags" defaultValue={prefTag ? [prefTag] : []}>
           {availableTags.map((tag) => (
             <Form.TagPicker.Item value={tag} title={tag} key={tag} />
           ))}
