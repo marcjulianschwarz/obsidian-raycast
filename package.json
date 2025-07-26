@@ -511,8 +511,17 @@
           "label": "JDex Root Tag",
           "title": "JDex Root Tag",
           "required": false,
-          "description": "Root tag of your JDex tags",
+          "description": "Add the root tag of your JDex tags",
           "default": "JDex"
+        },
+        {
+          "name": "defaultKeys",
+          "type": "textfield",
+          "label": "Default YAML Keys",
+          "title": "Default YAML Keys", 
+          "required": false,
+          "description": "Add YAML keys, e.g., {key1,a b c} {key2,{x,y,z}} {key3,uvw}",
+          "default": ""
         },
         {
           "name": "prefTag",
@@ -521,15 +530,6 @@
           "title": "Default Tag",
           "required": false,
           "description": "The default selected tag",
-          "default": ""
-        },
-        {
-          "name": "tags",
-          "type": "textfield",
-          "placeholder": "tag1, tag2, tag3, ...",
-          "title": "Tags",
-          "required": false,
-          "description": "The tags which will be suggested on note creation",
           "default": ""
         },
         {

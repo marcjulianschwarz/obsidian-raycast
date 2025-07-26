@@ -12,7 +12,7 @@ export function CreateNoteForm(props: { vault: Vault; showTitle: boolean }) {
   const { vault, showTitle } = props;
 
   const pref = getPreferenceValues<NoteFormPreferences>();
-  const { folderActions, tags, prefTag, prefPath } = pref;
+  const { folderActions, prefTag, prefPath } = pref;
 
   function parseFolderActions() {
     if (folderActions) {
@@ -41,23 +41,6 @@ export function CreateNoteForm(props: { vault: Vault; showTitle: boolean }) {
   }, [allNotes]);
 
   console.log("Available tags:", availableTags);
-
-  function parseTags() {
-    if (!tags) {
-      if (prefTag) {
-        return [{ name: prefTag, key: prefTag }];
-      }
-      return []; 
-    }
-    const parsedTags = tags
-      .split(",")
-      .map((tag) => ({ name: tag.trim(), key: tag.trim() }))
-      .filter((tag) => !!tag);
-    if (prefTag) {
-      parsedTags.push({ name: prefTag, key: prefTag });
-    }
-    return parsedTags;
-  }
 
   async function createNewNote(params: CreateNoteParams, path: string | undefined = undefined) {
     if (path !== undefined) {

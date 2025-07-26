@@ -23,6 +23,7 @@ export interface NoteFormPreferences extends GlobalPreferences {
   folderActions: string;
   focusContentArea: boolean;
   jdexRootTag: string;
+  defaultKeys: string;
 }
 
 export interface SearchNotePreferences extends GlobalPreferences, AppendNotePreferences {

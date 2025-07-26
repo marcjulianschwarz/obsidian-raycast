@@ -114,7 +114,7 @@ export async function createNote(vault: Vault, params: CreateNoteParams) {
 
   console.log(params.content);
 
-  content = createObsidianProperties(params) + content;
+  content = createObsidianProperties(params,pref) + content;
   content = await applyTemplates(content);
   fullName = await applyTemplates(fullName);
 
@@ -135,14 +135,14 @@ export async function createNote(vault: Vault, params: CreateNoteParams) {
 
 /** Gets the Obsidian Properties YAML frontmatter for a list of tags */
 /** Gets the Obsidian Properties YAML frontmatter for a list of tags */
-function createObsidianProperties(params: CreateNoteParams): string {
+function createObsidianProperties(params: CreateNoteParams, pref: NoteFormPreferences): string {
   const entries: [string, string[]][] = [
     ["tags", params.tags],
     ["locations", params.locations],
   ];
 
   let obsidianProperties = '---\n';
-  obsidianProperties += 'index: "[[00.00_Index]]"\n';
+  obsidianProperties += parseDefaultYAMLKeys(pref.defaultKeys || "");
 
   for (const [key, values] of entries) {
     if (values.length > 0) {
@@ -153,6 +153,26 @@ function createObsidianProperties(params: CreateNoteParams): string {
 
   obsidianProperties += '---\n\n';
   return obsidianProperties;
+}
+
+function parseDefaultYAMLKeys(input: string): string {
+  const regex = /\{([^,]+),(\{[^}]*\}|[^}]+)\}/g;
+  const lines: string[] = [];
+  let match;
+
+  while ((match = regex.exec(input)) !== null) {
+    const key = match[1].trim();
+    const valueRaw = match[2].trim();
+
+    if (valueRaw.startsWith('{') && valueRaw.endsWith('}')) {
+      const inner = valueRaw.slice(1, -1).split(',').map(v => `"${v.trim()}"`);
+      lines.push(`${key}: [${inner.join(', ')}]`);
+    } else {
+      lines.push(`${key}: ${valueRaw}`);
+    }
+  }
+
+  return lines.join('\n') + '\n';
 }
 
 /**

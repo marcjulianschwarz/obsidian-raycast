@@ -101,12 +101,12 @@ declare namespace Preferences {
   "prefNoteContent": string,
   /** Fill form with defaults - Fill form with default values */
   "fillFormWithDefaults": boolean,
-  /** JDex Root Tag - Root tag of your JDex tags */
+  /** JDex Root Tag - Add the root tag of your JDex tags */
   "jdexRootTag": string,
+  /** Default YAML Keys - Add YAML keys, e.g., {key1,a b c} {key2,{x,y,z}} {key3,uvw} */
+  "defaultKeys": string,
   /** Default Tag - The default selected tag */
   "prefTag": string,
-  /** Tags - The tags which will be suggested on note creation */
-  "tags": string,
   /** Folder Actions - Add actions to folders (comma separated) */
   "folderActions": string
 }
