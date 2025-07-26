@@ -31,6 +31,10 @@ export interface SearchNotePreferences extends GlobalPreferences, AppendNotePref
   showMetadata: boolean;
   searchContent: boolean;
   fuzzySearch: boolean;
+  prefSearchMode: string;
+  prefLunrSearchOrder: boolean;
+  prefSortOrder: string;
+  prefLogicMode: string;
   yamlProperties: string;
 }
 

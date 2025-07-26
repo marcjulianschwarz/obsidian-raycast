@@ -38,6 +38,14 @@ declare namespace Preferences {
   "showMetadata": boolean,
   /** Search Content - Use the content of notes for searching */
   "searchContent": boolean,
+  /** Select preferred default search mode - Use =|~|> at the beginning of your search query to select the search mode */
+  "prefSearchMode": "=" | "~" | ">",
+  /** Select preferred default sort order - Use sort:az|za|mno|mon|cno|con in search query to sort results */
+  "prefSearchOrder": "az" | "za" | "mno" | "mon" | "cno" | "con",
+  /** Default sort order in Lunr search mode - Use sort:scr in search query for the same effect */
+  "prefLunrSearchOrder": boolean,
+  /** Select preferred default logic mode - Use logic:and|or in search query to select the logic mode */
+  "prefLogichMode": "and" | "or",
   /** Use Fuzzy Search - If fuzzy search should be used */
   "fuzzySearch": boolean,
   /** Add YAML Properties - If fuzzy search should be used */

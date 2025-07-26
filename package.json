@@ -131,6 +131,92 @@
           "default": false
         },
         {
+          "name": "prefSearchMode",
+          "type": "dropdown",
+          "label": "Select preferred default search mode",
+          "title": "Select preferred default search mode",
+          "required": false,
+          "description": "Use =|~|> at the beginning of your search query to select the search mode",
+          "default": "=",
+          "data": [
+            {
+              "title": "Partial match (=)",
+              "value": "="
+            },
+            {
+              "title": "Fuzzy match (~)",
+              "value": "~"
+            },
+            {
+              "title": "Lunr match (>)",
+              "value": ">"
+            }
+          ]
+        },
+        {
+          "name": "prefSearchOrder",
+          "type": "dropdown",
+          "label": "Select preferred default sort order",
+          "title": "Select preferred default sort order",
+          "required": false,
+          "description": "Use sort:az|za|mno|mon|cno|con in search query to sort results",
+          "default": "za",
+          "data": [
+            {
+              "title": "A to Z (az)",
+              "value": "az"
+            },
+            {
+              "title": "Z to A (za)",
+              "value": "za"
+            },
+            {
+              "title": "Modified: new to old (mno)",
+              "value": "mno"
+            },
+            {
+              "title": "Modified: old to new (mon)",
+              "value": "mon"
+            },
+            {
+              "title": "Created: new to old (cno)",
+              "value": "cno"
+            },
+            {
+              "title": "Created: old to new (con)",
+              "value": "con"
+            }
+          ]
+        },
+        {
+          "name": "prefLunrSearchOrder",
+          "type": "checkbox",
+          "label": "Order by score (relevance)",
+          "title": "Default sort order in Lunr search mode",
+          "required": false,
+          "description": "Use sort:scr in search query for the same effect",
+          "default": false
+        },
+        {
+          "name": "prefLogichMode",
+          "type": "dropdown",
+          "label": "Select preferred default logic mode",
+          "title": "Select preferred default logic mode",
+          "required": false,
+          "description": "Use logic:and|or in search query to select the logic mode",
+          "default": "and",
+          "data": [
+            {
+              "title": "and",
+              "value": "and"
+            },
+            {
+              "title": "or",
+              "value": "or"
+            }
+          ]
+        },
+        {
           "name": "fuzzySearch",
           "type": "checkbox",
           "label": "Use Fuzzy Search",
