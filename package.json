@@ -159,7 +159,7 @@
           "label": "Select Default Search Scope (=~)",
           "title": "Select Default Search Scope (=~)",
           "required": false,
-          "description": "To use a different option, define your own search scope below",
+          "description": "Advanced users can define their own search scope below",
           "default": "name",
           "data": [
             {
