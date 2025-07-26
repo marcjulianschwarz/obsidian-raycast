@@ -12,7 +12,6 @@ import { getBookmarkedNotePaths } from "./notes/bookmarks/bookmarks.service";
 import { Note } from "./notes/notes.types";
 import { ObsidianJSON, Vault } from "./vault.types";
 import matter from "gray-matter";
-import { statSync } from "fs";
 
 function getVaultNameFromPath(vaultPath: string): string {
   const name = vaultPath
@@ -203,10 +202,6 @@ export function loadNotes(vault: Vault): Note[] {
     Array.isArray(data?.aliases) ? data.aliases : 
     typeof data?.aliases === "string" ? [data.aliases] :[];
     
-    const tags: string[] =
-    Array.isArray(data?.tags) ? data.tags :
-    typeof data?.tags === "string" ? [data.tags] : [];
-    
     const locations: string[] =
     Array.isArray(data?.locations) ? data.locations :
     typeof data?.locations === "string" ? [data.locations] : [];
@@ -216,7 +211,7 @@ export function loadNotes(vault: Vault): Note[] {
       path: filePath,
       created: fs.statSync(filePath).birthtime,
       modified: fs.statSync(filePath).mtime,
-      tags: tags, //tagsForString(content),
+      tags: tagsForString(content),
       content: content,
       bookmarked: bookmarkedFilePaths.includes(relativePath),
       aliases: aliases,
