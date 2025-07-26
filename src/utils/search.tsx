@@ -62,7 +62,7 @@ export function filterNotes(notes: Note[], pairs: { key: string; value: string }
     const term = value.toLowerCase();
 
     const matched = notes.filter((note) => {
-      if (key === "default") {
+      if (key === "name") {
         return (
           note.title.toLowerCase().includes(term) ||
           (note.aliases?.some(alias => alias.toLowerCase().includes(term)))
@@ -102,11 +102,11 @@ export function filterNotesFuzzy(notes: Note[], pairs: { key: string; value: str
   let matchingSets: Set<Note>[] = [];
 
   for (const { key, value } of pairs) {
-    if (key === "sort" || key === "logic") continue;
+    if (formalKeys.includes(key)) continue;
     let fuseKeys: string[];
 
     switch (key) {
-      case "default":
+      case "name":
         fuseKeys = ["title", "aliases"];
         break;
       case "full":
@@ -206,7 +206,7 @@ export function parseSearchQuery(input: string): { pairs: { key: string; value: 
   const tokens = input.match(/\w+:"[^"]*"|\w+:[^\s"]+|"[^"]+"|\S+/g) || [];
 
   for (let token of tokens) {
-    let key = "default";
+    let key = pref.prefSearchScope;
     let value = token;
 
     const colonIndex = token.indexOf(":");

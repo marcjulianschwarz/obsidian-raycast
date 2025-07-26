@@ -154,6 +154,29 @@
           ]
         },
         {
+          "name": "prefSearchScope",
+          "type": "dropdown",
+          "label": "Select preferred default search scope",
+          "title": "Select preferred default search scope",
+          "required": false,
+          "description": "Does not apply in Lunr search mode",
+          "default": "name",
+          "data": [
+            {
+              "title": "Title (title)",
+              "value": "title"
+            },
+            {
+              "title": "Title & aliases (name)",
+              "value": "name"
+            },
+            {
+              "title": "Content & path (full)",
+              "value": "full"
+            }
+          ]
+        },
+        {
           "name": "prefSearchOrder",
           "type": "dropdown",
           "label": "Select preferred default sort order",

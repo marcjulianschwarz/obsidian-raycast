@@ -40,6 +40,8 @@ declare namespace Preferences {
   "searchContent": boolean,
   /** Select preferred default search mode - Use =|~|> at the beginning of your search query to select the search mode */
   "prefSearchMode": "=" | "~" | ">",
+  /** Select preferred default search scope - Does not apply in Lunr search mode */
+  "prefSearchScope": "title" | "name" | "full",
   /** Select preferred default sort order - Use sort:az|za|mno|mon|cno|con in search query to sort results */
   "prefSearchOrder": "az" | "za" | "mno" | "mon" | "cno" | "con",
   /** Default sort order in Lunr search mode - Use sort:scr in search query for the same effect */
