@@ -192,8 +192,10 @@ export function loadNotes(vault: Vault): Note[] {
 
     const yamlProps: Record<string, any> = {};
     for (const key of yamlKeys) {
-      if (data && Object.prototype.hasOwnProperty.call(data, key)) {
-        yamlProps[key] = data[key];
+      const lowerKey = key.toLowerCase();
+      const match = Object.keys(data || {}).find(k => k.toLowerCase() === lowerKey);
+      if (match) {
+        yamlProps[lowerKey] = data[match];
       }
     }
 
