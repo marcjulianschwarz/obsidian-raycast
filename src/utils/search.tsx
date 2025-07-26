@@ -13,7 +13,7 @@ const pref = getPreferenceValues<SearchNotePreferences>();
 let searchMode = pref.prefSearchMode;
 
 
-export function searchFunction(notes: Note[], input: string, byContent: boolean, fuzzySearch: boolean): Note[] {
+export function searchFunction(notes: Note[], input: string): Note[] {
   searchMode = pref.prefSearchMode; // Reset to default search mode from preferences
   const isPartialMatch = input.startsWith(validSearchModes[0]); // "=" for partial match
   const isFuzzyMatch = input.startsWith(validSearchModes[1]); // "~" for fuzzy match

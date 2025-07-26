@@ -20,7 +20,6 @@ export type CreateNoteParams = {
   tags: string[];
   locations: string[];
   availableTags?: string[];
-  // availableLocations?: string[];
   allNotes?: Note[];
 };
 

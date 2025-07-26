@@ -122,19 +122,10 @@
           "default": false
         },
         {
-          "name": "searchContent",
-          "type": "checkbox",
-          "label": "Search Content",
-          "title": "Search Content",
-          "required": false,
-          "description": "Use the content of notes for searching",
-          "default": false
-        },
-        {
           "name": "prefSearchMode",
           "type": "dropdown",
-          "label": "Select Default Search Mode",
-          "title": "Select Default Search Mode",
+          "label": "Select Default Search Mode (=|~|>)",
+          "title": "Select Default Search Mode (=|~|>)",
           "required": false,
           "description": "Use =|~|> at the beginning of your search query to select the search mode",
           "default": "=",
@@ -156,10 +147,10 @@
         {
           "name": "prefSearchScope",
           "type": "dropdown",
-          "label": "Select Default Search Scope",
-          "title": "Select Default Search Scope",
+          "label": "Select Default Search Scope (=~)",
+          "title": "Select Default Search Scope (=~)",
           "required": false,
-          "description": "Does not apply to Lunr search",
+          "description": "More keys: path,aliases,content,tags,locations,bookmarked,modified,created",
           "default": "name",
           "data": [
             {
@@ -177,10 +168,29 @@
           ]
         },
         {
+          "name": "prefLogichMode",
+          "type": "dropdown",
+          "label": "Select Default Logic (=~)",
+          "title": "Select Default Logic (=~)",
+          "required": false,
+          "description": "Use logic:and|or in search query to select the logic",
+          "default": "and",
+          "data": [
+            {
+              "title": "And",
+              "value": "and"
+            },
+            {
+              "title": "Or",
+              "value": "or"
+            }
+          ]
+        },
+        {
           "name": "prefSearchOrder",
           "type": "dropdown",
-          "label": "Select Default Sort Order",
-          "title": "Select Default Sort Order",
+          "label": "Select Default Sort Order (=~>)",
+          "title": "Select Default Sort Order (=~>)",
           "required": false,
           "description": "Use sort:az|za|mn|mo|cn|co in search query to sort results",
           "default": "za",
@@ -215,46 +225,19 @@
           "name": "prefLunrSearchOrder",
           "type": "checkbox",
           "label": "Order Lunr search results by score (relevance)",
-          "title": "Use Different Default Sort Order",
+          "title": "Use Different Default Sort Order (>)",
           "required": false,
           "description": "Use sort:s in search query to order Lunr search results by score",
           "default": false
         },
         {
-          "name": "prefLogichMode",
-          "type": "dropdown",
-          "label": "Select Default Logic",
-          "title": "Select Default Logic",
-          "required": false,
-          "description": "Use logic:and|or in search query to select the logic",
-          "default": "and",
-          "data": [
-            {
-              "title": "And",
-              "value": "and"
-            },
-            {
-              "title": "Or",
-              "value": "or"
-            }
-          ]
-        },
-        {
-          "name": "fuzzySearch",
-          "type": "checkbox",
-          "label": "Use Fuzzy Search",
-          "title": "Use Fuzzy Search",
-          "required": false,
-          "description": "If fuzzy search should be used",
-          "default": false
-        },
-        {
           "name": "yamlProperties",
           "type": "textfield",
+          "placeholder": "property1, property2, ...",
           "label": "Add YAML Properties",
           "title": "Add YAML Properties",
           "required": false,
-          "description": "If fuzzy search should be used"
+          "description": "Add YAML properties to make them searchable (comma separated)"
         },
         {
           "name": "primaryAction",

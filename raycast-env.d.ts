@@ -36,21 +36,17 @@ declare namespace Preferences {
   "showDetail": boolean,
   /** Show Metadata - Show the notes metadata in a detail view (only works when Show Detail is enabled) */
   "showMetadata": boolean,
-  /** Search Content - Use the content of notes for searching */
-  "searchContent": boolean,
-  /** Select Default Search Mode - Use =|~|> at the beginning of your search query to select the search mode */
+  /** Select Default Search Mode (=|~|>) - Use =|~|> at the beginning of your search query to select the search mode */
   "prefSearchMode": "=" | "~" | ">",
-  /** Select Default Search Scope - Does not apply to Lunr search */
+  /** Select Default Search Scope (=~) - More keys: path,aliases,content,tags,locations,bookmarked,modified,created */
   "prefSearchScope": "title" | "name" | "full",
-  /** Select Default Sort Order - Use sort:az|za|mn|mo|cn|co in search query to sort results */
-  "prefSearchOrder": "az" | "za" | "mn" | "mo" | "cn" | "co",
-  /** Use Different Default Sort Order - Use sort:s in search query to order Lunr search results by score */
-  "prefLunrSearchOrder": boolean,
-  /** Select Default Logic - Use logic:and|or in search query to select the logic */
+  /** Select Default Logic (=~) - Use logic:and|or in search query to select the logic */
   "prefLogichMode": "and" | "or",
-  /** Use Fuzzy Search - If fuzzy search should be used */
-  "fuzzySearch": boolean,
-  /** Add YAML Properties - If fuzzy search should be used */
+  /** Select Default Sort Order (=~>) - Use sort:az|za|mn|mo|cn|co in search query to sort results */
+  "prefSearchOrder": "az" | "za" | "mn" | "mo" | "cn" | "co",
+  /** Use Different Default Sort Order (>) - Use sort:s in search query to order Lunr search results by score */
+  "prefLunrSearchOrder": boolean,
+  /** Add YAML Properties - Add YAML properties to make them searchable (comma separated) */
   "yamlProperties"?: string,
   /** Primary Action - Select a primary action to be executed on enter */
   "primaryAction"?: "quicklook" | "obsidian" | "newpane" | "defaultapp"

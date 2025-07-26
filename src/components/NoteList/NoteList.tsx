@@ -16,7 +16,7 @@ export function NoteList(props: NoteListProps) {
   const pref = getPreferenceValues<SearchNotePreferences>();
   const allNotes = useNotesContext();
   const [searchText, setSearchText] = useState(searchArguments.searchArgument ?? "");
-  const list = useMemo(() => searchFunction(notes ?? [], searchText, pref.searchContent, pref.fuzzySearch), [notes, searchText]);
+  const list = useMemo(() => searchFunction(notes ?? [], searchText), [notes, searchText]);
   const _notes = list.slice(0, MAX_RENDERED_NOTES);
 
   const tags = tagsForNotes(allNotes);
