@@ -133,8 +133,8 @@
         {
           "name": "prefSearchMode",
           "type": "dropdown",
-          "label": "Select preferred default search mode",
-          "title": "Select preferred default search mode",
+          "label": "Select Default Search Mode",
+          "title": "Select Default Search Mode",
           "required": false,
           "description": "Use =|~|> at the beginning of your search query to select the search mode",
           "default": "=",
@@ -156,10 +156,10 @@
         {
           "name": "prefSearchScope",
           "type": "dropdown",
-          "label": "Select preferred default search scope",
-          "title": "Select preferred default search scope",
+          "label": "Select Default Search Scope",
+          "title": "Select Default Search Scope",
           "required": false,
-          "description": "Does not apply in Lunr search mode",
+          "description": "Does not apply to Lunr search",
           "default": "name",
           "data": [
             {
@@ -179,10 +179,10 @@
         {
           "name": "prefSearchOrder",
           "type": "dropdown",
-          "label": "Select preferred default sort order",
-          "title": "Select preferred default sort order",
+          "label": "Select Default Sort Order",
+          "title": "Select Default Sort Order",
           "required": false,
-          "description": "Use sort:az|za|mno|mon|cno|con in search query to sort results",
+          "description": "Use sort:az|za|mn|mo|cn|co in search query to sort results",
           "default": "za",
           "data": [
             {
@@ -194,47 +194,47 @@
               "value": "za"
             },
             {
-              "title": "Modified: new to old (mno)",
-              "value": "mno"
+              "title": "Modified: newest first (mn)",
+              "value": "mn"
             },
             {
-              "title": "Modified: old to new (mon)",
-              "value": "mon"
+              "title": "Modified: oldest first (mo)",
+              "value": "mo"
             },
             {
-              "title": "Created: new to old (cno)",
-              "value": "cno"
+              "title": "Created: newest first (cn)",
+              "value": "cn"
             },
             {
-              "title": "Created: old to new (con)",
-              "value": "con"
+              "title": "Created: oldest first (co)",
+              "value": "co"
             }
           ]
         },
         {
           "name": "prefLunrSearchOrder",
           "type": "checkbox",
-          "label": "Order by score (relevance)",
-          "title": "Default sort order in Lunr search mode",
+          "label": "Order Lunr search results by score (relevance)",
+          "title": "Use Different Default Sort Order",
           "required": false,
-          "description": "Use sort:scr in search query for the same effect",
+          "description": "Use sort:s in search query to order Lunr search results by score",
           "default": false
         },
         {
           "name": "prefLogichMode",
           "type": "dropdown",
-          "label": "Select preferred default logic mode",
-          "title": "Select preferred default logic mode",
+          "label": "Select Default Logic",
+          "title": "Select Default Logic",
           "required": false,
-          "description": "Use logic:and|or in search query to select the logic mode",
+          "description": "Use logic:and|or in search query to select the logic",
           "default": "and",
           "data": [
             {
-              "title": "and",
+              "title": "And",
               "value": "and"
             },
             {
-              "title": "or",
+              "title": "Or",
               "value": "or"
             }
           ]

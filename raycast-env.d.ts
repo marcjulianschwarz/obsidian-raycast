@@ -38,15 +38,15 @@ declare namespace Preferences {
   "showMetadata": boolean,
   /** Search Content - Use the content of notes for searching */
   "searchContent": boolean,
-  /** Select preferred default search mode - Use =|~|> at the beginning of your search query to select the search mode */
+  /** Select Default Search Mode - Use =|~|> at the beginning of your search query to select the search mode */
   "prefSearchMode": "=" | "~" | ">",
-  /** Select preferred default search scope - Does not apply in Lunr search mode */
+  /** Select Default Search Scope - Does not apply to Lunr search */
   "prefSearchScope": "title" | "name" | "full",
-  /** Select preferred default sort order - Use sort:az|za|mno|mon|cno|con in search query to sort results */
-  "prefSearchOrder": "az" | "za" | "mno" | "mon" | "cno" | "con",
-  /** Default sort order in Lunr search mode - Use sort:scr in search query for the same effect */
+  /** Select Default Sort Order - Use sort:az|za|mn|mo|cn|co in search query to sort results */
+  "prefSearchOrder": "az" | "za" | "mn" | "mo" | "cn" | "co",
+  /** Use Different Default Sort Order - Use sort:s in search query to order Lunr search results by score */
   "prefLunrSearchOrder": boolean,
-  /** Select preferred default logic mode - Use logic:and|or in search query to select the logic mode */
+  /** Select Default Logic - Use logic:and|or in search query to select the logic */
   "prefLogichMode": "and" | "or",
   /** Use Fuzzy Search - If fuzzy search should be used */
   "fuzzySearch": boolean,

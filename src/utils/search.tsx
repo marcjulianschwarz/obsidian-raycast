@@ -5,36 +5,39 @@ import { LunrSearchManager } from "./lunrsearch";
 import { SearchNotePreferences } from "./preferences";
 import { getPreferenceValues } from "@raycast/api";
  
-const formalKeys = ["sort", "logic"];
+const reservedKeys = ["logic", "sort"];
+const validLogicValues = ["and", "or"];
+const validSortValues = ["az", "za", "mn", "mo", "cn", "co", "s"];
+const validSearchModes = ["=", "~", ">"];
 const pref = getPreferenceValues<SearchNotePreferences>();
 let searchMode = pref.prefSearchMode;
 
 
 export function searchFunction(notes: Note[], input: string, byContent: boolean, fuzzySearch: boolean): Note[] {
   searchMode = pref.prefSearchMode; // Reset to default search mode from preferences
-  const isPartialMatch = input.startsWith("=");
-  const isFuzzyMatch = input.startsWith("~");
-  const isLunrMatch = input.startsWith(">");
+  const isPartialMatch = input.startsWith(validSearchModes[0]); // "=" for partial match
+  const isFuzzyMatch = input.startsWith(validSearchModes[1]); // "~" for fuzzy match
+  const isLunrMatch = input.startsWith(validSearchModes[2]); // ">" for Lunr search
 
   if (isPartialMatch || isFuzzyMatch || isLunrMatch) {
     input = input.slice(1).trim();
     if (isPartialMatch){
-      searchMode = "=";
+      searchMode = validSearchModes[0];
     } else if (isFuzzyMatch) {
-      searchMode = "~";
+      searchMode = validSearchModes[1];
     } else if (isLunrMatch) {
-      searchMode = ">";
+      searchMode = validSearchModes[2];
     }
   }
   
   const { pairs } = parseSearchQuery(input);
 
   switch (searchMode) {
-    case "=": // Partial match
+    case validSearchModes[0]: // Partial match
       return filterNotes(notes, pairs);
-    case "~": // Fuzzy match
+    case validSearchModes[1]: // Fuzzy match
       return filterNotesFuzzy(notes, pairs);
-    case ">": // Lunr search
+    case validSearchModes[2]: // Lunr search
       return searchFunctionLunr(notes, pairs);
     default:
       return []
@@ -58,7 +61,7 @@ export function filterNotes(notes: Note[], pairs: { key: string; value: string }
   let matchingSets: Set<Note>[] = [];
 
   for (const { key, value } of pairs) {
-    if (key === "sort" || key === "logic") continue;
+    if (reservedKeys.includes(key)) continue;
     const term = value.toLowerCase();
 
     const matched = notes.filter((note) => {
@@ -102,7 +105,7 @@ export function filterNotesFuzzy(notes: Note[], pairs: { key: string; value: str
   let matchingSets: Set<Note>[] = [];
 
   for (const { key, value } of pairs) {
-    if (formalKeys.includes(key)) continue;
+    if (reservedKeys.includes(key)) continue;
     let fuseKeys: string[];
 
     switch (key) {
@@ -140,7 +143,7 @@ export function filterNotesFuzzy(notes: Note[], pairs: { key: string; value: str
 // Lunr search is applied to any fileds when no specific field is specified
 export function searchFunctionLunr(notes: Note[], pairs: { key: string; value: string }[]) {
   const input = pairs
-    .filter(({ key }) => !["sort", "logic", "content", "full"].includes(key))
+    .filter(({ key }) => !reservedKeys.includes(key))
     .flatMap(({ key, value }) => {
       const escaped = value.replace(/-/g, "\\-").replace(/ /g, "\\ ");
       return key === "default"
@@ -230,39 +233,40 @@ export function parseSearchQuery(input: string): { pairs: { key: string; value: 
 
 function checkPairsForValidity(pairs: { key: string; value: string }[]) {
   
-  // Validate "sort" key
-  let validSortValue = pref.prefSortOrder;
-  const validSortValues = ["cno", "con", "mno", "mon", "az", "za"];
-  if( searchMode === ">") { 
-    if (pref.prefLunrSearchOrder) {
-      validSortValue = "scr";
-    }
-    validSortValues.push("scr"); 
-  } 
-  const sortPairs = pairs.filter(p => p.key === "sort");
-  const validSort = [...sortPairs].reverse().find(p => validSortValues.includes(p.value));
-  if(validSort) { validSortValue = validSort.value; }
-
   // Validate "logic" key
   let validLogicValue = pref.prefLogicMode;
-  const validLogicValues = ["or", "and"];
-  const logicPairs = pairs.filter(p => p.key === "logic");
+  const logicPairs = pairs.filter(p => p.key === reservedKeys[0]);
   const validLogic = [...logicPairs].reverse().find(p => validLogicValues.includes(p.value));
   if (validLogic) { validLogicValue = validLogic.value; }
 
-  // Drop all original 'sort' and 'logic' keys
-  pairs = pairs.filter(p => !formalKeys.includes(p.key));
-  
-  if (validSortValue) {
-    pairs.push({
-      key: "sort",
-      value: validSortValue
-    });
+  // Validate "sort" key
+  let validSortValue = pref.prefSortOrder;
+  let validSortValuesLocal = [];
+  if( searchMode === validSearchModes[2]) { // Lunr search
+    if (pref.prefLunrSearchOrder) {
+      validSortValue = validSortValues[6]; // "s" for Lunr score
+    }
+    validSortValuesLocal = validSortValues;
+  } else {
+    validSortValuesLocal = validSortValues.slice(0, -1);
   }
+  const sortPairs = pairs.filter(p => p.key === reservedKeys[1]);
+  const validSort = [...sortPairs].reverse().find(p => validSortValuesLocal.includes(p.value));
+  if(validSort) { validSortValue = validSort.value; }
+
+  // Drop all original 'sort' and 'logic' keys
+  pairs = pairs.filter(p => !reservedKeys.includes(p.key));
+  
   if (validLogicValue) {
     pairs.push({
-      key: "logic",
+      key: reservedKeys[0],
       value: validLogicValue
+    });
+  }
+  if (validSortValue) {
+    pairs.push({
+      key: reservedKeys[1],
+      value: validSortValue
     });
   }
 
@@ -272,23 +276,23 @@ function checkPairsForValidity(pairs: { key: string; value: string }[]) {
 // getSearchKeysFromFlags is now deprecated and not used; key scoping is handled by terms' key:value pairs.
 
 function sortNotes(notes: Note[], pairs: { key: string; value: string }[]): Note[] {
-  const sortPair = pairs.find(p => p.key === "sort");
+  const sortPair = pairs.find(p => p.key === reservedKeys[1]);
   const sortValue = sortPair?.value || pref.prefSortOrder;
 
   switch (sortValue) {
-    case "cno":
-      return notes.sort((a, b) => new Date(b.created).getTime() - new Date(a.created).getTime());
-    case "con":
-      return notes.sort((a, b) => new Date(a.created).getTime() - new Date(b.created).getTime());
-    case "mno":
-      return notes.sort((a, b) => new Date(b.modified).getTime() - new Date(a.modified).getTime());
-    case "mon":
-      return notes.sort((a, b) => new Date(a.modified).getTime() - new Date(b.modified).getTime());
-    case "az":
+    case validSortValues[0]: // "az"
       return notes.sort((a, b) => a.title.localeCompare(b.title));
-    case "za":
+    case validSortValues[1]: // "za"  
       return notes.sort((a, b) => b.title.localeCompare(a.title));
-    case "scr":
+    case validSortValues[2]: // "mn"
+      return notes.sort((a, b) => new Date(b.modified).getTime() - new Date(a.modified).getTime());
+    case validSortValues[3]: // "mo"
+      return notes.sort((a, b) => new Date(a.modified).getTime() - new Date(b.modified).getTime());
+    case validSortValues[4]: // "cn"
+      return notes.sort((a, b) => new Date(b.created).getTime() - new Date(a.created).getTime());
+    case validSortValues[5]: // "co"
+      return notes.sort((a, b) => new Date(a.created).getTime() - new Date(b.created).getTime());
+    case validSortValues[6]: // "s" (Lunr score)
     default:
       return notes;
   }
@@ -296,14 +300,14 @@ function sortNotes(notes: Note[], pairs: { key: string; value: string }[]): Note
 }
 
 function getLogic(pairs: { key: string; value: string }[]): string {
-  const logicPair = pairs.find(p => p.key === "logic");
+  const logicPair = pairs.find(p => p.key === reservedKeys[0]);
   const logicValue = logicPair?.value || pref.prefLogicMode; 
 
   return logicValue;
 }
 
 function combineMatches(notes: Note[], matchingSets: Set<Note>[], pairs: { key: string; value: string }[]): Note[] {
-  if (getLogic(pairs) === "or") {
+  if (getLogic(pairs) === validLogicValues[1]) {
     // OR logic
     return notes.filter(note => matchingSets.some(set => set.has(note)));
   } else {
