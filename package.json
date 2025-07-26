@@ -244,7 +244,7 @@
           "name": "prefLunrSearchOrder",
           "type": "checkbox",
           "label": "Order Lunr search results by score (relevance)",
-          "title": "Use Different Default Sort Order (>)",
+          "title": "Overwrite Default Sort Order (>)",
           "required": false,
           "description": "Use sort:s in search query to order Lunr search results by score",
           "default": false
