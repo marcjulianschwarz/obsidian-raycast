@@ -209,7 +209,7 @@ export function parseSearchQuery(input: string): { pairs: { key: string; value: 
   const tokens = input.match(/\w+:"[^"]*"|\w+:[^\s"]+|"[^"]+"|\S+/g) || [];
 
   for (let token of tokens) {
-    let key = pref.prefSearchScope;
+    let key = pref.userDefinedSearchScope?.trim() || pref.prefSearchScope;
     let value = token;
 
     const colonIndex = token.indexOf(":");

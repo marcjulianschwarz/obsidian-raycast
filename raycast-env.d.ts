@@ -36,18 +36,20 @@ declare namespace Preferences {
   "showDetail": boolean,
   /** Show Metadata - Show the notes metadata in a detail view (only works when Show Detail is enabled) */
   "showMetadata": boolean,
+  /** Add YAML Keys - Add YAML keys to make them searchable (comma separated) */
+  "yamlProperties"?: string,
   /** Select Default Search Mode (=|~|>) - Use =|~|> at the beginning of your search query to select the search mode */
   "prefSearchMode": "=" | "~" | ">",
-  /** Select Default Search Scope (=~) - More keys: path,aliases,content,tags,locations,bookmarked,modified,created */
+  /** Select Default Search Scope (=~) - To use a different option, define your own search scope below */
   "prefSearchScope": "title" | "name" | "full",
+  /** Overwrite Default Search Scope (=~) - Use a custom or pre-defined key, e.g., path,aliases,content,tags,locations,bookmarked,modified,created */
+  "userDefinedSearchScope": string,
   /** Select Default Logic (=~) - Use logic:and|or in search query to select the logic */
   "prefLogichMode": "and" | "or",
   /** Select Default Sort Order (=~>) - Use sort:az|za|mn|mo|cn|co in search query to sort results */
   "prefSearchOrder": "az" | "za" | "mn" | "mo" | "cn" | "co",
   /** Use Different Default Sort Order (>) - Use sort:s in search query to order Lunr search results by score */
   "prefLunrSearchOrder": boolean,
-  /** Add YAML Properties - Add YAML properties to make them searchable (comma separated) */
-  "yamlProperties"?: string,
   /** Primary Action - Select a primary action to be executed on enter */
   "primaryAction"?: "quicklook" | "obsidian" | "newpane" | "defaultapp"
 }

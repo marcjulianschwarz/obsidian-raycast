@@ -122,6 +122,15 @@
           "default": false
         },
         {
+          "name": "yamlProperties",
+          "type": "textfield",
+          "placeholder": "property1, property2, ...",
+          "label": "Add YAML Keys",
+          "title": "Add YAML Keys",
+          "required": false,
+          "description": "Add YAML keys to make them searchable (comma separated)"
+        },
+        {
           "name": "prefSearchMode",
           "type": "dropdown",
           "label": "Select Default Search Mode (=|~|>)",
@@ -150,7 +159,7 @@
           "label": "Select Default Search Scope (=~)",
           "title": "Select Default Search Scope (=~)",
           "required": false,
-          "description": "More keys: path,aliases,content,tags,locations,bookmarked,modified,created",
+          "description": "To use a different option, define your own search scope below",
           "default": "name",
           "data": [
             {
@@ -166,6 +175,16 @@
               "value": "full"
             }
           ]
+        },
+        {
+          "name": "userDefinedSearchScope",
+          "type": "textfield",
+          "label": "Overwrite Default Search Scope (=~)",
+          "title": "Overwrite Default Search Scope (=~)",
+          "required": false,
+          "description": "Use a custom or pre-defined key, e.g., path,aliases,content,tags,locations,bookmarked,modified,created",
+          "default": "",
+          "placeholder": "Type name of key here"
         },
         {
           "name": "prefLogichMode",
@@ -229,15 +248,6 @@
           "required": false,
           "description": "Use sort:s in search query to order Lunr search results by score",
           "default": false
-        },
-        {
-          "name": "yamlProperties",
-          "type": "textfield",
-          "placeholder": "property1, property2, ...",
-          "label": "Add YAML Properties",
-          "title": "Add YAML Properties",
-          "required": false,
-          "description": "Add YAML properties to make them searchable (comma separated)"
         },
         {
           "name": "primaryAction",
