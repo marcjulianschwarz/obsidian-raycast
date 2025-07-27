@@ -156,11 +156,18 @@ function createObsidianProperties(params: CreateNoteParams, pref: NoteFormPrefer
 }
 
 function parseDefaultYAMLKeys(input: string): string {
+  // Replace escaped braces with placeholders
+  const ESC_LBRACE = '__ESC_LBRACE__';
+  const ESC_RBRACE = '__ESC_RBRACE__';
+  const escapedInput = input
+    .replace(/\\{/g, ESC_LBRACE)
+    .replace(/\\}/g, ESC_RBRACE);
+
   const regex = /\{([^,]+),(\{[^}]*\}|[^}]+)\}/g;
   const lines: string[] = [];
   let match;
 
-  while ((match = regex.exec(input)) !== null) {
+  while ((match = regex.exec(escapedInput)) !== null) {
     const key = match[1].trim();
     const valueRaw = match[2].trim();
 
@@ -172,7 +179,19 @@ function parseDefaultYAMLKeys(input: string): string {
     }
   }
 
-  return lines.join('\n') + '\n';
+  const escapedResult = lines.join('\n') + '\n';
+
+  // Restore escaped braces
+  const result = escapedResult
+  .replace(new RegExp(ESC_LBRACE, 'g'), '{')
+  .replace(new RegExp(ESC_RBRACE, 'g'), '}');
+
+  // console.log("Parsed YAML keys input:", input);
+  // console.log("Parsed YAML keys input escaped:", input);
+  // console.log("Parsed YAML keys result escaped:", escapedResult);
+  // console.log("Parsed YAML keys result:", result);
+
+  return result;
 }
 
 /**

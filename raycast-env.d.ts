@@ -48,7 +48,7 @@ declare namespace Preferences {
   "prefLogichMode": "and" | "or",
   /** Select Default Sort Order (=~>) - Use sort:az|za|mn|mo|cn|co in search query to sort results */
   "prefSearchOrder": "az" | "za" | "mn" | "mo" | "cn" | "co",
-  /** Use Different Default Sort Order (>) - Use sort:s in search query to order Lunr search results by score */
+  /** Overwrite Default Sort Order (>) - Use sort:s in search query to order Lunr search results by score */
   "prefLunrSearchOrder": boolean,
   /** Primary Action - Select a primary action to be executed on enter */
   "primaryAction"?: "quicklook" | "obsidian" | "newpane" | "defaultapp"
