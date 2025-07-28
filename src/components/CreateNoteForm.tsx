@@ -7,6 +7,7 @@ import { NoteFormPreferences } from "../utils/preferences";
 import { useMemo } from "react";
 import { useNotes } from "../utils/hooks";
 import { useState } from "react";
+import { tagsForNotes } from "../utils/yaml";
 
 export function CreateNoteForm(props: { vault: Vault; showTitle: boolean }) {
   const { vault, showTitle } = props;
@@ -29,7 +30,7 @@ export function CreateNoteForm(props: { vault: Vault; showTitle: boolean }) {
   const [allNotes] = useNotes(vault, false);
   const availableTags = useMemo(() => {
     if (!allNotes) return [];
-    const tags = Array.from(new Set(allNotes.flatMap((note) => note.tags ?? [])));
+    const tags = tagsForNotes(allNotes);
     return tags
       .map(tag => tag.startsWith("#") ? tag.substring(1) : tag)
       .filter(tag => tag.trim() !== "");  // Remove empty tags
