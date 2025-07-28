@@ -13,6 +13,10 @@ export class LunrSearchManager {
     this.index = this.createIndex(notes)
   }
 
+  public getLunrSearchManagerNotes(): Note[] {
+    return this.notes;
+  }
+
   private createIndex(notes: Note[]) {
     // Safely patch lunr warning system to avoid global.console crash
     // Force-patch lunr warning system to avoid global.console crash
@@ -97,11 +101,13 @@ export class LunrSearchManager {
         "path",
         "locations",
         "tags",
+        // "content", // Needs to much memory
         ...yamlProps,
       ]));
 
       indexFields.forEach(field => builder.field(field));
-    
+      
+      let prevField = "";
       notes.forEach(note => {
         const indexedNote: Record<string, string[]> = {
           path: [note.path],
@@ -113,12 +119,17 @@ export class LunrSearchManager {
           if (Array.isArray(value)) {
             const extraTokens = value.flatMap(v => v.split(" "));
             indexedNote[field] = [...value,...extraTokens];
+            if (field !== prevField) {
+              // console.log(`Indexed field "${field}" for note "${note.title}": ${value}`);
+              prevField = field; // Update title to avoid duplicate logging
+            }
+
           }
           // Exclude the reference field. It must not be altered.
           if (field.toString() !== "path") {
             if (typeof value === "string") {
               indexedNote[field] = [value, ...value.split(" ")];
-              console.log(`Indexed field "${field}" for note "${note.title}": ${value}`);
+              // console.log(`Indexed field "${field}" for note "${note.title}": ${value}`);
             }
           }
         });

@@ -11,7 +11,7 @@ const validSortValues = ["az", "za", "mn", "mo", "cn", "co", "s"];
 const validSearchModes = ["=", "~", ">"];
 const pref = getPreferenceValues<SearchNotePreferences>();
 let searchMode = pref.prefSearchMode;
-
+let persistentLunrManager: LunrSearchManager | null = null;
 
 export function searchFunction(notes: Note[], input: string): Note[] {
   searchMode = pref.prefSearchMode; // Reset to default search mode from preferences
@@ -152,7 +152,12 @@ export function searchFunctionLunr(notes: Note[], pairs: { key: string; value: s
     })
     .join(" ");
 
-  const manager = new LunrSearchManager(notes);
+  if (!persistentLunrManager || persistentLunrManager.getLunrSearchManagerNotes() !== notes) {
+    persistentLunrManager = new LunrSearchManager(notes);
+    console.log("Created new LunrSearchManager, notes length:", notes.length);
+  }
+  const manager = persistentLunrManager;
+  //const manager = new LunrSearchManager(notes);
   const index = manager['index'];
   // console.log(index);
 
