@@ -46,7 +46,7 @@ export interface DailyNoteAppendPreferences {
   silent?: boolean;
 }
 
-export interface appendTaskPreferences {
+export interface AppendTaskPreferences {
   appendTemplate?: string;
   vaultName?: string;
   heading?: string;
@@ -54,4 +54,8 @@ export interface appendTaskPreferences {
   noteTag?: string;
   silent?: boolean;
   creationDate?: boolean;
+}
+
+export interface DailyNotePreferences {
+  vaultName?: string;
 }

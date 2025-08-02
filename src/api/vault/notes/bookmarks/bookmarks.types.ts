@@ -12,6 +12,6 @@ export type BookmarkGroup = {
 
 export type BookmarkEntry = BookmarkFile | BookmarkGroup;
 
-export type BookMarkJson = {
+export type BookmarkJson = {
   items: BookmarkEntry[];
 };
