@@ -17,7 +17,8 @@
     "fservais",
     "psychomane",
     "denis_ufimtsev",
-    "sapoepsilon"
+    "sapoepsilon",
+    "theherk"
   ],
   "license": "MIT",
   "preferences": [
@@ -327,7 +328,16 @@
       "title": "Daily Note",
       "subtitle": "Obsidian",
       "description": "Open daily note in Obsidian. Will create new daily note when it doesn't exist yet.",
-      "mode": "view"
+      "mode": "view",
+      "preferences": [
+        {
+          "name": "vaultName",
+          "type": "textfield",
+          "title": "Obsidian Vault",
+          "required": false,
+          "description": "Name of Obsidian vault. If not given, a selector is presented."
+        }
+      ]
     },
     {
       "name": "createNoteCommand",

@@ -4,7 +4,7 @@ import AdvancedURIPluginNotInstalled from "./components/Notifications/AdvancedUR
 import { NoPathProvided } from "./components/Notifications/NoPathProvided";
 import { NoVaultFoundMessage } from "./components/Notifications/NoVaultFoundMessage";
 import { vaultsWithoutAdvancedURIToast } from "./components/Toasts";
-import { appendTaskPreferences } from "./utils/preferences";
+import { AppendTaskPreferences } from "./utils/preferences";
 import { getObsidianTarget, ObsidianTargetType } from "./utils/utils";
 import { useObsidianVaults } from "./utils/hooks";
 import { vaultPluginCheck } from "./api/vault/plugins/plugins.service";
@@ -23,7 +23,7 @@ export default function AppendTask(props: { arguments: appendTaskArgs }) {
   const dateContent = dueDate ? " 📅 " + dueDate : "";
 
   const { appendTemplate, heading, notePath, noteTag, vaultName, silent, creationDate } =
-    getPreferenceValues<appendTaskPreferences>();
+    getPreferenceValues<AppendTaskPreferences>();
   const [vaultsWithPlugin, vaultsWithoutPlugin] = vaultPluginCheck({
     vaults: vaults,
     communityPlugins: ["obsidian-advanced-uri"],

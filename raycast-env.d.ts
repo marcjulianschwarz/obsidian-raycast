@@ -74,7 +74,10 @@ declare namespace Preferences {
   "silent": boolean
 }
   /** Preferences accessible in the `dailyNoteCommand` command */
-  export type DailyNoteCommand = ExtensionPreferences & {}
+  export type DailyNoteCommand = ExtensionPreferences & {
+  /** Obsidian Vault - Name of Obsidian vault. If not given, a selector is presented. */
+  "vaultName"?: string
+}
   /** Preferences accessible in the `createNoteCommand` command */
   export type CreateNoteCommand = ExtensionPreferences & {
   /** Blank Note - Create a blank note */
