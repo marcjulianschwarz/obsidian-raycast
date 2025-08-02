@@ -58,8 +58,6 @@ export function useMedia(vault: Vault) {
     media: [],
   });
 
-  logger.info("useMedia hook called");
-
   useEffect(() => {
     async function fetch() {
       if (!media.ready) {
