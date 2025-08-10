@@ -182,19 +182,9 @@ export function loadNotes(vault: Vault): Note[] {
     const content = getNoteFileContent(filePath, false);
     const relativePath = path.relative(vault.path, filePath);
 
-    const yamlKeys = pref.yamlProperties
-    ?.split(",")
-    .map((s) => s.trim())
-    .filter((s) => s.length > 0) ?? [];
-
     const { data } = matter(content); // Parses YAML frontmatter
 
-    const yamlProps: Record<string, any> = {};
-    for (const key of yamlKeys) {
-      if (data && Object.prototype.hasOwnProperty.call(data, key)) {
-        yamlProps[key] = data[key];
-      }
-    }
+    const yamlProps: Record<string, any> = { ...data };
 
     const aliases: string[] = 
     Array.isArray(data?.aliases) ? data.aliases : 
