@@ -40,14 +40,12 @@ export function searchFunction(notes: Note[], searchQuery: string): Note[] {
 
     fieldMap: {
       // Aliases / reserved behavior
-      file: (d: any) => [d.title, ...(d.aliases ?? [])],
-      name: (d: any) => [d.title, ...(d.aliases ?? [])],
+      file: (d: any) => d.title,
+      anyname: (d: any) => [d.title, ...(d.aliases ?? [])],
       // Optional: keep tag mapping explicit; otherwise the spread already exposes d.tags
       tag: (d: any) => d.tags,
-      tags: (d: any) => d.tags,
       // Heavy fields (Fuse will only touch when a fuzzy term targets these fields)
       full: (d: any) => [d.content, d.path].filter(Boolean),
-      content: (d: any) => d.content,
     },
 
     // Only applied to terms carrying ~

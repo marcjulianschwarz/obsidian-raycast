@@ -41,7 +41,7 @@ declare namespace Preferences {
   /** Select Default Search Mode (=|~|>) - Use =|~|> at the beginning of your search query to select the search mode */
   "prefSearchMode": "=" | "~" | ">",
   /** Select Default Search Scope (=~) - Advanced users can define their own search scope below */
-  "prefSearchScope": "title" | "name" | "full",
+  "prefSearchScope": "title" | "anyname" | "full",
   /** Overwrite Default Search Scope (=~) - Use a custom or pre-defined key, e.g., path,aliases,content,tags,locations,bookmarked,modified,created */
   "userDefinedSearchScope": string,
   /** Select Default Logic (=~) - Use logic:and|or in search query to select the logic */
