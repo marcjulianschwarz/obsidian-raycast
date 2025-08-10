@@ -195,7 +195,8 @@ export function loadNotes(vault: Vault): Note[] {
     typeof data?.locations === "string" ? [data.locations] : [];
 
     const note: Note = {
-      ...yamlProps,
+      ...yamlProps, 
+      // IMPORTANT: The following properties override any YAML frontmatter properties
       title: title,
       path: filePath,
       created: fs.statSync(filePath).birthtime,
