@@ -195,6 +195,7 @@ export function loadNotes(vault: Vault): Note[] {
     typeof data?.locations === "string" ? [data.locations] : [];
 
     const note: Note = {
+      ...yamlProps,
       title: title,
       path: filePath,
       created: fs.statSync(filePath).birthtime,
@@ -204,7 +205,6 @@ export function loadNotes(vault: Vault): Note[] {
       bookmarked: bookmarkedFilePaths.includes(relativePath),
       aliases: aliases,
       locations: locations,
-      ...yamlProps,
     };
     // console.log("Note keys:", Object.keys(note));
 
