@@ -447,13 +447,12 @@
           "description": "Fill form with default values"
         },
         {
-          "name": "jdexRootTag",
+          "name": "prefTag",
           "type": "textfield",
-          "label": "JDex Root Tag",
-          "title": "JDex Root Tag",
+          "placeholder": "untagged",
+          "title": "Default Tag",
           "required": false,
-          "description": "If you use JDex/A0-A9_Area/AC_Category, they will be added to the note",
-          "default": "JDex"
+          "description": "The default selected tag"
         },
         {
           "name": "defaultKeys",
@@ -461,16 +460,8 @@
           "label": "Default YAML Keys",
           "title": "Default YAML Keys", 
           "required": false,
-          "description": "Default YAML keys are added to a new note",
+          "description": "Adds YAML keys automatically",
           "placeholder": "e.g, {key1,a b c} {key2,{x,y,z}} {key3,uvw}"
-        },
-        {
-          "name": "prefTag",
-          "type": "textfield",
-          "placeholder": "untagged",
-          "title": "Default Tag",
-          "required": false,
-          "description": "The default selected tag"
         },
         {
           "name": "folderActions",
@@ -480,6 +471,25 @@
           "required": false,
           "description": "Add actions to folders (comma separated)",
           "default": ""
+        },
+        {
+          "name": "prefEnableJDex",
+          "type": "checkbox",
+          "label": "Show JDex fields",
+          "title": "Show JDex fields",
+          "required": false,
+          "description": "Show JDex-specific fields in Create Note",
+          "default": false
+        },
+        {
+          "name": "jdexRootTag",
+          "type": "textfield",
+          "label": "JDex Root Tag",
+          "title": "JDex Root Tag",
+          "required": false,
+          "description": "Adds existing tags like '<root>/A0-A9_<area>/AC_<category>'",
+          "default": "JDex",
+          "placeholder": "<root>"
         }
       ]
     },

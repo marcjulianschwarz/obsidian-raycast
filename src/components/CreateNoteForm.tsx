@@ -13,7 +13,8 @@ export function CreateNoteForm(props: { vault: Vault; showTitle: boolean }) {
   const { vault, showTitle } = props;
 
   const pref = getPreferenceValues<NoteFormPreferences>();
-  const { folderActions, prefTag, prefPath } = pref;
+  const { folderActions, prefTag, prefPath, prefEnableJDex } = pref;
+  const showJDex = prefEnableJDex || false;
 
   function parseFolderActions() {
     if (folderActions) {
@@ -86,23 +87,27 @@ export function CreateNoteForm(props: { vault: Vault; showTitle: boolean }) {
         </ActionPanel>
       }
     >
-       <Form.TextField
-        title="JDex"
-        id="jdex"
-        placeholder="AC.ID"
-      />
+      {showJDex && (
+        <Form.TextField
+          title="JDex"
+          id="jdex"
+          placeholder="AC.ID"
+        />
+      )}
       <Form.TextField
         title="Name"
         id="name"
         placeholder="Name of note"
         defaultValue={pref.fillFormWithDefaults ? pref.prefNoteName : ""}
       />
-      <Form.Checkbox
-        label="Copy title to clipboard"
-        id="copytitle"
-        defaultValue={false}
-        onChange={setCopyToClipboard}
-      />
+      {showJDex && (
+        <Form.Checkbox
+          label="Copy title to clipboard"
+          id="copytitle"
+          defaultValue={false}
+          onChange={setCopyToClipboard}
+        />
+      )}
       <Form.TextField
         title="Path"
         id="path"
@@ -116,7 +121,7 @@ export function CreateNoteForm(props: { vault: Vault; showTitle: boolean }) {
           ))}
         </Form.TagPicker>
       )}
-      {availableLocations.length > 0 && (
+      {showJDex && availableLocations.length > 0 && (
         <Form.TagPicker id="locations" title="Locations">
           {availableLocations.map((location) => (
             <Form.TagPicker.Item value={location} title={location} key={location} />

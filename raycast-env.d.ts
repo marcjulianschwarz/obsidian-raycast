@@ -93,14 +93,16 @@ declare namespace Preferences {
   "prefNoteContent": string,
   /** Fill form with defaults - Fill form with default values */
   "fillFormWithDefaults": boolean,
-  /** JDex Root Tag - If you use JDex/A0-A9_Area/AC_Category, they will be added to the note */
-  "jdexRootTag": string,
-  /** Default YAML Keys - Default YAML keys are added to a new note */
-  "defaultKeys"?: string,
   /** Default Tag - The default selected tag */
   "prefTag"?: string,
+  /** Default YAML Keys - Adds YAML keys automatically */
+  "defaultKeys"?: string,
   /** Folder Actions - Add actions to folders (comma separated) */
-  "folderActions": string
+  "folderActions": string,
+  /** Show JDex fields - Show JDex-specific fields in Create Note */
+  "prefEnableJDex": boolean,
+  /** JDex Root Tag - Adds existing tags like '<root>/A0-A9_<area>/AC_<category>' */
+  "jdexRootTag": string
 }
   /** Preferences accessible in the `randomNoteCommand` command */
   export type RandomNoteCommand = ExtensionPreferences & {
