@@ -1,9 +1,10 @@
-import { Media } from "./interfaces";
+import { Media } from "../interfaces";
 import Fuse from "fuse.js";
-import { Note } from "../api/vault/notes/notes.types";
-import { LunrSearchManager } from "./lunrsearch";
-import { SearchNotePreferences } from "./preferences";
+import { Note } from "../../api/vault/notes/notes.types";
+import { SearchNotePreferences } from "../preferences";
 import { getPreferenceValues } from "@raycast/api";
+import { parseQuery } from "./parse";
+import { evaluateQueryAST } from "./evaluate";
  
 const reservedKeys = ["logic", "sort"];
 const validLogicValues = ["and", "or"];
@@ -11,38 +12,53 @@ const validSortValues = ["az", "za", "mn", "mo", "cn", "co", "s"];
 const validSearchModes = ["=", "~", ">"];
 const pref = getPreferenceValues<SearchNotePreferences>();
 let searchMode = pref.prefSearchMode;
-let persistentLunrManager: LunrSearchManager | null = null;
 
-export function searchFunction(notes: Note[], input: string): Note[] {
-  searchMode = pref.prefSearchMode; // Reset to default search mode from preferences
-  const isPartialMatch = input.startsWith(validSearchModes[0]); // "=" for partial match
-  const isFuzzyMatch = input.startsWith(validSearchModes[1]); // "~" for fuzzy match
-  const isLunrMatch = input.startsWith(validSearchModes[2]); // ">" for Lunr search
+export function searchFunction(notes: Note[], searchQuery: string): Note[] {
+  const query = (searchQuery ?? "").trim();
+  if (!query) return notes;
 
-  if (isPartialMatch || isFuzzyMatch || isLunrMatch) {
-    input = input.slice(1).trim();
-    if (isPartialMatch){
-      searchMode = validSearchModes[0];
-    } else if (isFuzzyMatch) {
-      searchMode = validSearchModes[1];
-    } else if (isLunrMatch) {
-      searchMode = validSearchModes[2];
-    }
-  }
-  
-  const { pairs } = parseSearchQuery(input);
-
-  switch (searchMode) {
-    case validSearchModes[0]: // Partial match
-      return filterNotes(notes, pairs);
-    case validSearchModes[1]: // Fuzzy match
-      return filterNotesFuzzy(notes, pairs);
-    case validSearchModes[2]: // Lunr search
-      return searchFunctionLunr(notes, pairs);
-    default:
-      return []
+  // 1) Parse to AST safely
+  let ast;
+  try {
+    ast = parseQuery(query);
+  } catch {
+    return notes; // graceful fallback on malformed query
   }
 
+  // 2) Build docs: expose all note fields (custom props included) + stable id
+  const docs = notes.map((n) => ({
+    id: n.path,   // stable identifier for evaluator + mapping back
+    ...n,         // exposes custom/frontmatter keys (e.g., index, status, locations, etc.)
+  }));
+
+  // 3) Evaluate (Fuse only kicks in for terms with ~; content is only used when the term targets it)
+  //console.log("DOCS", JSON.stringify(docs.slice(0, 5), null, 2));
+  const { hits } = evaluateQueryAST(ast, docs, {
+    defaultFields: Array.isArray(pref.prefSearchScope)
+      ? (pref.prefSearchScope as unknown as string[])
+      : [pref.prefSearchScope || "title"],
+
+    fieldMap: {
+      // Aliases / reserved behavior
+      file: (d: any) => [d.title, ...(d.aliases ?? [])],
+      name: (d: any) => [d.title, ...(d.aliases ?? [])],
+      // Optional: keep tag mapping explicit; otherwise the spread already exposes d.tags
+      tag: (d: any) => d.tags,
+      tags: (d: any) => d.tags,
+      // Heavy fields (Fuse will only touch when a fuzzy term targets these fields)
+      full: (d: any) => [d.content, d.path].filter(Boolean),
+      content: (d: any) => d.content,
+    },
+
+    // Only applied to terms carrying ~
+    fuzzy: { threshold: 0.35, minMatchCharLength: 2 },
+  });
+
+  // 4) Map back to Notes in ranked order
+  const byId = new Map(notes.map((n) => [n.path, n] as const));
+  return hits
+    .map((h) => byId.get(h.id))
+    .filter((n): n is Note => Boolean(n));
 }
 
 
@@ -139,45 +155,6 @@ export function filterNotesFuzzy(notes: Note[], pairs: { key: string; value: str
   return sortNotes(result, pairs);
 }
 
-// https://lunrjs.com/guides/searching.html
-// Lunr search is applied to any fileds when no specific field is specified
-export function searchFunctionLunr(notes: Note[], pairs: { key: string; value: string }[]) {
-  const input = pairs
-    .filter(({ key }) => !reservedKeys.includes(key))
-    .flatMap(({ key, value }) => {
-      const escaped = value.replace(/-/g, "\\-").replace(/ /g, "\\ ");
-      return key === "default"
-        ? [escaped]
-        : [`${key}:${escaped}`];
-    })
-    .join(" ");
-
-  if (!persistentLunrManager || persistentLunrManager.getLunrSearchManagerNotes() !== notes) {
-    persistentLunrManager = new LunrSearchManager(notes);
-    console.log("Created new LunrSearchManager, notes length:", notes.length);
-  }
-  const manager = persistentLunrManager;
-  //const manager = new LunrSearchManager(notes);
-  const index = manager['index'];
-  // console.log(index);
-
-  const results = safeSearch(index, input);
-  
-  const mappedResults = results
-    .map((r) => notes.find((n) => n.path === r.ref)!).filter(Boolean);
-
-  return sortNotes(mappedResults, pairs);
-}
-
-function safeSearch(index: lunr.Index, input: string): lunr.Index.Result[] {
-  try {
-    console.log("Lunr search input:", input);
-    return index.search(input);
-  } catch (e: any) {
-    if (e.name === "QueryParseError") return [];
-    throw e;
-  }
-}
 
 /**
  * Filters a list of media according to the input search string. If the input is empty, all media is returned. It will match the medias title, path and all notes mentioning the media.

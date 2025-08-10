@@ -6,7 +6,8 @@ import { MAX_RENDERED_NOTES } from "../../utils/constants";
 import { tagsForNotes } from "../../utils/yaml";
 import { NoteListItem } from "./NoteListItem";
 import { NoteListDropdown } from "./NoteListDropdown";
-import { searchFunction } from "../../utils/search";import { getObsidianTarget, ObsidianTargetType } from "../../utils/utils";
+import { searchFunction } from "../../utils/search/search";
+import { getObsidianTarget, ObsidianTargetType } from "../../utils/utils";
 import { SearchNotePreferences } from "../../utils/preferences";
 import { useNotesContext } from "../../utils/hooks";
 

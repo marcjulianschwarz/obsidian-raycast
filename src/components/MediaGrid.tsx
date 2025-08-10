@@ -5,7 +5,7 @@ import { Media, MediaSearchArguments } from "../utils/interfaces";
 import { OpenPathInObsidianAction, ShowPathInFinderAction } from "../utils/actions";
 import { getListOfMediaFileExtensions } from "../utils/utils";
 import { IMAGE_SIZE_MAPPING } from "../utils/constants";
-import { filterMedia } from "../utils/search";
+import { filterMedia } from "../utils/search/search";
 import { useMedia, useNotes } from "../utils/hooks";
 import { SearchMediaPreferences } from "../utils/preferences";
 import { Vault } from "../api/vault/vault.types";
