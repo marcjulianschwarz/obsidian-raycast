@@ -64,7 +64,7 @@ export function NoteList(props: NoteListProps) {
       }}
       navigationTitle={title}
       searchText={searchText}
-      searchBarPlaceholder="=~> key:value logic:and|or sort:az|za|mn|mo|cn|co|s"
+      searchBarPlaceholder="Type search query..."
       searchBarAccessory={<NoteListDropdown sortOrder={sortOrder} setSortOrder={setSortOrder} />}
     >
       {_notes?.map((note) => (

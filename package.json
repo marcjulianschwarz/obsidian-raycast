@@ -123,56 +123,24 @@
           "default": false
         },
         {
-          "name": "yamlProperties",
-          "type": "textfield",
-          "placeholder": "property1, property2, ...",
-          "label": "Add YAML Keys",
-          "title": "Add YAML Keys",
-          "required": false,
-          "description": "Add YAML keys to make them searchable (comma separated)"
-        },
-        {
-          "name": "prefSearchMode",
-          "type": "dropdown",
-          "label": "Select Default Search Mode (=|~|>)",
-          "title": "Select Default Search Mode (=|~|>)",
-          "required": false,
-          "description": "Use =|~|> at the beginning of your search query to select the search mode",
-          "default": "=",
-          "data": [
-            {
-              "title": "Partial match (=)",
-              "value": "="
-            },
-            {
-              "title": "Fuzzy match (~)",
-              "value": "~"
-            },
-            {
-              "title": "Lunr match (>)",
-              "value": ">"
-            }
-          ]
-        },
-        {
           "name": "prefSearchScope",
           "type": "dropdown",
-          "label": "Select Default Search Scope (=~)",
-          "title": "Select Default Search Scope (=~)",
+          "label": "Select Default Search Scope",
+          "title": "Select Default Search Scope",
           "required": false,
-          "description": "Advanced users can define their own search scope below",
-          "default": "name",
+          "description": "Used when the query has no field (e.g., vacation plan)",
+          "default": "title",
           "data": [
             {
-              "title": "Title (title)",
+              "title": "File (key:file)",
               "value": "title"
             },
             {
-              "title": "Title & aliases (name)",
+              "title": "Title & aliases (key:anyname)",
               "value": "anyname"
             },
             {
-              "title": "Content & path (full)",
+              "title": "Content & path (key:full)",
               "value": "full"
             }
           ]
@@ -180,75 +148,47 @@
         {
           "name": "userDefinedSearchScope",
           "type": "textfield",
-          "label": "Overwrite Default Search Scope (=~)",
-          "title": "Overwrite Default Search Scope (=~)",
+          "label": "Define Default Search Scope",
+          "title": "Define Default Search Scope",
           "required": false,
-          "description": "Use a custom or pre-defined key, e.g., path,aliases,content,tags,locations,bookmarked,modified,created",
+          "description": "Enter note property to override selected search scope",
           "default": "",
-          "placeholder": "Type name of key here"
-        },
-        {
-          "name": "prefLogichMode",
-          "type": "dropdown",
-          "label": "Select Default Logic (=~)",
-          "title": "Select Default Logic (=~)",
-          "required": false,
-          "description": "Use logic:and|or in search query to select the logic",
-          "default": "and",
-          "data": [
-            {
-              "title": "And",
-              "value": "and"
-            },
-            {
-              "title": "Or",
-              "value": "or"
-            }
-          ]
+          "placeholder": "e.g., path, tags, locations, bookmarked..."
         },
         {
           "name": "prefSortOrder",
           "type": "dropdown",
-          "label": "Select Default Sort Order (=~>)",
-          "title": "Select Default Sort Order (=~>)",
+          "label": "Select Default Sort Order",
+          "title": "Select Default Sort Order",
           "required": false,
-          "description": "Use sort:az|za|mn|mo|cn|co in search query to sort results",
-          "default": "za",
+          "description": "Selct a default sort order for the search results",
+          "default": "az",
           "data": [
             {
-              "title": "A to Z (az)",
+              "title": "A to Z",
               "value": "az"
             },
             {
-              "title": "Z to A (za)",
+              "title": "Z to A",
               "value": "za"
             },
             {
-              "title": "Modified: newest first (mn)",
+              "title": "Modified: newest first",
               "value": "mn"
             },
             {
-              "title": "Modified: oldest first (mo)",
+              "title": "Modified: oldest first",
               "value": "mo"
             },
             {
-              "title": "Created: newest first (cn)",
+              "title": "Created: newest first",
               "value": "cn"
             },
             {
-              "title": "Created: oldest first (co)",
+              "title": "Created: oldest first",
               "value": "co"
             }
           ]
-        },
-        {
-          "name": "prefLunrSearchOrder",
-          "type": "checkbox",
-          "label": "Order Lunr search results by score (relevance)",
-          "title": "Overwrite Default Sort Order (>)",
-          "required": false,
-          "description": "Use sort:s in search query to order Lunr search results by score",
-          "default": false
         },
         {
           "name": "primaryAction",

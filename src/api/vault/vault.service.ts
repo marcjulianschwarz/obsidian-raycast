@@ -174,7 +174,6 @@ export function loadNotes(vault: Vault): Note[] {
   const notes: Note[] = [];
   const filePaths = getFilePaths(vault);
   const bookmarkedFilePaths = getBookmarkedNotePaths(vault);
-  const pref: SearchNotePreferences = getPreferenceValues<SearchNotePreferences>();
 
   for (const filePath of filePaths) {
     const fileName = path.basename(filePath);

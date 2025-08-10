@@ -9,7 +9,6 @@ export type Doc = {
   title?: string;
   path?: string;
   tags?: string[];
-  frontmatter?: Record<string, unknown>; // string | string[] | number | boolean
   // You can add more fields and map them via EvaluateOptions.fieldMap
 };
 
@@ -70,11 +69,6 @@ function getFieldValues(doc: Doc, field: string, opts: EvaluateOptions): string[
   const getter = opts.fieldMap?.[field];
   if (getter) return valueToStrings(getter(doc));
   // fallback to direct properties
-  // special-case frontmatter access: key:foo can map to frontmatter.foo
-  if (field && doc.frontmatter && field in doc.frontmatter) {
-    return valueToStrings((doc.frontmatter as any)[field]);
-  }
-  // common direct fields
   const val = (doc as any)[field];
   return valueToStrings(val);
 }
