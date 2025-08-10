@@ -207,7 +207,7 @@
           ]
         },
         {
-          "name": "prefSearchOrder",
+          "name": "prefSortOrder",
           "type": "dropdown",
           "label": "Select Default Sort Order (=~>)",
           "title": "Select Default Sort Order (=~>)",

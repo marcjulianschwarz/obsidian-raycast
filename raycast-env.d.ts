@@ -47,7 +47,7 @@ declare namespace Preferences {
   /** Select Default Logic (=~) - Use logic:and|or in search query to select the logic */
   "prefLogichMode": "and" | "or",
   /** Select Default Sort Order (=~>) - Use sort:az|za|mn|mo|cn|co in search query to sort results */
-  "prefSearchOrder": "az" | "za" | "mn" | "mo" | "cn" | "co",
+  "prefSortOrder": "az" | "za" | "mn" | "mo" | "cn" | "co",
   /** Overwrite Default Sort Order (>) - Use sort:s in search query to order Lunr search results by score */
   "prefLunrSearchOrder": boolean,
   /** Primary Action - Select a primary action to be executed on enter */
