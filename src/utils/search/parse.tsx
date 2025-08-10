@@ -9,9 +9,10 @@
  *  - Parentheses for grouping
  *  - Boolean operators: AND, OR (case-insensitive). Default operator is AND.
  *  - Per-term fuzzy suffix: term~ or "phrase"~ (flag only; execution layer decides behavior)
- *  - Wildcards '*' are preserved in the value; executor decides semantics (e.g., prefix)
+ *  - To use regular expressions in your search term, surround the expression with forward slashes (/).
  */
 
+type RegexInfo = { pattern: string; flags: string; raw: string };
 export type Position = { start: number; end: number };
 
 export type TermNode = {
@@ -20,7 +21,7 @@ export type TermNode = {
   value: string;         // raw value (without quotes)
   phrase: boolean;       // true if originally quoted
   fuzzy: boolean;        // true if token had trailing '~'
-  hasWildcard: boolean;  // true if '*' present in value
+  regex?: RegexInfo | null;
   pos: Position;
 };
 
@@ -64,10 +65,41 @@ export type Token =
   | { kind: 'TERM'; value: string; pos: Position }
   | { kind: 'PHRASE'; value: string; pos: Position }
   | { kind: 'TILDE'; pos: Position }
+  | { kind: 'REGEX'; pattern: string; flags: string; raw: string; pos: Position }
   | { kind: 'WS'; pos: Position };
 
 function isWhitespace(ch: string) { return /\s/.test(ch); }
 function isPunct(ch: string) { return /[():~]/.test(ch); }
+
+function readRegex(input: string, startIndex: number) {
+  // expects input[startIndex] === '/'
+  let i = startIndex + 1;
+  const n = input.length;
+  let pattern = '';
+  let escaped = false;
+
+  while (i < n) {
+    const c = input[i++];
+    if (escaped) { pattern += c; escaped = false; continue; }
+    if (c === '\\') { escaped = true; continue; }
+    if (c === '/') { break; } // closing slash
+    pattern += c;
+  }
+
+  if (i > n || input[i - 1] !== '/') {
+    // no closing slash → not a valid /regex/, let caller handle as normal TERM
+    return null;
+  }
+
+  // collect flags (letters only)
+  let flags = '';
+  while (i < n && /[a-z]/i.test(input[i])) {
+    flags += input[i++];
+  }
+
+  const raw = input.slice(startIndex, i);
+  return { end: i, token: { pattern, flags, raw } };
+}
 
 export function tokenize(input: string): Token[] {
   const toks: Token[] = [];
@@ -78,6 +110,17 @@ export function tokenize(input: string): Token[] {
   while (i < n) {
     const start = i;
     const ch = input[i];
+
+    // Regex literal: /pattern/flags  (JS-flavored)
+    if (ch === '/') {
+      const rr = readRegex(input, i);
+      if (rr) {
+        i = rr.end;
+        push({ kind: 'REGEX', pattern: rr.token.pattern, flags: rr.token.flags, raw: rr.token.raw, pos: { start, end: i } });
+        continue;
+      }
+      // fall through if not a valid /regex/
+    }
 
     if (ch === '"') {
       // Quoted phrase (supports \" escapes)
@@ -137,7 +180,7 @@ export function tokenize(input: string): Token[] {
 
 class Parser {
   private i = 0;
-  constructor(private toks: Token[]) {}
+  constructor(private toks: Token[]) { }
 
   private peek(k = 0): Token | undefined { return this.toks[this.i + k]; }
   private eat(kind?: Token['kind']): Token | undefined {
@@ -227,7 +270,7 @@ class Parser {
       field = (first as any).value;
       this.eat('COLON');
       const next = this.peek();
-      if (next && (next.kind === 'TERM' || next.kind === 'PHRASE')) {
+      if (next && (next.kind === 'TERM' || next.kind === 'PHRASE' || next.kind === 'REGEX')) {
         valueTok = this.eat()!; // consume value token
       } else {
         // Empty value allowed? We'll treat as empty term.
@@ -238,19 +281,28 @@ class Parser {
     let phrase = false;
     let raw = '';
     let endPos = valueTok.pos.end;
+    let regexInfo: RegexInfo | null = null;
 
-    if (valueTok.kind === 'PHRASE') { phrase = true; raw = valueTok.value; }
-    else if (valueTok.kind === 'TERM') { raw = valueTok.value; }
-    else { throw new Error(`Unexpected token in term: ${valueTok.kind}`); }
+    if (valueTok.kind === 'PHRASE') {
+      phrase = true;
+      raw = valueTok.value;
+    } else if (valueTok.kind === 'TERM') {
+      raw = valueTok.value;
+    } else if (valueTok.kind === 'REGEX') {
+      // Tentatively treat as regex; final decision after we peek for '~'
+      raw = valueTok.raw; // keep the literal for astToString/debug
+      regexInfo = { pattern: valueTok.pattern, flags: valueTok.flags, raw: valueTok.raw };
+    } else {
+      throw new Error(`Unexpected token in term: ${valueTok.kind}`);
+    }
 
     // optional trailing '~' to mark fuzzy for this term/phrase
     let fuzzy = false;
     if (this.peek()?.kind === 'TILDE') {
       this.eat('TILDE');
-      fuzzy = true; endPos = this.peek()?.pos.start ?? (endPos + 1);
+      fuzzy = true;
+      endPos = this.peek()?.pos.start ?? (endPos + 1);
     }
-
-    const hasWildcard = raw.includes('*');
 
     return {
       type: 'Term',
@@ -258,7 +310,7 @@ class Parser {
       value: raw,
       phrase,
       fuzzy,
-      hasWildcard,
+      regex: regexInfo,
       pos: { start: startTok.pos.start, end: endPos },
     };
   }
@@ -280,7 +332,10 @@ export function astToString(node: ASTNode): string {
   switch (node.type) {
     case 'Term': {
       const f = node.field ? `${node.field}:` : '';
-      const v = node.phrase ? `"${node.value}"` : node.value;
+      // If it's a true regex node (and not the fuzzy-literal case), print its raw regex.
+      const v = node.regex
+        ? node.regex.raw
+        : (node.phrase ? `"${node.value}"` : node.value);
       const tilde = node.fuzzy ? '~' : '';
       return `${f}${v}${tilde}`;
     }
@@ -299,3 +354,6 @@ export function astToString(node: ASTNode): string {
 // Example:
 // console.log(JSON.stringify(parseQuery('(term1 OR -term2) term3'), null, 2));
 // console.log(astToString(parseQuery('tag:JDex coat~ -serious title:"Hello Kitty"~')));
+
+// const debugAST = parseQuery("title:/.*intro/");
+// console.log(JSON.stringify(debugAST, null, 2));

@@ -1,5 +1,3 @@
-
-
 import Fuse from 'fuse.js';
 import { ASTNode, TermNode, AndNode, OrNode, NotNode } from './parse';
 
@@ -87,13 +85,6 @@ function collectFields(doc: Doc, fields: string[], opts: EvaluateOptions): strin
   return out;
 }
 
-function wildcardToRegex(input: string): RegExp | null {
-  if (!input.includes('*')) return null;
-  // Treat '*' as any substring (greedy). Escape regex metachars except '*'
-  const escaped = input.replace(/[-/\\^$+?.()|[\]{}]/g, '\\$&').replace(/\*/g, '.*');
-  return new RegExp(escaped, 'i');
-}
-
 // ————————————————————————————————————————————————————————————
 // Leaf evaluation
 // ————————————————————————————————————————————————————————————
@@ -105,12 +96,9 @@ type LeafEval = {
 
 function evalExactLeaf(docs: Doc[], node: TermNode, fields: string[], opts: EvaluateOptions): LeafEval {
   const ids = new Set<string>();
-  const regex = wildcardToRegex(node.value);
   for (const d of docs) {
     const values = collectFields(d, fields, opts);
-    const matched = values.some(v =>
-      regex ? regex.test(v) : strIncludes(v, node.value)
-    );
+    const matched = values.some(v => strIncludes(v, node.value));
     if (matched) ids.add(d.id);
   }
   return { ids, scores: new Map() };
@@ -131,6 +119,42 @@ function buildFuseIndex(docs: Doc[], fields: string[], opts: EvaluateOptions) {
     keys: ['blob'],
   });
 }
+
+function evalRegexLeaf(docs: Doc[], node: TermNode, fields: string[], opts: EvaluateOptions): LeafEval {
+    const ids = new Set<string>();
+    const scores = new Map<string, number>();
+  
+    // Defensive: node.regex should exist here
+    if (!node.regex) return { ids, scores };
+  
+    let re: RegExp;
+    try {
+      re = new RegExp(node.regex.pattern, node.regex.flags);
+    } catch {
+      // Invalid regex → no matches (you could also choose to fallback to literal)
+      return { ids, scores };
+    }
+
+    // console.log(`[Regex Search] pattern=${re} fields=${fields.join(", ")}`);
+
+    // for (const d of docs) {
+    //     const values = collectFields(d, fields, opts);
+    //     values.forEach(v => {
+    //       const matched = re.test(v);
+    //       console.log(`[Regex Test] docId=${d.id} value="${v}" match=${matched}`);
+    //       if (matched) ids.add(d.id);
+    //     });
+    // }
+  
+    for (const d of docs) {
+      const values = collectFields(d, fields, opts);
+      // IMPORTANT: regex is JS-flavored, case-sensitivity controlled by /flags/,
+      // so DO NOT fold values here—use the raw strings.
+      const matched = values.some(v => re.test(v));
+      if (matched) ids.add(d.id);
+    }
+    return { ids, scores };
+  }
 
 function evalFuzzyLeaf(docs: Doc[], node: TermNode, fields: string[], opts: EvaluateOptions, fuseCache: Map<string, Fuse<any>>): LeafEval {
   const cacheKey = fields.join('|');
@@ -190,13 +214,20 @@ export function evaluateQueryAST(ast: ASTNode, docs: Doc[], opts: EvaluateOption
   function evalNode(node: ASTNode): { ids: Set<string>, scores: Map<string, number> } {
     switch (node.type) {
       case 'Term': {
-        // Determine fields
         const fields = node.field ? [node.field] : defaultFields;
-        // Wildcards take precedence over fuzzy: treat as exact pattern
-        if (!node.fuzzy || node.hasWildcard) {
-          return evalExactLeaf(docs, node, fields, opts);
+
+        // Regex has highest priority
+        if (node.regex) {
+          return evalRegexLeaf(docs, node, fields, opts);
         }
-        return evalFuzzyLeaf(docs, node, fields, opts, fuseCache);
+        
+        // Fuzzy next (only for terms explicitly suffixed with ~)
+        if (node.fuzzy) {
+          return evalFuzzyLeaf(docs, node, fields, opts, fuseCache);
+        }
+        
+        // Otherwise: exact (folded includes)
+        return evalExactLeaf(docs, node, fields, opts);
       }
       case 'Not': {
         const inner = evalNode(node.child);
