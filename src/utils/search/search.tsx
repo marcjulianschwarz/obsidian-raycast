@@ -1,5 +1,4 @@
 import { Media } from "../interfaces";
-import Fuse from "fuse.js";
 import { Note } from "../../api/vault/notes/notes.types";
 import { SearchNotePreferences } from "../preferences";
 import { getPreferenceValues } from "@raycast/api";

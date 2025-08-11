@@ -20,12 +20,17 @@ export function NoteList(props: NoteListProps) {
     (pref.prefSortOrder as SortOrder) || "az"
   );
   const allNotes = useNotesContext();
-  const [searchText, setSearchText] = useState(searchArguments.searchArgument ?? "");
+  const [searchText, setSearchText] = useState(searchArguments?.searchArgument ?? "");
   const list = useMemo(() => searchFunction(notes ?? [], searchText), [notes, searchText]);
   const sorted = useMemo(() => sortNotesByOrder(list, sortOrder), [list, sortOrder]);
   const _notes = sorted.slice(0, MAX_RENDERED_NOTES);
 
   const tags = tagsForNotes(allNotes);
+
+  const searchAccessory = useMemo(
+    () => <NoteListDropdown sortOrder={sortOrder} setSortOrder={setSortOrder} />,
+    [sortOrder]
+  );
 
   function onNoteCreation() {
     const target = getObsidianTarget({ type: ObsidianTargetType.NewNote, vault: vault, name: searchText });
@@ -34,25 +39,6 @@ export function NoteList(props: NoteListProps) {
   }
 
   const isNotesUndefined = notes === undefined;
-  if (_notes.length == 0) {
-    return (
-      <List
-        navigationTitle={title}
-        onSearchTextChange={(value) => {
-          setSearchText(value);
-        }}
-      >
-        <List.Item
-          title={`🗒️ Create Note "${searchText}"`}
-          actions={
-            <ActionPanel>
-              <Action title="Create Note" onAction={onNoteCreation} />
-            </ActionPanel>
-          }
-        />
-      </List>
-    );
-  }
 
   return (
     <List
@@ -63,13 +49,23 @@ export function NoteList(props: NoteListProps) {
         setSearchText(value);
       }}
       navigationTitle={title}
-      searchText={searchText}
       searchBarPlaceholder="Type search query..."
-      searchBarAccessory={<NoteListDropdown sortOrder={sortOrder} setSortOrder={setSortOrder} />}
+      searchBarAccessory={searchAccessory}
     >
-      {_notes?.map((note) => (
-        <NoteListItem note={note} vault={vault} key={note.path} pref={pref} action={action} />
-      ))}
+      {_notes.length === 0 ? (
+        <List.Item
+          title={`🗒️ Create Note "${searchText}"`}
+          actions={
+            <ActionPanel>
+              <Action title="Create Note" onAction={onNoteCreation} />
+            </ActionPanel>
+          }
+        />
+      ) : (
+        _notes.map((note) => (
+          <NoteListItem note={note} vault={vault} key={note.path} pref={pref} action={action} />
+        ))
+      )}
     </List>
   );
 }
