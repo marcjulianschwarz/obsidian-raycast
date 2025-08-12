@@ -43,6 +43,53 @@ export function getCodeBlocks(content: string): CodeBlock[] {
   return codeBlocks;
 }
 
+function incrementJDex(params: CreateNoteParams): { stop: boolean; newName?: string } {
+  const name = params.name;
+  const jdex = params.jdex;
+  if (!/^\d\d$/.test(jdex)) return { stop: false };
+
+  const maxId = (params.allNotes ?? [])
+    .map((note) => path.basename(note.path, ".md"))
+    .filter((base) => base.startsWith(`${jdex}.`))
+    .reduce((max, base) => {
+      const parsed = parseInt(base.substring(3, 5), 10);
+      return Math.max(max, isNaN(parsed) ? 0 : parsed);
+    }, 10);
+
+  // Stop at 99 to avoid creating 100
+  if (maxId >= 99) {
+    showToast({
+      title: "ID limit reached",
+      message: "Cannot create more than 99 notes in this category.",
+      style: Toast.Style.Failure,
+    });
+    return { stop: true };
+  }
+
+  const newId = String(maxId + 1).padStart(2, "0"); // remove padStart if you prefer unpadded
+  return { stop: false, newName: `${jdex}.${newId}_${name}` };
+}
+
+function addMatchingJDexCategoryTag(pref: NoteFormPreferences, params: CreateNoteParams) {
+  const availableTags = params.availableTags;
+  const category = params.fullName.match(/^\d{2}/);
+  console.log("Category:", category); // Debug
+
+  // Try to find a matching tag
+  const matchingTag = availableTags?.find(
+    tag => tag.startsWith(pref.jdexRootTag) && tag.includes(`/${category}_`)
+  );
+
+  console.log("Matching tag:", matchingTag);
+
+  if (matchingTag) {
+    console.log("→ Found matching tag:", matchingTag);
+    console.log("→ Before pushing:", [...params.tags]);
+    params.tags.unshift(matchingTag);
+    console.log("→ After pushing:", [...params.tags]);
+  }
+}
+
 /**
  * Creates a note in the vault.
  * - Adds a YAML frontmatter
@@ -56,74 +103,30 @@ export function getCodeBlocks(content: string): CodeBlock[] {
 
 export async function createNote(vault: Vault, params: CreateNoteParams) {
   const pref = getPreferenceValues<NoteFormPreferences>();
-  const fillDefaults = !pref.fillFormWithDefaults && params.content.length == 0;
 
-  let jdex = params.jdex;
-  let name = params.name == "" ? pref.prefNoteName : params.name;
-  let content = fillDefaults ? pref.prefNoteContent : params.content;
-  let fullName = jdex ? `${jdex}_${name}` : name;
-  let availableTags = params.availableTags;
+  params.name = params.name == "" ? pref.prefNoteName : params.name;
+  params.content = pref.fillFormWithDefaults ? pref.prefNoteContent : params.content;
+  params.fullName = params.jdex ? `${params.jdex}_${params.name}` : params.name;
 
+  // === JDex Handling Start ===
   // Handle special case: exact match with "AC" (e.g., "12")
-  if (jdex.match(/^\d{2}$/)) {
-    const matchingNotes = (params.allNotes ?? [])
-      .map((note) => path.basename(note.path, ".md"))
-      .filter((noteName) => jdex && noteName.startsWith(jdex));
+  const { stop, newName } = incrementJDex(params);
+  if (stop) return false;
+  if (newName) params.fullName = newName;
 
-    
-    let maxId = 10;
-    for (const noteName of matchingNotes) {
-      const numStr = noteName.substring(3, 5);
-      const parsed = parseInt(numStr, 10);
-      const id = isNaN(parsed) ? 0 : parsed;
-      maxId = Math.max(maxId, id);
-      console.log("→ maxId: ", noteName);
-      console.log("→ maxId: ", maxId);
-    }
-
-    if (maxId > 99) {
-      showToast({ title: "ID limit reached", message: "Cannot create more than 99 notes in this category.", style: Toast.Style.Failure });
-      return false;
-    }
-
-    const newId = String(maxId + 1);
-    fullName = `${jdex}.${newId}_${name}`;
-    console.log("→ Generated new full name:", fullName);
-  }
-
-  const category = fullName.match(/^\d{2}/);
-
-  console.log("Category:",category); // Debug
-  if (category) {
-    console.log("Category:",category); // Debug
-
-    // Try to find a matching tag
-    const matchingTag = availableTags?.find(
-      tag => tag.startsWith(pref.jdexRootTag) && tag.includes(`/${category}_`)
-    );
-
-    console.log("Matching tag:",matchingTag);
-
-    if (matchingTag) {
-      console.log("→ Found matching tag:", matchingTag);
-      console.log("→ Before pushing:", [...params.tags]);
-      params.tags.unshift(matchingTag);
-      console.log("→ After pushing:", [...params.tags]);
-    } 
-  }
+  addMatchingJDexCategoryTag(pref, params);
+  // === JDex Handling End ===
 
   console.log(params.content);
 
-  content = createObsidianProperties(params,pref) + content;
-  content = await applyTemplates(content);
-  fullName = await applyTemplates(fullName);
+  params.content = createObsidianProperties(params,pref) + params.content;
+  params.content = await applyTemplates(params.content);
+  params.fullName = await applyTemplates(params.fullName);
 
-  params.fullName = fullName;
-
-  const saved = await saveStringToDisk(vault.path, content, fullName, params.path);
+  const saved = await saveStringToDisk(vault.path, params.content, params.fullName, params.path);
 
   if (pref.openOnCreate) {
-    const target = "obsidian://open?path=" + encodeURIComponent(path.join(vault.path, params.path, fullName + ".md"));
+    const target = "obsidian://open?path=" + encodeURIComponent(path.join(vault.path, params.path, params.fullName + ".md"));
     if (saved) {
       setTimeout(() => {
         open(target);

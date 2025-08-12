@@ -1,6 +1,6 @@
 import { List, ActionPanel, Action } from "@raycast/api";
 import { Vault } from "../api/vault/vault.types";
-import { ReactNode } from "@raycast/api/node_modules/@types/react";
+import { ReactNode } from "react";
 import { ShowVaultInFinderAction } from "../utils/actions";
 
 export function VaultSelection(props: { vaults: Vault[]; target: (vault: Vault) => ReactNode }) {
