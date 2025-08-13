@@ -123,6 +123,13 @@
           "default": false
         },
         {
+          "name": "prefillSearchQuery",
+          "type": "textfield",
+          "title": "Pre-fill Search Query",
+          "required": false,
+          "description": "Pre-fill the search bar with a default query"
+        },
+        {
           "name": "prefSearchScope",
           "type": "dropdown",
           "label": "Select Default Search Scope",
@@ -269,15 +276,6 @@
           "title": "Show Metadata",
           "required": false,
           "description": "Show the notes metadata in a detail view (only works when Show Detail is enabled)",
-          "default": false
-        },
-        {
-          "name": "searchContent",
-          "type": "checkbox",
-          "label": "Search Content",
-          "title": "Search Content",
-          "required": false,
-          "description": "Use the content of notes for searching",
           "default": false
         },
         {

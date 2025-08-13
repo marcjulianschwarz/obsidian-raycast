@@ -31,7 +31,6 @@ export interface SearchNotePreferences extends GlobalPreferences, AppendNotePref
   primaryAction: string;
   showDetail: boolean;
   showMetadata: boolean;
-  searchContent: boolean;
   fuzzySearch: boolean;
   prefSearchMode: string;
   prefSearchScope: string;
@@ -40,6 +39,7 @@ export interface SearchNotePreferences extends GlobalPreferences, AppendNotePref
   prefSortOrder: string;
   prefLogicMode: string;
   yamlProperties: string;
+  prefillSearchQuery: string;
 }
 
 export interface RandomNotePreferences extends GlobalPreferences, AppendNotePreferences {}

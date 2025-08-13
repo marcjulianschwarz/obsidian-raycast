@@ -20,7 +20,7 @@ export function NoteList(props: NoteListProps) {
     (pref.prefSortOrder as SortOrder) || "az"
   );
   const allNotes = useNotesContext();
-  const [searchText, setSearchText] = useState(searchArguments?.searchArgument ?? "");
+  const [searchText, setSearchText] = useState(searchArguments?.searchArgument ?? pref.prefillSearchQuery ?? "");
   const list = useMemo(() => searchFunction(notes ?? [], searchText), [notes, searchText]);
   const sorted = useMemo(() => sortNotesByOrder(list, sortOrder), [list, sortOrder]);
   const _notes = sorted.slice(0, MAX_RENDERED_NOTES);
@@ -48,6 +48,7 @@ export function NoteList(props: NoteListProps) {
       onSearchTextChange={(value) => {
         setSearchText(value);
       }}
+      searchText={searchText}
       navigationTitle={title}
       searchBarPlaceholder="Type search query..."
       searchBarAccessory={searchAccessory}
