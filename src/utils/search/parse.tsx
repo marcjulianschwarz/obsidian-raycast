@@ -1,3 +1,5 @@
+import { dbgParse, j } from '../debugging/debug';
+
 /*
  * Obsidian-style search parser → AST (TypeScript)
  * Supports:
@@ -174,6 +176,7 @@ export function tokenize(input: string): Token[] {
     }
     if (t.kind !== 'WS') normalized.push(t);
   }
+  dbgParse('[tokenize] normalized tokens:', normalized);
   return normalized;
 }
 
@@ -196,6 +199,7 @@ class Parser {
 
   parse(): ASTNode | GroupNode {
     const node = this.parseOr();
+    dbgParse('[Parser.parse] final AST:', j(node));
     // If multiple top-level nodes without OR, we already handled as AND inside parseAnd
     return node;
   }
@@ -327,6 +331,8 @@ class Parser {
       endPos = this.peek()?.pos.start ?? (endPos + 1);
     }
 
+    dbgParse('[Parser.parseTerm] term parsed:', { field, raw, phrase, fuzzy, regexInfo });
+
     return {
       type: 'Term',
       field,
@@ -341,9 +347,12 @@ class Parser {
 
 // Public API
 export function parseQuery(input: string): ASTNode {
+  dbgParse('[parseQuery] input:', input);
   const toks = tokenize(input);
+  dbgParse('[parseQuery] tokens:', toks);
   const p = new Parser(toks);
   const ast = p.parse();
+  dbgParse('[parseQuery] AST output:', j(ast));
   return ast;
 }
 
@@ -352,6 +361,7 @@ export function parseQuery(input: string): ASTNode {
 // ————————————————————————————————————————————————————————————
 
 export function astToString(node: ASTNode): string {
+  dbgParse('[astToString] node:', node);
   switch (node.type) {
     case 'Term': {
       const f = node.field ? `${node.field}:` : '';

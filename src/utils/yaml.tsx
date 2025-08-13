@@ -3,12 +3,16 @@ import { Note } from "../api/vault/notes/notes.types";
 
 import { CODE_BLOCK_REGEX, INLINE_TAGS_REGEX, YAML_FRONTMATTER_REGEX } from "./constants";
 import { sortByAlphabet } from "./utils";
+import { dbgYaml, j } from "./debugging/debug";
 
 export function parsedYAMLFrontmatter(str: string) {
-  const frontmatter = str.match(YAML_FRONTMATTER_REGEX);
-  if (frontmatter) {
+  // Non-greedy, start-anchored: match only the first frontmatter block
+  const FM_RE = /^---\r?\n([\s\S]*?)\r?\n---/m;
+  const m = str.match(FM_RE);
+  if (m) {
     try {
-      return YAML.parse(frontmatter[0].replaceAll("---", ""), { logLevel: "error" });
+      // m[1] contains the YAML content without the fences
+      return YAML.parse(m[1], { logLevel: "error" });
     } catch {
       //
     }
@@ -93,6 +97,7 @@ export function inlineTagsForString(str: string) {
       foundTags.push(tag[1]);
     }
   }
+  dbgYaml("inlineTagsForString foundTags:", j(foundTags));
   return foundTags;
 }
 
@@ -115,7 +120,8 @@ export function yamlTagsForString(str: string) {
     }
   }
   foundTags = foundTags.filter((tag: string) => tag != "");
-  return foundTags.map((tag) => "#" + tag);
+  dbgYaml("yamlTagsForString foundTags:", j(foundTags));
+  return foundTags;
 }
 
 export function tagsForString(str: string) {
@@ -126,5 +132,7 @@ export function tagsForString(str: string) {
       foundTags.push(tag);
     }
   }
-  return foundTags.sort(sortByAlphabet);
+  const sortedTags = foundTags.sort(sortByAlphabet);
+  dbgYaml("tagsForString merged and sorted tags:", j(sortedTags));
+  return sortedTags;
 }

@@ -12,6 +12,7 @@ import { getBookmarkedNotePaths } from "./notes/bookmarks/bookmarks.service";
 import { Note } from "./notes/notes.types";
 import { ObsidianJSON, Vault } from "./vault.types";
 import matter from "gray-matter";
+import { Logger } from "../../utils/debugging/logger";
 
 function getVaultNameFromPath(vaultPath: string): string {
   const name = vaultPath
@@ -185,16 +186,30 @@ export function loadNotes(vault: Vault): Note[] {
 
     const yamlProps: Record<string, any> = { ...data };
 
-    const aliases: string[] = 
-    Array.isArray(data?.aliases) ? data.aliases : 
-    typeof data?.aliases === "string" ? [data.aliases] :[];
-    
+    const aliases: string[] =
+      Array.isArray(data?.aliases) ? data.aliases :
+        typeof data?.aliases === "string" ? [data.aliases] : [];
+
     const locations: string[] =
-    Array.isArray(data?.locations) ? data.locations :
-    typeof data?.locations === "string" ? [data.locations] : [];
+      Array.isArray(data?.locations) ? data.locations :
+        typeof data?.locations === "string" ? [data.locations] : [];
+
+
+    const tagsFromYamlViaMatter =
+      Array.isArray(data?.tags) ? data.tags :
+        typeof data?.tags === "string" ? [data.tags] : [];
+
+    const tagsFromParser = tagsForString(content);
+
+    console.log("[loadNotes] tag debug", {
+      title,
+      tagsFromYamlViaMatter,
+      tagsFromParser,
+    });
+
 
     const note: Note = {
-      ...yamlProps, 
+      ...yamlProps,
       // IMPORTANT: The following properties override any YAML frontmatter properties
       title: title,
       path: filePath,
