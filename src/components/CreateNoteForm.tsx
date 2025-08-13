@@ -31,10 +31,7 @@ export function CreateNoteForm(props: { vault: Vault; showTitle: boolean }) {
   const [allNotes] = useNotes(vault, false);
   const availableTags = useMemo(() => {
     if (!allNotes) return [];
-    const tags = tagsForNotes(allNotes);
-    return tags
-      .map(tag => tag.startsWith("#") ? tag.substring(1) : tag)
-      .filter(tag => tag.trim() !== "");  // Remove empty tags
+    return tagsForNotes(allNotes);
   }, [allNotes]);
   const availableLocations = useMemo(() => {
     if (!allNotes) return [];
