@@ -78,15 +78,25 @@
       "arguments": [
         {
           "name": "searchArgument",
-          "placeholder": "Note",
+          "placeholder": "Search Query",
           "type": "text",
           "required": false
         },
         {
-          "name": "tagArgument",
-          "placeholder": "Tag",
-          "type": "text",
-          "required": false
+          "name": "bookmarkedArgument",
+          "placeholder": "Bookmarked",
+          "type": "dropdown",
+          "required": false,
+          "data": [
+            {
+              "title": "true",
+              "value": "true"
+            },
+            {
+              "title": "false",
+              "value": "false"
+            }
+          ]
         }
       ],
       "preferences": [
@@ -239,7 +249,7 @@
           "required": false
         },
         {
-          "name": "tagArgument",
+          "name": "bookmarkedArgument",
           "placeholder": "Tag",
           "type": "text",
           "required": false

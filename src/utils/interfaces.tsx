@@ -4,7 +4,7 @@ import { Vault } from "../api/vault/vault.types";
 
 export interface SearchArguments {
   searchArgument: string;
-  tagArgument: string;
+  bookmarkedArgument: string;
 }
 
 export interface Media {

@@ -142,17 +142,17 @@ declare namespace Preferences {
 declare namespace Arguments {
   /** Arguments passed to the `searchNoteCommand` command */
   export type SearchNoteCommand = {
-  /** Note */
+  /** Search Query */
   "searchArgument": string,
-  /** Tag */
-  "tagArgument": string
+  /** Bookmarked */
+  "bookmarkedArgument": "true" | "false"
 }
   /** Arguments passed to the `starredNotesCommand` command */
   export type StarredNotesCommand = {
   /** Note */
   "searchArgument": string,
   /** Tag */
-  "tagArgument": string
+  "bookmarkedArgument": string
 }
   /** Arguments passed to the `openVaultCommand` command */
   export type OpenVaultCommand = {}
