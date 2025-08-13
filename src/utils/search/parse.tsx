@@ -49,6 +49,10 @@ export type GroupNode = {
 
 export type ASTNode = TermNode | NotNode | AndNode | OrNode | GroupNode;
 
+function noMatchRegex(): RegexInfo {
+  return { pattern: '(?!)', flags: '', raw: '/(?!)/' };
+}
+
 // ————————————————————————————————————————————————————————————
 // Lexer
 // ————————————————————————————————————————————————————————————
@@ -82,12 +86,15 @@ function readRegex(input: string, startIndex: number) {
       const bodyEnd = i - 1; // char before the slash
       // collect flags
       let flags = '';
+      // When reading regex flags, stop only at whitespace
       while (i < n && !isWhitespace(input[i])) flags += input[i++];
       const raw = input.slice(startIndex, i);
+      // Validate that regex flags contain only allowed JavaScript flags
       const validFlags = 'gimsyu';
+      // If any flag is invalid, produce a no-match regex
       if ([...flags].some(f => !validFlags.includes(f))) {
         // Produce a REGEX token that will match nothing
-        return { end: i, token: { pattern: '(?!)', flags: '', raw } };
+        return { end: i, token: noMatchRegex() };
       }
       const pattern = input.slice(startIndex + 1, bodyEnd); // ← untouched body
       return { end: i, token: { pattern, flags, raw } };
@@ -247,6 +254,20 @@ class Parser {
       const end = endTok ? endTok.pos.end : (inner as any)?.pos.end ?? start + 1;
       return { type: 'Group', child: inner!, pos: { start, end } };
     }
+    if (t.kind === 'TILDE') {
+      // Standalone '~' → treat as no-match (power-user strict)
+      const start = t.pos.start;
+      this.eat('TILDE');
+      return {
+        type: 'Term',
+        field: undefined,
+        value: '',
+        phrase: false,
+        fuzzy: false,
+        regex: noMatchRegex(),
+        pos: { start, end: t.pos.end },
+      };
+    }
     return this.parseTerm();
   }
 
@@ -296,6 +317,12 @@ class Parser {
     // optional trailing '~' to mark fuzzy for this term/phrase
     let fuzzy = false;
     if (this.peek()?.kind === 'TILDE') {
+      // Exception: empty quoted phrase with trailing '~' → no-match regex
+      if (valueTok.kind === 'PHRASE' && valueTok.value === '') {
+        regexInfo = noMatchRegex();
+      } else {
+        fuzzy = true;
+      }
       this.eat('TILDE');
       endPos = this.peek()?.pos.start ?? (endPos + 1);
     }
