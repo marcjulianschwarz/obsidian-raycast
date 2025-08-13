@@ -1,5 +1,3 @@
-
-
 /*
  * Obsidian-style search parser → AST (TypeScript)
  * Supports:
@@ -84,9 +82,13 @@ function readRegex(input: string, startIndex: number) {
       const bodyEnd = i - 1; // char before the slash
       // collect flags
       let flags = '';
-      while (i < n && /[a-z]/i.test(input[i])) flags += input[i++];
-
+      while (i < n && !isWhitespace(input[i])) flags += input[i++];
       const raw = input.slice(startIndex, i);
+      const validFlags = 'gimsyu';
+      if ([...flags].some(f => !validFlags.includes(f))) {
+        // Produce a REGEX token that will match nothing
+        return { end: i, token: { pattern: '(?!)', flags: '', raw } };
+      }
       const pattern = input.slice(startIndex + 1, bodyEnd); // ← untouched body
       return { end: i, token: { pattern, flags, raw } };
     }
@@ -295,7 +297,6 @@ class Parser {
     let fuzzy = false;
     if (this.peek()?.kind === 'TILDE') {
       this.eat('TILDE');
-      fuzzy = true;
       endPos = this.peek()?.pos.start ?? (endPos + 1);
     }
 
