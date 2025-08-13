@@ -115,40 +115,36 @@ function buildFuseIndex(docs: Doc[], fields: string[], opts: EvaluateOptions) {
 }
 
 function evalRegexLeaf(docs: Doc[], node: TermNode, fields: string[], opts: EvaluateOptions): LeafEval {
-    const ids = new Set<string>();
-    const scores = new Map<string, number>();
-  
-    // Defensive: node.regex should exist here
-    if (!node.regex) return { ids, scores };
-  
-    let re: RegExp;
-    try {
-      re = new RegExp(node.regex.pattern, node.regex.flags);
-    } catch {
-      // Invalid regex → no matches (you could also choose to fallback to literal)
-      return { ids, scores };
-    }
+  // 1. Log at function start
+  console.log('[evalRegexLeaf] start', { pattern: node.regex?.pattern, flags: node.regex?.flags, docCount: docs.length });
+  const ids = new Set<string>();
+  const scores = new Map<string, number>();
 
-    // console.log(`[Regex Search] pattern=${re} fields=${fields.join(", ")}`);
+  // Defensive: node.regex should exist here
+  if (!node.regex) return { ids, scores };
 
-    // for (const d of docs) {
-    //     const values = collectFields(d, fields, opts);
-    //     values.forEach(v => {
-    //       const matched = re.test(v);
-    //       console.log(`[Regex Test] docId=${d.id} value="${v}" match=${matched}`);
-    //       if (matched) ids.add(d.id);
-    //     });
-    // }
-  
-    for (const d of docs) {
-      const values = collectFields(d, fields, opts);
-      // IMPORTANT: regex is JS-flavored, case-sensitivity controlled by /flags/,
-      // so DO NOT fold values here—use the raw strings.
-      const matched = values.some(v => re.test(v));
-      if (matched) ids.add(d.id);
-    }
+  let re: RegExp;
+  try {
+    re = new RegExp(node.regex.pattern, node.regex.flags);
+    // 2. Log compiled regex
+    console.log('[evalRegexLeaf] compiled regex', re);
+  } catch {
+    // Invalid regex → no matches (you could also choose to fallback to literal)
     return { ids, scores };
   }
+
+  for (const d of docs) {
+    const values = collectFields(d, fields, opts);
+    const matched = values.some(v => re.test(v));
+    if (matched) {
+      console.log('[evalRegexLeaf] MATCH', { id: d.id, testedValues: values.length });
+      ids.add(d.id);
+    }
+  }
+  // 6. Log total matches before returning
+  console.log('[evalRegexLeaf] done', { matchCount: ids.size });
+  return { ids, scores };
+}
 
 function evalFuzzyLeaf(docs: Doc[], node: TermNode, fields: string[], opts: EvaluateOptions, fuseCache: Map<string, Fuse<any>>): LeafEval {
   const cacheKey = fields.join('|');
@@ -214,12 +210,12 @@ export function evaluateQueryAST(ast: ASTNode, docs: Doc[], opts: EvaluateOption
         if (node.regex) {
           return evalRegexLeaf(docs, node, fields, opts);
         }
-        
+
         // Fuzzy next (only for terms explicitly suffixed with ~)
         if (node.fuzzy) {
           return evalFuzzyLeaf(docs, node, fields, opts, fuseCache);
         }
-        
+
         // Otherwise: exact (folded includes)
         return evalExactLeaf(docs, node, fields, opts);
       }

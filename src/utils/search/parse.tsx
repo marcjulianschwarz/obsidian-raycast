@@ -75,30 +75,25 @@ function readRegex(input: string, startIndex: number) {
   // expects input[startIndex] === '/'
   let i = startIndex + 1;
   const n = input.length;
-  let pattern = '';
   let escaped = false;
 
   while (i < n) {
     const c = input[i++];
-    if (escaped) { pattern += c; escaped = false; continue; }
-    if (c === '\\') { escaped = true; continue; }
-    if (c === '/') { break; } // closing slash
-    pattern += c;
-  }
+    if (!escaped && c === '/') {
+      // found terminating '/'
+      const bodyEnd = i - 1; // char before the slash
+      // collect flags
+      let flags = '';
+      while (i < n && /[a-z]/i.test(input[i])) flags += input[i++];
 
-  if (i > n || input[i - 1] !== '/') {
-    // no closing slash → not a valid /regex/, let caller handle as normal TERM
-    return null;
+      const raw = input.slice(startIndex, i);
+      const pattern = input.slice(startIndex + 1, bodyEnd); // ← untouched body
+      return { end: i, token: { pattern, flags, raw } };
+    }
+    escaped = !escaped && c === '\\';
   }
-
-  // collect flags (letters only)
-  let flags = '';
-  while (i < n && /[a-z]/i.test(input[i])) {
-    flags += input[i++];
-  }
-
-  const raw = input.slice(startIndex, i);
-  return { end: i, token: { pattern, flags, raw } };
+  // no closing slash → not a regex
+  return null;
 }
 
 export function tokenize(input: string): Token[] {
