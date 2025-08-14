@@ -75,14 +75,9 @@ function yamlTagsForNotes(notes: Note[]) {
 }
 
 export function tagsForNotes(notes: Note[]) {
-  const foundTags = inlineTagsForNotes(notes);
-  const foundYAMLTags = yamlTagsForNotes(notes);
-  for (const tag of foundYAMLTags) {
-    if (!foundTags.includes(tag)) {
-      foundTags.push(tag);
-    }
-  }
-  return foundTags.sort(sortByAlphabet);
+  const inline = inlineTagsForNotes(notes);
+  const yaml = yamlTagsForNotes(notes);
+  return normalizeDedupeSortTags([...inline, ...yaml]);
 }
 
 //--------------------------------------------------------------------------------
@@ -93,10 +88,8 @@ export function inlineTagsForString(str: string) {
   const foundTags: string[] = [];
   const tags = [...str.matchAll(INLINE_TAGS_REGEX)];
   for (const tag of tags) {
-    // Remove leading '#'
-    const cleanedTag = tag[1].startsWith("#") ? tag[1].slice(1) : tag[1];
-    if (!foundTags.includes(cleanedTag)) {
-      foundTags.push(cleanedTag);
+    if (!foundTags.includes(tag[1])) {
+      foundTags.push(tag[1]);
     }
   }
   dbgYaml("inlineTagsForString foundTags:", j(foundTags));
@@ -130,16 +123,21 @@ export function tagsForString(str: string) {
   const inline = inlineTagsForString(str);
   const yaml = yamlTagsForString(str);
 
-  // Dedupe by conversion to Set and backwards to Array
-  const uniqueClean = Array.from(
-    new Set(
-      [...inline, ...yaml]
-        .map((tag) => (typeof tag === "string" ? tag.replace(/^#/, "") : tag)) // Defensive: strip leading '#'
-        .filter((tag): tag is string => typeof tag === "string" && tag.trim() !== "") // Remove empty/whitespace
-    )
-  );
+  const sortedTags = normalizeDedupeSortTags([...inline, ...yaml]);
 
-  const sortedTags = uniqueClean.sort(sortByAlphabet);
   dbgYaml("tagsForString merged and sorted tags:", j(sortedTags));
   return sortedTags;
+}
+
+//-----------------------------------------------------------------------------------
+
+function normalizeDedupeSortTags(tags: string[]): string[] {
+  return Array.from(
+    new Set(
+      tags
+        .map((tag) => (typeof tag === "string" ? tag.replace(/^#/, "") : tag))
+        // Remove empty strings or strings containing only whitespace
+        .filter((tag): tag is string => typeof tag === "string" && tag.trim() !== "")
+    )
+  ).sort(sortByAlphabet);
 }
