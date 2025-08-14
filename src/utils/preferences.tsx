@@ -17,14 +17,14 @@ export interface NoteFormPreferences extends GlobalPreferences {
   prefNoteName: string;
   prefNoteContent: string;
   fillFormWithDefaults: boolean;
-  prefTag?: string;
-  tags: string;
+  prefTag: string;
   defaultKeys: string;
   openOnCreate: boolean;
   folderActions: string;
   focusContentArea: boolean;
   prefEnableJDex: boolean;
   jdexRootTag: string;
+  jdexTitleSeparator: string;
 }
 
 export interface SearchNotePreferences extends GlobalPreferences, AppendNotePreferences {

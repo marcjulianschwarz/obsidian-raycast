@@ -99,8 +99,10 @@ declare namespace Preferences {
   "defaultKeys"?: string,
   /** Folder Actions - Add actions to folders (comma separated) */
   "folderActions": string,
-  /** Yes - Show JDex-specific fields in Create Note */
+  /** Show Johnny.Decimal fields - Show JDex-specific fields in Create Note */
   "prefEnableJDex": boolean,
+  /** JDex Title Separator - AC.ID + Title = 'AC.ID<sep>Title' */
+  "jdexTitleSeparator": string,
   /** JDex Root Tag - Adds existing tags like '<root>/A0-A9_<area>/AC_<category>' */
   "jdexRootTag": string
 }

@@ -483,11 +483,21 @@
         {
           "name": "prefEnableJDex",
           "type": "checkbox",
-          "label": "Show Johnny.Decimal fields",
-          "title": "Yes",
+          "label": "Yes",
+          "title": "Show Johnny.Decimal fields",
           "required": false,
           "description": "Show JDex-specific fields in Create Note",
           "default": false
+        },
+        {
+          "name": "jdexTitleSeparator",
+          "type": "textfield",
+          "label": "JDex Title Separator",
+          "title": "JDex Title Separator",
+          "required": false,
+          "description": "AC.ID + Title = 'AC.ID<sep>Title'",
+          "default": " ",
+          "placeholder": "<sep>"
         },
         {
           "name": "jdexRootTag",

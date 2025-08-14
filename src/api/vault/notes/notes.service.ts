@@ -43,7 +43,7 @@ export function getCodeBlocks(content: string): CodeBlock[] {
   return codeBlocks;
 }
 
-function incrementJDex(params: CreateNoteParams): { stop: boolean; newName?: string } {
+function incrementJDex(pref: NoteFormPreferences, params: CreateNoteParams): { stop: boolean; newName?: string } {
   const name = params.name;
   const jdex = params.jdex;
   if (!/^\d\d$/.test(jdex)) return { stop: false };
@@ -66,8 +66,9 @@ function incrementJDex(params: CreateNoteParams): { stop: boolean; newName?: str
     return { stop: true };
   }
 
-  const newId = String(maxId + 1).padStart(2, "0"); // remove padStart if you prefer unpadded
-  return { stop: false, newName: `${jdex}.${newId}_${name}` };
+  const newId = String(maxId + 1).padStart(2, "0"); // Defensive: always padStart
+  const separator = pref.jdexTitleSeparator || ""; // default to empty if not set
+  return { stop: false, newName: `${jdex}.${newId}${separator}${name}` };
 }
 
 function addMatchingJDexCategoryTag(pref: NoteFormPreferences, params: CreateNoteParams) {
@@ -114,7 +115,7 @@ export async function createNote(vault: Vault, params: CreateNoteParams) {
 
   // === JDex Handling Start ===
   // Handle special case: exact match with "AC" (e.g., "12")
-  const { stop, newName } = incrementJDex(params);
+  const { stop, newName } = incrementJDex(pref, params);
   if (stop) return false;
   if (newName) params.fullName = newName;
 
@@ -190,8 +191,8 @@ function parseDefaultYAMLKeys(input: string): string {
 
   // Restore escaped braces
   const result = escapedResult
-  .replace(new RegExp(ESC_LBRACE, 'g'), '{')
-  .replace(new RegExp(ESC_RBRACE, 'g'), '}');
+    .replace(new RegExp(ESC_LBRACE, 'g'), '{')
+    .replace(new RegExp(ESC_RBRACE, 'g'), '}');
 
   // console.log("Parsed YAML keys input:", input);
   // console.log("Parsed YAML keys input escaped:", input);
