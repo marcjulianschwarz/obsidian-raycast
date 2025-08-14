@@ -54,7 +54,7 @@ function incrementJDex(params: CreateNoteParams): { stop: boolean; newName?: str
     .reduce((max, base) => {
       const parsed = parseInt(base.substring(3, 5), 10);
       return Math.max(max, isNaN(parsed) ? 0 : parsed);
-    }, 10);
+    }, 9); // <-- start from 9 so first becomes 10
 
   // Stop at 99 to avoid creating 100
   if (maxId >= 99) {
@@ -104,8 +104,12 @@ function addMatchingJDexCategoryTag(pref: NoteFormPreferences, params: CreateNot
 export async function createNote(vault: Vault, params: CreateNoteParams) {
   const pref = getPreferenceValues<NoteFormPreferences>();
 
-  params.name = params.name == "" ? pref.prefNoteName : params.name;
-  params.content = pref.fillFormWithDefaults ? pref.prefNoteContent : params.content;
+  if (params.name === undefined) {
+    params.name = pref.prefNoteName;
+  }
+  if (params.content === undefined) {
+    params.content = pref.fillFormWithDefaults ? pref.prefNoteContent : "";
+  }
   params.fullName = params.jdex ? `${params.jdex}_${params.name}` : params.name;
 
   // === JDex Handling Start ===
@@ -119,7 +123,7 @@ export async function createNote(vault: Vault, params: CreateNoteParams) {
 
   console.log(params.content);
 
-  params.content = createObsidianProperties(params,pref) + params.content;
+  params.content = createObsidianProperties(params, pref) + (params.content ?? "");
   params.content = await applyTemplates(params.content);
   params.fullName = await applyTemplates(params.fullName);
 
