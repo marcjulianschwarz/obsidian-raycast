@@ -483,8 +483,8 @@
         {
           "name": "prefEnableJDex",
           "type": "checkbox",
-          "label": "Show JDex fields",
-          "title": "Show JDex fields",
+          "label": "Show Johnny.Decimal fields",
+          "title": "Yes",
           "required": false,
           "description": "Show JDex-specific fields in Create Note",
           "default": false
