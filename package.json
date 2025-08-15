@@ -446,15 +446,6 @@
           "default": ""
         },
         {
-          "name": "fillFormWithDefaults",
-          "type": "checkbox",
-          "label": "Fill form with defaults",
-          "title": "Fill form with defaults",
-          "required": false,
-          "default": false,
-          "description": "Fill form with default values"
-        },
-        {
           "name": "defaultTags",
           "type": "textfield",
           "placeholder": "tag1, tag2, ...",
@@ -470,6 +461,15 @@
           "required": false,
           "description": "Adds YAML keys automatically",
           "placeholder": "e.g, {key1,a b c} {key2,{x,y,z}} {key3,uvw}"
+        },
+        {
+          "name": "fillFormWithDefaults",
+          "type": "checkbox",
+          "label": "Fill form with defaults",
+          "title": "Fill form with defaults",
+          "required": false,
+          "default": false,
+          "description": "Fill form with default values"
         },
         {
           "name": "folderActions",

@@ -19,7 +19,7 @@ export type CreateNoteParams = {
   content: string;
   tags: string[];
   locations: string[];
-  availableTags?: string[];
+  availableTags: string[];
   allNotes: Note[];
   yamlKeys: string;
 };
