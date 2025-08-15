@@ -455,12 +455,12 @@
           "description": "Fill form with default values"
         },
         {
-          "name": "prefTag",
+          "name": "defaultTags",
           "type": "textfield",
-          "placeholder": "untagged",
-          "title": "Default Tag",
+          "placeholder": "tag1, tag2, ...",
+          "title": "Default Tags",
           "required": false,
-          "description": "The default selected tag"
+          "description": "The default selected tags"
         },
         {
           "name": "defaultKeys",

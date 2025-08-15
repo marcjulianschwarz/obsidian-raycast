@@ -13,7 +13,10 @@ export function CreateNoteForm(props: { vault: Vault; showTitle: boolean }) {
   const { vault, showTitle } = props;
 
   const pref = getPreferenceValues<NoteFormPreferences>();
-  const { folderActions, prefTag, prefPath, prefEnableJDex } = pref;
+  const { folderActions, prefPath, prefEnableJDex } = pref;
+  const defaultTagsArray = pref.defaultTags
+    ? pref.defaultTags.split(",").map((tag) => tag.trim()).filter(Boolean)
+    : [];
   const showJDex = prefEnableJDex || false;
 
   function parseFolderActions() {
@@ -112,7 +115,7 @@ export function CreateNoteForm(props: { vault: Vault; showTitle: boolean }) {
         placeholder="path/to/note (optional)"
       />
       {availableTags.length > 0 && (
-        <Form.TagPicker id="tags" title="Tags" defaultValue={prefTag ? [prefTag] : []}>
+        <Form.TagPicker id="tags" title="Tags" defaultValue={defaultTagsArray}>
           {availableTags.map((tag) => (
             <Form.TagPicker.Item value={tag} title={tag} key={tag} />
           ))}

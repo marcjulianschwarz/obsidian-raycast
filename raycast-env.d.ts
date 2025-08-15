@@ -93,8 +93,8 @@ declare namespace Preferences {
   "prefNoteContent": string,
   /** Fill form with defaults - Fill form with default values */
   "fillFormWithDefaults": boolean,
-  /** Default Tag - The default selected tag */
-  "prefTag"?: string,
+  /** Default Tags - The default selected tags */
+  "defaultTags"?: string,
   /** Default YAML Keys - Adds YAML keys automatically */
   "defaultKeys"?: string,
   /** Folder Actions - Add actions to folders (comma separated) */
