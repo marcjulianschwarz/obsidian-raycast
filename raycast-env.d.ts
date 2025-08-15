@@ -91,12 +91,12 @@ declare namespace Preferences {
   "prefNoteName": string,
   /** Default Note Content - The default note content (supports templates) */
   "prefNoteContent": string,
-  /** Fill form with defaults - Fill form with default values */
-  "fillFormWithDefaults": boolean,
   /** Default Tags - The default selected tags */
   "defaultTags"?: string,
   /** Default YAML Keys - Adds YAML keys automatically */
   "defaultKeys"?: string,
+  /** Fill form with defaults - Fill form with default values */
+  "fillFormWithDefaults": boolean,
   /** Folder Actions - Add actions to folders (comma separated) */
   "folderActions": string,
   /** Show Johnny.Decimal fields - Show JDex-specific fields in Create Note */
@@ -145,16 +145,12 @@ declare namespace Arguments {
   /** Arguments passed to the `searchNoteCommand` command */
   export type SearchNoteCommand = {
   /** Search Query */
-  "searchArgument": string,
-  /** Bookmarked */
-  "bookmarkedArgument": "true" | "false"
+  "searchArgument": string
 }
   /** Arguments passed to the `starredNotesCommand` command */
   export type StarredNotesCommand = {
-  /** Note */
-  "searchArgument": string,
-  /** Tag */
-  "bookmarkedArgument": string
+  /** Search Query */
+  "searchArgument": string
 }
   /** Arguments passed to the `openVaultCommand` command */
   export type OpenVaultCommand = {}
