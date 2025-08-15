@@ -20,7 +20,8 @@ export type CreateNoteParams = {
   tags: string[];
   locations: string[];
   availableTags?: string[];
-  allNotes?: Note[];
+  allNotes: Note[];
+  yamlKeys: string;
 };
 
 export interface CodeBlock {

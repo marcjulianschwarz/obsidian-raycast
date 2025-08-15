@@ -13,7 +13,7 @@ export function CreateNoteForm(props: { vault: Vault; showTitle: boolean }) {
   const { vault, showTitle } = props;
 
   const pref = getPreferenceValues<NoteFormPreferences>();
-  const { folderActions, prefPath, prefEnableJDex } = pref;
+  const { folderActions, prefPath, prefEnableJDex, defaultKeys } = pref;
   const defaultTagsArray = pref.defaultTags
     ? pref.defaultTags.split(",").map((tag) => tag.trim()).filter(Boolean)
     : [];
@@ -128,6 +128,12 @@ export function CreateNoteForm(props: { vault: Vault; showTitle: boolean }) {
           ))}
         </Form.TagPicker>
       )}
+      <Form.TextField
+        title="YAML Keys"
+        id="yamlKeys"
+        defaultValue={defaultKeys ? defaultKeys : ""}
+        placeholder="e.g, {key1,a b c} {key2,{x,y,z}} {key3,uvw}"
+      />
       <Form.TextArea
         title="Content:"
         id="content"

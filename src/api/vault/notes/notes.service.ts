@@ -150,7 +150,7 @@ function createObsidianProperties(params: CreateNoteParams, pref: NoteFormPrefer
   ];
 
   let obsidianProperties = '---\n';
-  obsidianProperties += parseDefaultYAMLKeys(pref.defaultKeys || "");
+  obsidianProperties += parseYAMLKeys(params.yamlKeys || "");
 
   for (const [key, values] of entries) {
     if (values.length > 0) {
@@ -163,7 +163,7 @@ function createObsidianProperties(params: CreateNoteParams, pref: NoteFormPrefer
   return obsidianProperties;
 }
 
-function parseDefaultYAMLKeys(input: string): string {
+function parseYAMLKeys(input: string): string {
   // Replace escaped braces with placeholders
   const ESC_LBRACE = '__ESC_LBRACE__';
   const ESC_RBRACE = '__ESC_RBRACE__';
