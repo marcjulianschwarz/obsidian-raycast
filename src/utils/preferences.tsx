@@ -40,6 +40,7 @@ export interface SearchNotePreferences extends GlobalPreferences, AppendNotePref
   prefLogicMode: string;
   yamlProperties: string;
   prefillSearchQuery: string;
+  excludedNotePatterns: string;
 }
 
 export interface RandomNotePreferences extends GlobalPreferences, AppendNotePreferences {}

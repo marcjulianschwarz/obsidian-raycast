@@ -38,6 +38,8 @@ declare namespace Preferences {
   "showMetadata": boolean,
   /** Pre-fill Search Query - Pre-fill the search bar with a default query */
   "prefillSearchQuery"?: string,
+  /** Excluded Note Patterns - Exclude notes whose path matches any of these patterns (case-insensitive) */
+  "excludedNotePatterns"?: string,
   /** Select Default Search Scope - Used when the query has no field (e.g., vacation plan) */
   "prefSearchScope": "title" | "anyname" | "full",
   /** Define Default Search Scope - Enter note property to override selected search scope */

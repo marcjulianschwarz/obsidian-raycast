@@ -124,6 +124,14 @@
           "description": "Pre-fill the search bar with a default query"
         },
         {
+          "name": "excludedNotePatterns",
+          "type": "textfield",
+          "title": "Excluded Note Patterns",
+          "placeholder": "/Test/, Templates, ...",
+          "required": false,
+          "description": "Exclude notes whose path matches any of these patterns (case-insensitive)"
+        },
+        {
           "name": "prefSearchScope",
           "type": "dropdown",
           "label": "Select Default Search Scope",

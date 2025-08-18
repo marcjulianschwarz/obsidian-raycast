@@ -167,6 +167,18 @@ export function getNoteFileContent(path: string, filter = false) {
   return filter ? filterContent(content) : content;
 }
 
+/** Create array of excluded note patterns **/
+function getExcludedNotePatterns(): string[] {
+  const preferences = getPreferenceValues<SearchNotePreferences>();
+  const patternsString = preferences.excludedNotePatterns;
+  if (!patternsString) return [];
+
+  return patternsString
+    .split(",")
+    .map((p) => p.trim())
+    .filter((p) => p.length > 0);
+}
+
 /** Reads a list of notes from the vault path */
 export function loadNotes(vault: Vault): Note[] {
   console.log("Loading Notes for vault: " + vault.path);
@@ -176,7 +188,17 @@ export function loadNotes(vault: Vault): Note[] {
   const filePaths = getFilePaths(vault);
   const bookmarkedFilePaths = getBookmarkedNotePaths(vault);
 
+  const excludedNotePatterns = getExcludedNotePatterns();
+
   for (const filePath of filePaths) {
+
+    // Skip if filePath contains any of the ignore patterns (case insensitive)
+    if (excludedNotePatterns.some((pattern) =>
+      filePath.toLowerCase().includes(pattern.toLowerCase())
+    )) {
+      continue;
+    }
+
     const fileName = path.basename(filePath);
     const title = fileName.replace(/\.md$/, "") || "default";
     const content = getNoteFileContent(filePath, false);
