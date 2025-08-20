@@ -57,7 +57,7 @@ export async function loadObsidianJson(): Promise<Vault[]> {
 /**
  * Checks if a path should be excluded based on exclusion rules
  */
-function isPathExcluded(pathToCheck: string, excludedPaths: string[]) {
+export function isPathExcluded(pathToCheck: string, excludedPaths: string[]) {
   const normalizedPath = path.normalize(pathToCheck);
 
   return excludedPaths.some((excluded) => {
@@ -70,7 +70,7 @@ function isPathExcluded(pathToCheck: string, excludedPaths: string[]) {
   });
 }
 
-const DEFAULT_EXCLUDED_PATHS = [".git", ".obsidian", ".trash", ".excalidraw", ".mobile"];
+export const DEFAULT_EXCLUDED_PATHS = [".git", ".obsidian", ".trash", ".excalidraw", ".mobile"];
 
 function walkFilesHelper(pathToWalk: string, excludedFolders: string[], fileEndings: string[], resultFiles: string[]) {
   const files = fs.readdirSync(pathToWalk);
@@ -123,7 +123,7 @@ function getFilePaths(vault: Vault): string[] {
 }
 
 /** Gets a list of folders that are ignored by the user inside of Obsidian */
-function getUserIgnoreFilters(vault: Vault): string[] {
+export function getUserIgnoreFilters(vault: Vault): string[] {
   const { configFileName } = getPreferenceValues<GlobalPreferences>();
   const appJSONPath = `${vault.path}/${configFileName || ".obsidian"}/app.json`;
   if (!fs.existsSync(appJSONPath)) {

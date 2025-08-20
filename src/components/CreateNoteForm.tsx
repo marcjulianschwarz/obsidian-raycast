@@ -5,6 +5,7 @@ import { CreateNoteParams } from "../api/vault/notes/notes.types";
 import { Vault } from "../api/vault/vault.types";
 import { NoteFormPreferences } from "../utils/preferences";
 import { useMemo } from "react";
+import { getAllFolderPaths } from "../utils/folderPaths";
 import { useNotes } from "../utils/hooks";
 import { useState } from "react";
 import { tagsForNotes } from "../utils/yaml";
@@ -41,6 +42,10 @@ export function CreateNoteForm(props: { vault: Vault; showTitle: boolean }) {
     const locations = Array.from(new Set(allNotes.flatMap((note) => note.locations ?? [])));
     return locations
   }, [allNotes]);
+
+  const availableFolderPaths = useMemo(() => {
+    return getAllFolderPaths(vault);
+  }, [vault]);
 
   console.log("Available tags:", availableTags);
 
@@ -108,12 +113,18 @@ export function CreateNoteForm(props: { vault: Vault; showTitle: boolean }) {
           onChange={setCopyToClipboard}
         />
       )}
-      <Form.TextField
-        title="Path"
-        id="path"
-        defaultValue={prefPath ? prefPath : ""}
-        placeholder="path/to/note (optional)"
-      />
+      {availableFolderPaths.length > 0 && (
+        <Form.Dropdown
+          title="Path"
+          id="path"
+          defaultValue={prefPath && availableFolderPaths.includes(prefPath) ? prefPath : availableFolderPaths[0]}
+          placeholder="Choose a folder"
+        >
+          {availableFolderPaths.map((fp) => (
+            <Form.Dropdown.Item key={fp} value={fp} title={fp} />
+          ))}
+        </Form.Dropdown>
+      )}
       {availableTags.length > 0 && (
         <Form.TagPicker id="tags" title="Tags" defaultValue={defaultTagsArray}>
           {availableTags?.map((tag) => (
