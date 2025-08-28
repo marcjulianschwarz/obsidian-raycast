@@ -32,7 +32,7 @@ export function CreateNoteForm(props: { vault: Vault; showTitle: boolean }) {
   }
 
   const [copyToClipboard, setCopyToClipboard] = useState(false);
-  const [allNotes] = useNotes(vault, false);
+  const [allNotes] = useNotes(vault);
   const availableTags = useMemo(() => {
     if (!allNotes) return [];
     return tagsForNotes(allNotes);

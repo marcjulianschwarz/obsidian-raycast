@@ -4,6 +4,8 @@ import { Vault } from "../api/vault/vault.types";
 
 export interface SearchArguments {
   searchArgument: string;
+  prefilterSearchQuery?: string;
+  initialSearchText?: string;
 }
 
 export interface Media {

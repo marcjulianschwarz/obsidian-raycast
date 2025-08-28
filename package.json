@@ -125,7 +125,7 @@
           "default": false
         },
         {
-          "name": "prefillSearchQuery",
+          "name": "initialSearchText",
           "type": "textfield",
           "title": "Pre-fill Search Query",
           "required": false,
@@ -228,10 +228,10 @@
       ]
     },
     {
-      "name": "starredNotesCommand",
-      "title": "Bookmarked Notes",
+      "name": "importantNotesCommand",
+      "title": "Important Notes",
       "subtitle": "Obsidian",
-      "description": "Search, open, view, copy, paste and edit bookmarked notes in Obsidian.",
+      "description": "Search, open, view, copy, paste and edit important notes in Obsidian. By default all bookmarked",
       "mode": "view",
       "arguments": [
         {
@@ -242,6 +242,15 @@
         }
       ],
       "preferences": [
+        {
+          "name": "prefilterSearchQuery",
+          "type": "textfield",
+          "title": "Pre-filter Search Query",
+          "required": false,
+          "description": "Pre-fill the search bar with a default query",
+          "placeholder": "Type search query...",
+          "default": "bookmarked:"
+        },
         {
           "name": "appendTemplate",
           "type": "textfield",

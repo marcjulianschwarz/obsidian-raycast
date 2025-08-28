@@ -1,4 +1,4 @@
-import { List } from "@raycast/api";
+import { List, getPreferenceValues } from "@raycast/api";
 
 import { NoteListObsidian } from "./components/NoteList/NoteListObsidian";
 import { VaultSelection } from "./components/VaultSelection";
@@ -7,9 +7,14 @@ import { NoVaultFoundMessage } from "./components/Notifications/NoVaultFoundMess
 import { noVaultPathsToast } from "./components/Toasts";
 import { useObsidianVaults } from "./utils/hooks";
 import { Vault } from "./api/vault/vault.types";
+import { SearchNotePreferences } from "./utils/preferences";
 
 export default function Command(props: { arguments: SearchArguments }) {
   const { ready, vaults } = useObsidianVaults();
+  const pref = getPreferenceValues<SearchNotePreferences>();
+  const initialSearchText = pref.initialSearchText;
+  const initial = initialSearchText?.trim() ? initialSearchText.trim() : "";
+  props.arguments.initialSearchText = initial || undefined;
 
   if (!ready) {
     return <List isLoading={true} />;
@@ -20,13 +25,13 @@ export default function Command(props: { arguments: SearchArguments }) {
       <VaultSelection
         vaults={vaults}
         target={(vault: Vault) => (
-          <NoteListObsidian vault={vault} showTitle={true} bookmarked={false} searchArguments={props.arguments} />
+          <NoteListObsidian vault={vault} showTitle={true} searchArguments={props.arguments} />
         )}
       />
     );
   } else if (vaults.length == 1) {
     return (
-      <NoteListObsidian vault={vaults[0]} showTitle={false} bookmarked={false} searchArguments={props.arguments} />
+      <NoteListObsidian vault={vaults[0]} showTitle={false} searchArguments={props.arguments} />
     );
   } else {
     noVaultPathsToast();

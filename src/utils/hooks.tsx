@@ -15,7 +15,7 @@ const logger = new Logger("Hooks");
 export const NotesContext = createContext([] as Note[]);
 export const NotesDispatchContext = createContext((() => {}) as (action: NoteReducerAction) => void);
 
-export function useNotes(vault: Vault, bookmarked = false) {
+export function useNotes(vault: Vault) {
   /**
    * The preferred way of loading notes inside the extension
    *
@@ -27,11 +27,7 @@ export function useNotes(vault: Vault, bookmarked = false) {
 
   const [notes] = useState<Note[]>(notes_);
   logger.info("useNotes hook called");
-  if (bookmarked) {
-    return [notes.filter((note: Note) => note.bookmarked)] as const;
-  } else {
-    return [notes] as const;
-  }
+  return [notes] as const;
 }
 
 export function useNotesContext() {

@@ -4,7 +4,7 @@ import { getPreferenceValues } from "@raycast/api";
 import { Vault } from "../api/vault/vault.types";
 import { isPathExcluded, getUserIgnoreFilters, DEFAULT_EXCLUDED_PATHS } from "../api/vault/vault.service";
 
-function walkDirsHelper(pathToWalk: string, excludedFolders: string[], collected: Set<string>): Set<string> {
+function walkDirsHelper(pathToWalk: string, excludedFolders: string[], vaultRoot: string, collected: Set<string>): Set<string> {
   const files = fs.readdirSync(pathToWalk);
   const { configFileName } = getPreferenceValues();
 
@@ -15,10 +15,10 @@ function walkDirsHelper(pathToWalk: string, excludedFolders: string[], collected
     if (stats.isDirectory()) {
       if (file === configFileName) continue;
       if (DEFAULT_EXCLUDED_PATHS.includes(file)) continue;
-      if (isPathExcluded(fullPath, excludedFolders)) continue;
+      if (isPathExcluded(fullPath, excludedFolders, vaultRoot)) continue;
 
       collected.add(fullPath);
-      walkDirsHelper(fullPath, excludedFolders, collected);
+      walkDirsHelper(fullPath, excludedFolders, vaultRoot, collected);
     }
   }
   return collected;
@@ -30,7 +30,7 @@ export function getAllFolderPaths(vault: Vault): string[] {
   const userIgnoredFolders = getUserIgnoreFilters(vault);
   excludedFolders.push(...userIgnoredFolders);
 
-  const collected = walkDirsHelper(vault.path, excludedFolders, new Set<string>());
+  const collected = walkDirsHelper(vault.path, excludedFolders, vault.path, new Set<string>());
 
   const relative = Array.from(collected)
     .map((p) => path.relative(vault.path, p))

@@ -39,7 +39,7 @@ declare namespace Preferences {
   /** Show Metadata - Show the notes metadata in a detail view (only works when Show Detail is enabled) */
   "showMetadata": boolean,
   /** Pre-fill Search Query - Pre-fill the search bar with a default query */
-  "prefillSearchQuery"?: string,
+  "initialSearchText"?: string,
   /** Select Default Search Scope - Used when the query has no field (e.g., vacation plan) */
   "prefSearchScope": "title" | "anyname" | "full",
   /** Define Default Search Scope - Enter note property to override selected search scope */
@@ -49,8 +49,10 @@ declare namespace Preferences {
   /** Primary Action - Select a primary action to be executed on enter */
   "primaryAction"?: "quicklook" | "obsidian" | "newpane" | "defaultapp"
 }
-  /** Preferences accessible in the `starredNotesCommand` command */
-  export type StarredNotesCommand = ExtensionPreferences & {
+  /** Preferences accessible in the `importantNotesCommand` command */
+  export type ImportantNotesCommand = ExtensionPreferences & {
+  /** Pre-filter Search Query - Pre-fill the search bar with a default query */
+  "prefilterSearchQuery": string,
   /** Template for Append action - Specify a template for Append action (e.g. '- {content}') */
   "appendTemplate"?: string,
   /** Template for Append Selected Text action - Specify a template for Append Selected Text action (e.g. '- {content}') */
@@ -149,8 +151,8 @@ declare namespace Arguments {
   /** Search Query */
   "searchArgument": string
 }
-  /** Arguments passed to the `starredNotesCommand` command */
-  export type StarredNotesCommand = {
+  /** Arguments passed to the `importantNotesCommand` command */
+  export type ImportantNotesCommand = {
   /** Search Query */
   "searchArgument": string
 }

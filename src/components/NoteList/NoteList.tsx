@@ -18,8 +18,15 @@ export function NoteList(props: NoteListProps) {
     (pref.prefSortOrder as SortOrder) || "az"
   );
   
-  const [searchText, setSearchText] = useState(searchArguments?.searchArgument ?? pref.prefillSearchQuery ?? "");
-  const list = useMemo(() => searchFunction(notes ?? [], searchText), [notes, searchText]);
+  const [searchText, setSearchText] = useState(
+    searchArguments?.searchArgument || searchArguments?.initialSearchText || ""
+  );
+  const prefilterSearchQuery = (searchArguments?.prefilterSearchQuery ?? "").trim();
+  const prefilteredNotes = useMemo(
+    () => (prefilterSearchQuery ? searchFunction(notes ?? [], prefilterSearchQuery) : (notes ?? [])),
+    [notes, prefilterSearchQuery]
+  );
+  const list = useMemo(() => searchFunction(prefilteredNotes, searchText), [prefilteredNotes, searchText]);
   const sorted = useMemo(() => sortNotesByOrder(list, sortOrder), [list, sortOrder]);
   const _notes = sorted.slice(0, MAX_RENDERED_NOTES);
 

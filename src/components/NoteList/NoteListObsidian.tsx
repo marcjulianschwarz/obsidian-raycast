@@ -13,12 +13,11 @@ import { renewCache } from "../../api/cache/cache.service";
 export function NoteListObsidian(props: {
   vault: Vault;
   showTitle: boolean;
-  bookmarked: boolean;
   searchArguments: SearchArguments;
 }) {
   const { showTitle, vault, searchArguments } = props;
 
-  const [allNotes] = useNotes(vault, props.bookmarked);
+  const [allNotes] = useNotes(vault);
   const [currentViewNoteList, dispatch] = useReducer(NoteReducer, allNotes);
 
   return (
