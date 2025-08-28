@@ -293,8 +293,6 @@ export function loadNotes(vault: Vault): Note[] {
 
       const { data } = matter(content); // Parses YAML frontmatter
 
-      const yamlProps: Record<string, any> = { ...data };
-
       const aliases: string[] =
         Array.isArray(data?.aliases) ? data.aliases :
           typeof data?.aliases === "string" ? [data.aliases] : [];
@@ -315,6 +313,9 @@ export function loadNotes(vault: Vault): Note[] {
         tagsFromParser,
       });
 
+      const yamlProps: Record<string, any> = { ...data };
+      delete (yamlProps as any).bookmarked; // Prevent YAML bookmarked from interfering with Obsidian bookmark
+
       const note: Note = {
         ...yamlProps,
         // IMPORTANT: The following properties override any YAML frontmatter properties
@@ -324,7 +325,7 @@ export function loadNotes(vault: Vault): Note[] {
         modified: fs.statSync(filePath).mtime,
         tags: tagsForString(content),
         content: content,
-        bookmarked: bookmarkedFilePaths.includes(relativePath),
+        ...(bookmarkedFilePaths.includes(relativePath) ? { bookmarked: true } : {}), // bookmarked: <=> bookmarked:true
         aliases: aliases,
         locations: locations,
       };

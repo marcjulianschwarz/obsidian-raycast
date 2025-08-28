@@ -5,9 +5,9 @@ export type Note = {
   modified: Date;
   tags: string[];
   content: string;
-  bookmarked: boolean;
+  bookmarked?: boolean;
   aliases: string[];
-  locations?: string[];
+  locations: string[];
   [key:string]: any; // Additional properties from YAML frontmatter
 };
 

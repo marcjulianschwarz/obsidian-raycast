@@ -97,6 +97,13 @@ function collectFields(doc: Doc, fields: string[], opts: EvaluateOptions): strin
 // Leaf evaluation
 // ————————————————————————————————————————————————————————————
 
+/**
+ * Note on empty fielded terms:
+ * Currently, queries like `key:` with an empty value will match all documents that contain the field,
+ * because the evaluator uses substring logic (`strIncludes(v, "")`), which always returns true.
+ * This can lead to “all notes are included” behavior if the field exists on every note,
+ * even though the value is empty. This also aligns with Obsidian’s search plugin.
+ */
 type LeafEval = {
   ids: Set<string>;
   scores: Map<string, number>; // only populated for fuzzy
