@@ -12,7 +12,9 @@ type ExtensionPreferences = {
   "vaultPath"?: string,
   /** Config filename - Override the vault config filename (default: .obsidian) */
   "configFileName": string,
-  /** Exclude following folders - Specify which folders to exclude (comma separated) */
+  /** Include following folders - Specify relative paths of folders to include (comma separated). All by default. */
+  "includedFolders"?: string,
+  /** Exclude following folders - Specify which folders to exclude. Takes precedensce over included folders */
   "excludedFolders"?: string,
   /** Remove content - Hide YAML frontmatter for copying and viewing notes */
   "removeYAML"?: boolean,
@@ -38,8 +40,6 @@ declare namespace Preferences {
   "showMetadata": boolean,
   /** Pre-fill Search Query - Pre-fill the search bar with a default query */
   "prefillSearchQuery"?: string,
-  /** Excluded Note Patterns - Exclude notes whose path matches any of these patterns (case-insensitive) */
-  "excludedNotePatterns"?: string,
   /** Select Default Search Scope - Used when the query has no field (e.g., vacation plan) */
   "prefSearchScope": "title" | "anyname" | "full",
   /** Define Default Search Scope - Enter note property to override selected search scope */

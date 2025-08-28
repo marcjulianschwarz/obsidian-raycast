@@ -12,7 +12,7 @@ import { getBookmarkedNotePaths } from "./notes/bookmarks/bookmarks.service";
 import { Note } from "./notes/notes.types";
 import { ObsidianJSON, Vault } from "./vault.types";
 import matter from "gray-matter";
-import { Logger } from "../../utils/debugging/logger";
+import { dbgLoadNotes, dbgExcludeNotes } from "../../utils/debugging/debug";
 
 function getVaultNameFromPath(vaultPath: string): string {
   const name = vaultPath
@@ -55,47 +55,109 @@ export async function loadObsidianJson(): Promise<Vault[]> {
 }
 
 /**
- * Checks if a path should be excluded based on exclusion rules
+ * Checks if a path should be excluded based on exclusion rules.
+ * NOTE: Excluded paths are treated **only as relative to the vault root**.
  */
-export function isPathExcluded(pathToCheck: string, excludedPaths: string[]) {
-  const normalizedPath = path.normalize(pathToCheck);
+export function isPathExcluded(pathToCheck: string, excludedPaths: string[], vaultRoot: string) {
+  const absPath = path.normalize(pathToCheck);
+  const relPath = path.normalize(path.relative(vaultRoot, absPath));
 
   return excludedPaths.some((excluded) => {
     if (!excluded) return false;
 
-    const normalizedExcluded = path.normalize(excluded);
+    // Force relative-to-root semantics: strip any leading './' or '/' from the pattern
+    const pattern = path.normalize(excluded.replace(/^\/+/, '').replace(/^\.\/*/, ''));
+    if (pattern === '') return false;
 
-    // Check if the path is exactly the excluded path or is a subfolder
-    return normalizedPath === normalizedExcluded || normalizedPath.startsWith(normalizedExcluded + path.sep);
+    return relPath === pattern || relPath.startsWith(pattern + path.sep);
   });
 }
 
 export const DEFAULT_EXCLUDED_PATHS = [".git", ".obsidian", ".trash", ".excalidraw", ".mobile"];
 
-function walkFilesHelper(pathToWalk: string, excludedFolders: string[], fileEndings: string[], resultFiles: string[]) {
+function walkFilesHelper(
+  pathToWalk: string,
+  excludedFolders: string[],
+  includedFolders: string[] | null,
+  fileEndings: string[],
+  resultFiles: string[],
+  vaultRoot?: string
+) {
   const files = fs.readdirSync(pathToWalk);
   const { configFileName } = getPreferenceValues();
+
+  const isIncluded = (fullPath: string, forTraversal = false) => {
+    // If includes are empty → include everything. '/' normalizes to '' and matches all.
+    if (!includedFolders || includedFolders.length === 0) return true;
+    if (!vaultRoot) return true;
+
+    const rel = path.relative(vaultRoot, fullPath);
+    const relNorm = rel.split(path.sep).join(path.sep);
+
+    return includedFolders.some((inc) => {
+      const incNorm = inc.replace(/^\.+/, "").replace(/^\/*/, ""); // trim leading ./ and /
+      if (incNorm === "") return true; // '/' wildcard
+
+      if (forTraversal) {
+        // Allow descending into ancestors of an included path
+        if (relNorm === "") return true; // at root: must traverse to reach includes
+        return (
+          relNorm === incNorm ||
+          relNorm.startsWith(incNorm + path.sep) ||
+          incNorm.startsWith(relNorm + path.sep)
+        );
+      }
+
+      // Strict: only paths that are inside one of the included folders
+      return relNorm === incNorm || relNorm.startsWith(incNorm + path.sep);
+    });
+  };
 
   for (const file of files) {
     const fullPath = path.join(pathToWalk, file);
     const stats = fs.statSync(fullPath);
 
+    // Exclusion check always wins
     if (stats.isDirectory()) {
       if (file === configFileName) continue;
       if (DEFAULT_EXCLUDED_PATHS.includes(file)) continue;
-      if (isPathExcluded(fullPath, excludedFolders)) continue;
+      if (vaultRoot && isPathExcluded(fullPath, excludedFolders, vaultRoot)) {
+        try { dbgExcludeNotes('[walk] skip dir (excluded):', path.relative(vaultRoot, fullPath)); } catch {}
+        continue;
+      }
+      if (!isIncluded(fullPath, true)) {
+        try { if (vaultRoot) dbgExcludeNotes('[walk] skip dir (not included/ancestor):', path.relative(vaultRoot, fullPath)); } catch {}
+        continue;
+      } else {
+        try { if (vaultRoot) dbgExcludeNotes('[walk] traverse dir:', path.relative(vaultRoot, fullPath)); } catch {}
+      }
       // Recursively process subdirectory
-      walkFilesHelper(fullPath, excludedFolders, fileEndings, resultFiles);
+      walkFilesHelper(fullPath, excludedFolders, includedFolders, fileEndings, resultFiles, vaultRoot);
     } else {
       const extension = path.extname(file);
-      if (
-        fileEndings.includes(extension) &&
-        file !== ".md" &&
-        !file.includes(".excalidraw") &&
-        !isPathExcluded(pathToWalk, [".obsidian", configFileName]) &&
-        !isPathExcluded(pathToWalk, excludedFolders)
-      ) {
+      const relFile = vaultRoot ? path.relative(vaultRoot, fullPath) : fullPath;
+
+      const allowedByExtension = fileEndings.includes(extension);
+      const notSpecial = file !== ".md" && !file.includes(".excalidraw");
+      const notObsidianCfg = !(vaultRoot && isPathExcluded(pathToWalk, [".obsidian", configFileName], vaultRoot));
+      const notExcluded = !(vaultRoot && isPathExcluded(pathToWalk, excludedFolders, vaultRoot));
+      const inIncludedTree = isIncluded(pathToWalk, false);
+
+      const shouldAdd = allowedByExtension && notSpecial && notObsidianCfg && notExcluded && inIncludedTree;
+
+      if (shouldAdd) {
+        try { if (vaultRoot) dbgExcludeNotes('[walk] add file:', relFile); } catch {}
         resultFiles.push(fullPath);
+      } else {
+        try {
+          if (vaultRoot) dbgExcludeNotes('[walk] skip file:', relFile, {
+            allowedByExtension,
+            notSpecial,
+            notObsidianCfg,
+            notExcluded,
+            inIncludedTree,
+          });
+        } catch {}
       }
     }
   }
@@ -113,12 +175,23 @@ function getExcludedFolders(): string[] {
   return folders;
 }
 
+/** Gets a list of folders that are explicitly included inside of the Raycast preferences */
+function getIncludedFolders(): string[] {
+  const preferences = getPreferenceValues<SearchNotePreferences>();
+  const foldersString = (preferences as any).includedFolders as string | undefined;
+  if (!foldersString || foldersString.trim() === "") return ["/"]; // default to root
+  return foldersString.split(",").map((folder) => folder.trim()).filter((f) => f !== "");
+}
+
 /** Returns a list of file paths for all notes. */
 function getFilePaths(vault: Vault): string[] {
   const excludedFolders = getExcludedFolders();
   const userIgnoredFolders = getUserIgnoreFilters(vault);
   excludedFolders.push(...userIgnoredFolders);
-  const files = walkFilesHelper(vault.path, excludedFolders, [".md"], []);
+
+  const includedFolders = getIncludedFolders();
+
+  const files = walkFilesHelper(vault.path, excludedFolders, includedFolders, [".md"], [], vault.path);
   return files;
 }
 
@@ -167,37 +240,16 @@ export function getNoteFileContent(path: string, filter = false) {
   return filter ? filterContent(content) : content;
 }
 
-/** Create array of excluded note patterns **/
-function getExcludedNotePatterns(): string[] {
-  const preferences = getPreferenceValues<SearchNotePreferences>();
-  const patternsString = preferences.excludedNotePatterns;
-  if (!patternsString) return [];
-
-  return patternsString
-    .split(",")
-    .map((p) => p.trim())
-    .filter((p) => p.length > 0);
-}
-
 /** Reads a list of notes from the vault path */
 export function loadNotes(vault: Vault): Note[] {
-  console.log("Loading Notes for vault: " + vault.path);
+  dbgLoadNotes("Loading Notes for vault: " + vault.path);
   const start = performance.now();
 
   const notes: Note[] = [];
   const filePaths = getFilePaths(vault);
   const bookmarkedFilePaths = getBookmarkedNotePaths(vault);
 
-  const excludedNotePatterns = getExcludedNotePatterns();
-
   for (const filePath of filePaths) {
-
-    // Skip if filePath contains any of the ignore patterns (case insensitive)
-    if (excludedNotePatterns.some((pattern) =>
-      filePath.toLowerCase().includes(pattern.toLowerCase())
-    )) {
-      continue;
-    }
 
     const fileName = path.basename(filePath);
     const title = fileName.replace(/\.md$/, "") || "default";
@@ -223,7 +275,7 @@ export function loadNotes(vault: Vault): Note[] {
 
     const tagsFromParser = tagsForString(content);
 
-    console.log("[loadNotes] tag debug", {
+    dbgLoadNotes("[loadNotes] tag debug", {
       title,
       tagsFromYamlViaMatter,
       tagsFromParser,
@@ -249,7 +301,7 @@ export function loadNotes(vault: Vault): Note[] {
   }
 
   const end = performance.now();
-  console.log(`Finished loading ${notes.length} notes in ${end - start} ms.`);
+  dbgLoadNotes(`Finished loading ${notes.length} notes in ${end - start} ms.`);
 
   return notes;
 }
@@ -257,11 +309,14 @@ export function loadNotes(vault: Vault): Note[] {
 /** Gets a list of file paths for all media. */
 function getMediaFilePaths(vault: Vault) {
   const excludedFolders = getExcludedFolders();
+  const includedFolders = getIncludedFolders();
   const files = walkFilesHelper(
     vault.path,
     excludedFolders,
+    includedFolders,
     [...AUDIO_FILE_EXTENSIONS, ...VIDEO_FILE_EXTENSIONS, ".jpg", ".png", ".gif", ".mp4", ".pdf"],
-    []
+    [],
+    vault.path
   );
   return files;
 }

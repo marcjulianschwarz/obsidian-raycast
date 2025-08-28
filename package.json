@@ -38,12 +38,20 @@
       "description": "Override the vault config filename (default: .obsidian)"
     },
     {
+      "name": "includedFolders",
+      "type": "textfield",
+      "title": "Include following folders",
+      "placeholder": "folder1/folder2, folder3, ...",
+      "required": false,
+      "description": "Specify relative paths of folders to include (comma separated). All by default."
+    },
+    {
       "name": "excludedFolders",
       "type": "textfield",
-      "placeholder": "folder1, folder2, ...",
+      "placeholder": "folder1/folder2, folder3, ...",
       "title": "Exclude following folders",
       "required": false,
-      "description": "Specify which folders to exclude (comma separated)"
+      "description": "Specify which folders to exclude. Takes precedensce over included folders"
     },
     {
       "name": "removeYAML",
@@ -124,14 +132,6 @@
           "description": "Pre-fill the search bar with a default query"
         },
         {
-          "name": "excludedNotePatterns",
-          "type": "textfield",
-          "title": "Excluded Note Patterns",
-          "placeholder": "/Test/, Templates, ...",
-          "required": false,
-          "description": "Exclude notes whose path matches any of these patterns (case-insensitive)"
-        },
-        {
           "name": "prefSearchScope",
           "type": "dropdown",
           "label": "Select Default Search Scope",
@@ -141,15 +141,15 @@
           "default": "title",
           "data": [
             {
-              "title": "File (key:file)",
+              "title": "file:",
               "value": "title"
             },
             {
-              "title": "Title & aliases (key:anyname)",
+              "title": "anyname: (Title & aliases)",
               "value": "anyname"
             },
             {
-              "title": "Content & path (key:full)",
+              "title": "full: (Content & path)",
               "value": "full"
             }
           ]

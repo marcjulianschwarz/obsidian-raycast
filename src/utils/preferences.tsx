@@ -5,6 +5,7 @@ export interface GlobalPreferences {
   removeLinks: boolean;
   removeLatex: boolean;
   excludedFolders: string;
+  includedFolders: string;
 }
 
 export interface AppendNotePreferences {
@@ -40,7 +41,6 @@ export interface SearchNotePreferences extends GlobalPreferences, AppendNotePref
   prefLogicMode: string;
   yamlProperties: string;
   prefillSearchQuery: string;
-  excludedNotePatterns: string;
 }
 
 export interface RandomNotePreferences extends GlobalPreferences, AppendNotePreferences {}

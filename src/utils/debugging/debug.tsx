@@ -1,4 +1,5 @@
 // src/utils/debug/index.ts
+import { loadNotes } from "../../api/vault/vault.service";
 import { Logger } from "./logger";
 
 /**
@@ -6,11 +7,13 @@ import { Logger } from "./logger";
  * Flip these on/off or expose setters to toggle at runtime.
  */
 export const DEBUG_FLAGS = {
-  parse: true,
-  eval: true,
-  search: true,
-  yaml: true,
+  parse: false,
+  eval: false,
+  search: false,
+  yaml: false,
   custom: false,
+  loadNotes: false,
+  excludeNotes: true,
 };
 
 /**
@@ -57,3 +60,5 @@ export const dbgParse  = createDebugger("parse",  "[parse]");
 export const dbgEval   = createDebugger("eval",   "[evaluate]");
 export const dbgSearch = createDebugger("search", "[search]");
 export const dbgYaml   = createDebugger("yaml",   "[yaml]");
+export const dbgLoadNotes   = createDebugger("loadNotes",   "[loadNotes]");
+export const dbgExcludeNotes = createDebugger("excludeNotes", "[excludeNotes]");
