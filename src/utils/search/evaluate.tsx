@@ -10,6 +10,7 @@ export type Doc = {
   title?: string;
   path?: string;
   tags?: string[];
+  content?: string;              // note body/content (for content: special case)
   // You can add more fields and map them via EvaluateOptions.fieldMap
 };
 
@@ -67,24 +68,25 @@ function valueToStrings(v: unknown): string[] {
 }
 
 function getFieldValues(doc: Doc, field: string, opts: EvaluateOptions): string[] {
-  // Add near the top of getFieldValues, after you resolve `f` (the field name)
-  const TARGET = "03.12_Stefans-Desktop-PC-2025";
+  const TARGET = "name-of-your-note"; // for targeted debugging
   const isTarget = String((doc as any).id || "").includes(TARGET);
 
+  // Special case: content: → none-empty notes only
+  if (field.toLowerCase() === 'content') {
+    const out = valueToStrings(doc.content).map(s => s.trim()).filter(s => s.length > 0);
+    if (isTarget) dbgEval('[getFieldValues TARGET content]', { out });
+    return out;
+  }
 
   const getter = opts.fieldMap?.[field];
   if (getter) return valueToStrings(getter(doc));
   // fallback to direct properties
   const val = (doc as any)[field];
-
-
-  // Right before `return out;` add:
-  const out = valueToStrings(val); // Initialize `out` with the processed field values
+  const out = valueToStrings(val);
   if (isTarget && (field === "title" || field === "tags" || field === "path")) {
     dbgEval("[getFieldValues TARGET]", { field, out });
   }
-
-  return valueToStrings(val);
+  return out;
 }
 
 function collectFields(doc: Doc, fields: string[], opts: EvaluateOptions): string[] {
