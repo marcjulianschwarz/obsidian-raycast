@@ -290,12 +290,20 @@ class Parser {
     if (first.kind === 'TERM' && this.peek()?.kind === 'COLON') {
       // field present
       field = (first as any).value;
-      this.eat('COLON');
+      const colonTok = this.eat('COLON')!;
       const next = this.peek();
-      if (next && (next.kind === 'TERM' || next.kind === 'PHRASE' || next.kind === 'REGEX')) {
-        valueTok = this.eat()!; // consume value token
+
+      // Rule: values attach only if they are immediately adjacent to the ':' with no whitespace.
+      const isAdjacent = !!(next && next.pos.start === colonTok.pos.end);
+
+      // If next looks like the start of another field (TERM followed by COLON), don't consume it.
+      const startsNextField = !!(next && next.kind === 'TERM' && this.peek(1)?.kind === 'COLON');
+
+      if (isAdjacent && !startsNextField && next && (next.kind === 'TERM' || next.kind === 'PHRASE' || next.kind === 'REGEX')) {
+        // Consume the adjacent token as the value
+        valueTok = this.eat()!;
       } else {
-        // Empty value allowed? We'll treat as empty term.
+        // Empty value for this field; do not consume `next`
         valueTok = { kind: 'TERM', value: '', pos: next ? next.pos : first.pos } as any;
       }
     }

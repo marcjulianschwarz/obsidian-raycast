@@ -7,13 +7,13 @@ import { Logger } from "./logger";
  * Flip these on/off or expose setters to toggle at runtime.
  */
 export const DEBUG_FLAGS = {
-  parse: false,
-  eval: false,
+  parse: true,
+  eval: true,
   search: false,
   yaml: false,
   custom: false,
   loadNotes: false,
-  excludeNotes: true,
+  excludeNotes: false,
 };
 
 /**
