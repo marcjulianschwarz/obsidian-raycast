@@ -12,9 +12,9 @@ type ExtensionPreferences = {
   "vaultPath"?: string,
   /** Config filename - Override the vault config filename (default: .obsidian) */
   "configFileName": string,
-  /** Include following folders - Specify relative paths of folders to include (comma separated). All by default. */
+  /** Include following folders - Folders to include (vault-relative). Vault root is default. */
   "includedFolders"?: string,
-  /** Exclude following folders - Specify which folders to exclude. Takes precedensce over included folders */
+  /** Exclude following folders - Folders to exclude (vault-relative1). Exclusions take precedence. */
   "excludedFolders"?: string,
   /** Remove content - Hide YAML frontmatter for copying and viewing notes */
   "removeYAML"?: boolean,
@@ -121,7 +121,7 @@ declare namespace Preferences {
 }
   /** Preferences accessible in the `searchMedia` command */
   export type SearchMedia = ExtensionPreferences & {
-  /** Exclude following folders - Specify which folders to exclude (comma separated) */
+  /** Exclude following folders - Folders to exclude (vault-relative) */
   "excludedFolders"?: string,
   /** Image Size - Select the image size to display */
   "imageSize"?: "small" | "medium" | "large"

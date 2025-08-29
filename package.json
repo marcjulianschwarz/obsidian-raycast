@@ -43,7 +43,7 @@
       "title": "Include following folders",
       "placeholder": "folder1/folder2, folder3, ...",
       "required": false,
-      "description": "Specify relative paths of folders to include (comma separated). All by default."
+      "description": "Folders to include (vault-relative). Vault root is default."
     },
     {
       "name": "excludedFolders",
@@ -51,7 +51,7 @@
       "placeholder": "folder1/folder2, folder3, ...",
       "title": "Exclude following folders",
       "required": false,
-      "description": "Specify which folders to exclude. Takes precedensce over included folders"
+      "description": "Folders to exclude (vault-relative1). Exclusions take precedence."
     },
     {
       "name": "removeYAML",
@@ -579,10 +579,10 @@
         {
           "name": "excludedFolders",
           "type": "textfield",
-          "placeholder": "folder1, folder2, ...",
+          "placeholder": "folder1/folder2, folder3, ...",
           "title": "Exclude following folders",
           "required": false,
-          "description": "Specify which folders to exclude (comma separated)"
+          "description": "Folders to exclude (vault-relative)"
         },
         {
           "name": "imageSize",
