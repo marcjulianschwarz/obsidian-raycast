@@ -14,29 +14,6 @@ import { ObsidianJSON, Vault } from "./vault.types";
 import matter from "gray-matter";
 import { dbgLoadNotes, dbgExcludeNotes } from "../../utils/debugging/debug";
 
-// --- Safety helpers to avoid race conditions on first render ---
-function hasVaultPath(vault?: Vault | null): vault is Vault & { path: string } {
-  return !!vault && typeof vault.path === "string" && vault.path.length > 0;
-}
-
-function dirExists(p?: string): p is string {
-  try {
-    return !!p && fs.existsSync(p) && fs.statSync(p).isDirectory();
-  } catch {
-    return false;
-  }
-}
-// --- end safety helpers ---
-
-// Centralized guard: run an action only when the vault path is ready
-function withVault<T>(vault: Vault, label: string, action: (root: string) => T, fallback: T): T {
-  if (!hasVaultPath(vault) || !dirExists(vault.path)) {
-    try { dbgLoadNotes(`[${label}] vault path not ready; returning fallback`); } catch {}
-    return fallback;
-  }
-  return action(vault.path);
-}
-
 function getVaultNameFromPath(vaultPath: string): string {
   const name = vaultPath
     .split(fsPath.sep)
@@ -82,9 +59,8 @@ export async function loadObsidianJson(): Promise<Vault[]> {
  * NOTE: Excluded paths are treated **only as relative to the vault root**.
  */
 export function isPathExcluded(pathToCheck: string, excludedPaths: string[], vaultRoot: string) {
-  const root = vaultRoot || "";
   const absPath = path.normalize(pathToCheck);
-  const relPath = path.normalize(path.relative(root, absPath));
+  const relPath = path.normalize(path.relative(vaultRoot, absPath));
 
   return excludedPaths.some((excluded) => {
     if (!excluded) return false;
@@ -107,10 +83,6 @@ function walkFilesHelper(
   resultFiles: string[],
   vaultRoot?: string
 ) {
-  if (!dirExists(pathToWalk)) {
-    try { if (vaultRoot) dbgExcludeNotes('[walk] skip (missing path):', path.relative(vaultRoot, pathToWalk)); } catch {}
-    return resultFiles;
-  }
   const files = fs.readdirSync(pathToWalk);
   const { configFileName } = getPreferenceValues();
 
@@ -213,33 +185,26 @@ function getIncludedFolders(): string[] {
 
 /** Returns a list of file paths for all notes. */
 function getFilePaths(vault: Vault): string[] {
-  return withVault(vault, 'getFilePaths', (root) => {
-    const excludedFolders = getExcludedFolders();
-    const userIgnoredFolders = getUserIgnoreFilters(vault);
-    excludedFolders.push(...userIgnoredFolders);
+  const excludedFolders = getExcludedFolders();
+  const userIgnoredFolders = getUserIgnoreFilters(vault);
+  excludedFolders.push(...userIgnoredFolders);
 
-    const includedFolders = getIncludedFolders();
+  const includedFolders = getIncludedFolders();
 
-    const files = walkFilesHelper(root, excludedFolders, includedFolders, [".md"], [], root);
-    return files;
-  }, []);
+  const files = walkFilesHelper(vault.path, excludedFolders, includedFolders, [".md"], [], vault.path);
+  return files;
 }
 
 /** Gets a list of folders that are ignored by the user inside of Obsidian */
 export function getUserIgnoreFilters(vault: Vault): string[] {
-  return withVault(vault, 'getUserIgnoreFilters', (root) => {
-    const { configFileName } = getPreferenceValues<GlobalPreferences>();
-    const appJSONPath = `${root}/${configFileName || ".obsidian"}/app.json`;
-    if (!fs.existsSync(appJSONPath)) {
-      return [];
-    }
-    try {
-      const appJSON = JSON.parse(fs.readFileSync(appJSONPath, "utf-8"));
-      return appJSON["userIgnoreFilters"] || [];
-    } catch {
-      return [];
-    }
-  }, []);
+  const { configFileName } = getPreferenceValues<GlobalPreferences>();
+  const appJSONPath = `${vault.path}/${configFileName || ".obsidian"}/app.json`;
+  if (!fs.existsSync(appJSONPath)) {
+    return [];
+  } else {
+    const appJSON = JSON.parse(fs.readFileSync(appJSONPath, "utf-8"));
+    return appJSON["userIgnoreFilters"] || [];
+  }
 }
 
 export function filterContent(content: string) {
@@ -277,105 +242,103 @@ export function getNoteFileContent(path: string, filter = false) {
 
 /** Reads a list of notes from the vault path */
 export function loadNotes(vault: Vault): Note[] {
-  return withVault(vault, 'loadNotes', (root) => {
-    dbgLoadNotes("Loading Notes for vault: " + root);
-    const start = performance.now();
+  dbgLoadNotes("Loading Notes for vault: " + vault.path);
+  const start = performance.now();
 
-    const notes: Note[] = [];
-    const filePaths = getFilePaths(vault);
-    const bookmarkedFilePaths = getBookmarkedNotePaths(vault);
+  const notes: Note[] = [];
+  const filePaths = getFilePaths(vault);
+  const bookmarkedFilePaths = getBookmarkedNotePaths(vault);
 
-    for (const filePath of filePaths) {
-      const fileName = path.basename(filePath);
-      const title = fileName.replace(/\.md$/, "") || "default";
-      const content = getNoteFileContent(filePath, false);
-      const relativePath = path.relative(root, filePath);
+  for (const filePath of filePaths) {
 
-      const { data } = matter(content); // Parses YAML frontmatter
+    const fileName = path.basename(filePath);
+    const title = fileName.replace(/\.md$/, "") || "default";
+    const content = getNoteFileContent(filePath, false);
+    const relativePath = path.relative(vault.path, filePath);
 
-      const aliases: string[] =
-        Array.isArray(data?.aliases) ? data.aliases :
-          typeof data?.aliases === "string" ? [data.aliases] : [];
+    const { data } = matter(content); // Parses YAML frontmatter
 
-      const locations: string[] =
-        Array.isArray(data?.locations) ? data.locations :
-          typeof data?.locations === "string" ? [data.locations] : [];
+    const aliases: string[] =
+      Array.isArray(data?.aliases) ? data.aliases :
+        typeof data?.aliases === "string" ? [data.aliases] : [];
 
-      const tagsFromYamlViaMatter =
-        Array.isArray(data?.tags) ? data.tags :
-          typeof data?.tags === "string" ? [data.tags] : [];
+    const locations: string[] =
+      Array.isArray(data?.locations) ? data.locations :
+        typeof data?.locations === "string" ? [data.locations] : [];
 
-      const tagsFromParser = tagsForString(content);
 
-      dbgLoadNotes("[loadNotes] tag debug", {
-        title,
-        tagsFromYamlViaMatter,
-        tagsFromParser,
-      });
+    const tagsFromYamlViaMatter =
+      Array.isArray(data?.tags) ? data.tags :
+        typeof data?.tags === "string" ? [data.tags] : [];
 
-      const yamlProps: Record<string, any> = { ...data };
-      delete (yamlProps as any).bookmarked; // Prevent YAML bookmarked from interfering with Obsidian bookmark
+    const tagsFromParser = tagsForString(content);
 
-      const note: Note = {
-        ...yamlProps,
-        // IMPORTANT: The following properties override any YAML frontmatter properties
-        title: title,
-        path: filePath,
-        created: fs.statSync(filePath).birthtime,
-        modified: fs.statSync(filePath).mtime,
-        tags: tagsForString(content),
-        content: content,
-        ...(bookmarkedFilePaths.includes(relativePath) ? { bookmarked: true } : {}), // bookmarked: <=> bookmarked:true
-        aliases: aliases,
-        locations: locations,
-      };
+    dbgLoadNotes("[loadNotes] tag debug", {
+      title,
+      tagsFromYamlViaMatter,
+      tagsFromParser,
+    });
 
-      notes.push(note);
-    }
 
-    const end = performance.now();
-    dbgLoadNotes(`Finished loading ${notes.length} notes in ${end - start} ms.`);
+    const yamlProps: Record<string, any> = { ...data };
+    delete (yamlProps as any).bookmarked; // Prevent YAML bookmarked from interfering with Obsidian bookmark
 
-    return notes;
-  }, []);
+    const note: Note = {
+      ...yamlProps,
+      // IMPORTANT: The following properties override any YAML frontmatter properties
+      title: title,
+      path: filePath,
+      created: fs.statSync(filePath).birthtime,
+      modified: fs.statSync(filePath).mtime,
+      tags: tagsForString(content),
+      content: content,
+      ...(bookmarkedFilePaths.includes(relativePath) ? { bookmarked: true } : {}), // bookmarked: <=> bookmarked:true
+      aliases: aliases,
+      locations: locations,
+    };
+    // console.log("Note keys:", Object.keys(note));
+
+    notes.push(note);
+  }
+
+  const end = performance.now();
+  dbgLoadNotes(`Finished loading ${notes.length} notes in ${end - start} ms.`);
+
+  return notes;
 }
 
 /** Gets a list of file paths for all media. */
 function getMediaFilePaths(vault: Vault) {
-  return withVault(vault, 'getMediaFilePaths', (root) => {
-    const excludedFolders = getExcludedFolders();
-    const includedFolders = getIncludedFolders();
-    const files = walkFilesHelper(
-      root,
-      excludedFolders,
-      includedFolders,
-      [...AUDIO_FILE_EXTENSIONS, ...VIDEO_FILE_EXTENSIONS, ".jpg", ".png", ".gif", ".mp4", ".pdf"],
-      [],
-      root
-    );
-    return files;
-  }, []);
+  const excludedFolders = getExcludedFolders();
+  const includedFolders = getIncludedFolders();
+  const files = walkFilesHelper(
+    vault.path,
+    excludedFolders,
+    includedFolders,
+    [...AUDIO_FILE_EXTENSIONS, ...VIDEO_FILE_EXTENSIONS, ".jpg", ".png", ".gif", ".mp4", ".pdf"],
+    [],
+    vault.path
+  );
+  return files;
 }
 
 /** Loads media (images, pdfs, video, audio, etc.) for a given vault from disk. utils.useMedia() is the preferred way of loading media. */
 export function loadMedia(vault: Vault): Media[] {
-  return withVault(vault, 'loadMedia', (root) => {
-    const medias: Media[] = [];
-    const filePaths = getMediaFilePaths(vault);
+  const medias: Media[] = [];
+  const filePaths = getMediaFilePaths(vault);
 
-    for (const filePath of filePaths) {
-      const title = path.basename(filePath);
-      const icon = getIconFor(filePath);
+  for (const filePath of filePaths) {
+    const title = path.basename(filePath);
+    const icon = getIconFor(filePath);
 
-      const media: Media = {
-        title,
-        path: filePath,
-        icon: icon,
-      };
-      medias.push(media);
-    }
-    return medias;
-  }, []);
+    const media: Media = {
+      title,
+      path: filePath,
+      icon: icon,
+    };
+    medias.push(media);
+  }
+  return medias;
 }
 
 /** Gets the icon for a given file path. This is used to determine the icon for a media item where the media itself can't be displayed (e.g. video, audio). */
