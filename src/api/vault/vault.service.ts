@@ -13,6 +13,7 @@ import { Note } from "./notes/notes.types";
 import { ObsidianJSON, Vault } from "./vault.types";
 import matter from "gray-matter";
 import { dbgLoadNotes, dbgExcludeNotes } from "../../utils/debugging/debug";
+import { getSelectedTextContent } from "../../utils/utils";
 
 function getVaultNameFromPath(vaultPath: string): string {
   const name = vaultPath
@@ -279,9 +280,7 @@ export function loadNotes(vault: Vault): Note[] {
       tagsFromParser,
     });
 
-
     const yamlProps: Record<string, any> = { ...data };
-    delete (yamlProps as any).bookmarked; // Prevent YAML bookmarked from interfering with Obsidian bookmark
 
     const note: Note = {
       ...yamlProps,
@@ -292,7 +291,7 @@ export function loadNotes(vault: Vault): Note[] {
       modified: fs.statSync(filePath).mtime,
       tags: tagsForString(content),
       content: content,
-      ...(bookmarkedFilePaths.includes(relativePath) ? { bookmarked: true } : {}), // bookmarked: <=> bookmarked:true
+      bookmarked: bookmarkedFilePaths.includes(relativePath),
       aliases: aliases,
       locations: locations,
     };

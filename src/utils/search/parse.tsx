@@ -326,6 +326,11 @@ class Parser {
       throw new Error(`Unexpected token in term: ${valueTok.kind}`);
     }
 
+    // Special case: `bookmarked:` → treat as `bookmarked:true`
+    if (field && field.toLowerCase() === 'bookmarked' && raw === '') {
+      raw = 'true';
+    }
+
     // optional trailing '~' to mark fuzzy for this term/phrase
     let fuzzy = false;
     if (this.peek()?.kind === 'TILDE') {
