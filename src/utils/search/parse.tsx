@@ -1,4 +1,5 @@
 import { dbgParse, j } from '../debugging/debug';
+import { validateQuerySyntax } from './validate';
 
 /*
  * Obsidian-style search parser → AST (TypeScript)
@@ -187,7 +188,7 @@ export function tokenize(input: string): Token[] {
 
 class Parser {
   private i = 0;
-  constructor(private toks: Token[]) { }
+  constructor(private toks: Token[], private input: string) { }
 
   private peek(k = 0): Token | undefined { return this.toks[this.i + k]; }
   private eat(kind?: Token['kind']): Token | undefined {
@@ -195,6 +196,13 @@ class Parser {
     if (!t) return undefined;
     if (kind && t.kind !== kind) return undefined;
     this.i++; return t;
+  }
+
+  private findValueEnd(startPos: number): number {
+    const s = this.input;
+    let i = startPos;
+    while (i < s.length && !/\s/.test(s[i])) i++;
+    return i;
   }
 
   parse(): ASTNode | GroupNode {
@@ -258,20 +266,20 @@ class Parser {
       const end = endTok ? endTok.pos.end : (inner as any)?.pos.end ?? start + 1;
       return { type: 'Group', child: inner!, pos: { start, end } };
     }
-    if (t.kind === 'TILDE') {
-      // Standalone '~' → treat as no-match (power-user strict)
-      const start = t.pos.start;
-      this.eat('TILDE');
-      return {
-        type: 'Term',
-        field: undefined,
-        value: '',
-        phrase: false,
-        fuzzy: false,
-        regex: noMatchRegex(),
-        pos: { start, end: t.pos.end },
-      };
-    }
+    // if (t.kind === 'TILDE') {
+    //   // Standalone '~' → treat as no-match (power-user strict)
+    //   const start = t.pos.start;
+    //   this.eat('TILDE');
+    //   return {
+    //     type: 'Term',
+    //     field: undefined,
+    //     value: '',
+    //     phrase: false,
+    //     fuzzy: false,
+    //     regex: noMatchRegex(),
+    //     pos: { start, end: t.pos.end },
+    //   };
+    // }
     return this.parseTerm();
   }
 
@@ -286,44 +294,72 @@ class Parser {
     if (!first) throw new Error('Unexpected end of input');
 
     let valueTok = first;
-    let expectValue = false;
+
     if (first.kind === 'TERM' && this.peek()?.kind === 'COLON') {
       // field present
       field = (first as any).value;
       const colonTok = this.eat('COLON')!;
       const next = this.peek();
 
-      // Rule: values attach only if they are immediately adjacent to the ':' with no whitespace.
+      // Attach value only if immediately adjacent to ':' (no whitespace).
       const isAdjacent = !!(next && next.pos.start === colonTok.pos.end);
 
-      // If next looks like the start of another field (TERM followed by COLON), don't consume it.
-      const startsNextField = !!(next && next.kind === 'TERM' && this.peek(1)?.kind === 'COLON');
+      if (isAdjacent) {
+        const valueStart = colonTok.pos.end;
+        const valueEnd = this.findValueEnd(valueStart);
+        const rawSlice = this.input.slice(valueStart, valueEnd);
 
-      if (isAdjacent && !startsNextField && next && (next.kind === 'TERM' || next.kind === 'PHRASE' || next.kind === 'REGEX')) {
-        // Consume the adjacent token as the value
-        valueTok = this.eat()!;
+        // Advance tokenizer index to skip all tokens covered by the raw slice
+        while (this.peek() && (this.peek() as any).pos.start < valueEnd) {
+          this.eat();
+        }
+
+        // Create a synthetic TERM token carrying the raw slice and positions
+        valueTok = { kind: 'TERM', value: rawSlice, pos: { start: valueStart, end: valueEnd } } as any;
       } else {
-        // Empty value for this field; do not consume `next`
+        // Empty value for this field; leave next token untouched
         valueTok = { kind: 'TERM', value: '', pos: next ? next.pos : first.pos } as any;
       }
     }
 
     let phrase = false;
     let raw = '';
-    let endPos = valueTok.pos.end;
+    let fuzzy = false;
     let regexInfo: RegexInfo | null = null;
+    let endPos = valueTok.pos.end;
 
-    if (valueTok.kind === 'PHRASE') {
-      phrase = true;
-      raw = valueTok.value;
-    } else if (valueTok.kind === 'TERM') {
-      raw = valueTok.value;
-    } else if (valueTok.kind === 'REGEX') {
-      // Tentatively treat as regex; final decision after we peek for '~'
-      raw = valueTok.raw; // keep the literal for astToString/debug
-      regexInfo = { pattern: valueTok.pattern, flags: valueTok.flags, raw: valueTok.raw };
+    if (valueTok.kind === 'REGEX') {
+      // Keep existing behavior for standalone regex tokens
+      raw = (valueTok as any).raw;
+      regexInfo = { pattern: (valueTok as any).pattern, flags: (valueTok as any).flags, raw: (valueTok as any).raw };
+    } else if (valueTok.kind === 'PHRASE' || valueTok.kind === 'TERM') {
+      raw = (valueTok as any).value ?? '';
     } else {
       throw new Error(`Unexpected token in term: ${valueTok.kind}`);
+    }
+
+    // Post-process raw according to the new rules:
+    // 1) Fuzzy if the raw value ends with '~' (strip it)
+    if (raw.endsWith('~')) {
+      fuzzy = true;
+      raw = raw.slice(0, -1);
+    }
+
+    // 2) Quoted phrase if the (possibly de-tilde'd) raw is enclosed in double-quotes
+    if (raw.length >= 2 && raw.startsWith('"') && raw.endsWith('"')) {
+      phrase = true;
+      raw = raw.slice(1, -1);
+    }
+
+    // 3) Regex literal if raw starts with '/' — validate with readRegex on the original input slice
+    if (!phrase && raw.startsWith('/')) {
+      const startInInput = (valueTok as any).pos.start;
+      const rr = readRegex(this.input, startInInput);
+      if (rr && rr.end === (valueTok as any).pos.end) {
+        regexInfo = { pattern: rr.token.pattern, flags: rr.token.flags, raw: rr.token.raw };
+        // Keep raw as rr.token.raw for ast/debug consistency
+        raw = rr.token.raw;
+      }
     }
 
     // Special case: `bookmarked:` → treat as `bookmarked:true`
@@ -331,18 +367,14 @@ class Parser {
       raw = 'true';
     }
 
-    // optional trailing '~' to mark fuzzy for this term/phrase
-    let fuzzy = false;
-    if (this.peek()?.kind === 'TILDE') {
-      // Exception: empty quoted phrase with trailing '~' → no-match regex
-      if (valueTok.kind === 'PHRASE' && valueTok.value === '') {
-        regexInfo = noMatchRegex();
-      } else {
-        fuzzy = true;
-      }
-      this.eat('TILDE');
-      endPos = this.peek()?.pos.start ?? (endPos + 1);
+    // optional trailing '~' has already been handled inside `raw` processing above
+    // Handle the special case: empty quoted phrase + '~' → no-match regex
+    if (phrase && raw === '' && fuzzy) {
+      regexInfo = noMatchRegex();
+      // Keep `fuzzy` true for AST flagging, but execution can treat regex as no-match.
     }
+
+    endPos = (valueTok as any).pos?.end ?? endPos;
 
     dbgParse('[Parser.parseTerm] term parsed:', { field, raw, phrase, fuzzy, regexInfo });
 
@@ -361,9 +393,17 @@ class Parser {
 // Public API
 export function parseQuery(input: string): ASTNode {
   dbgParse('[parseQuery] input:', input);
+
+  // 1) Pre-validate: if invalid, quietly return an empty AST (no toasts)
+  // const v = validateQuerySyntax(input);
+  // dbgParse('[parseQuery) validation result:', v);
+  // if (!(v as any).ok) {
+  //   return { type: 'Group', child: null, pos: { start: 0, end: 0 } } as GroupNode;
+  // }
+
   const toks = tokenize(input);
   dbgParse('[parseQuery] tokens:', toks);
-  const p = new Parser(toks);
+  const p = new Parser(toks, input);
   const ast = p.parse();
   dbgParse('[parseQuery] AST output:', j(ast));
   return ast;
