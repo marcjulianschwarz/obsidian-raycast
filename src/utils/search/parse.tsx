@@ -292,10 +292,8 @@ class Parser {
       return { type: 'Group', child: null, pos: { start: 0, end: 0 } };
     }
     if (t.kind === 'MINUS') {
-      const start = t.pos.start;
-      this.eat('MINUS');
-      const child = this.parseUnary();
-      return { type: 'Not', child, pos: { start, end: (child as any).pos.end } };
+      const neg = this.tryParseNegation();
+      if (neg) return neg;
     }
     if (t.kind === 'LPAREN') {
       const start = t.pos.start; this.eat('LPAREN');
@@ -319,6 +317,39 @@ class Parser {
     //   };
     // }
     return this.parseTerm();
+  }
+
+  /**
+   * Simplified '-' handling:
+   * - If input starts with '-', negate the following unary expression.
+   * - Lone '-' (no following token) is treated as a literal term "-".
+   */
+  private tryParseNegation(): ASTNode | null {
+    const t = this.peek();
+    if (!t || t.kind !== 'MINUS') return null;
+    const minusTok = this.eat('MINUS')!;
+    const next = this.peek();
+  
+    // Lone '-' → literal term
+    if (!next) {
+      return {
+        type: 'Term',
+        field: undefined,
+        value: '-',
+        phrase: false,
+        fuzzy: false,
+        regex: null,
+        pos: { start: minusTok.pos.start, end: minusTok.pos.end },
+      } as TermNode;
+    }
+  
+    // Otherwise, '-' negates the next unary expression (covers -val, -key:val, -"phrase", -key:"phrase", -( ... ), -/re/, -~, --dash, etc.)
+    const child = this.parseUnary();
+    return {
+      type: 'Not',
+      child,
+      pos: { start: minusTok.pos.start, end: (child as any).pos.end },
+    } as NotNode;
   }
 
   private parseTerm(): TermNode {
