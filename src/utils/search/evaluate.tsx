@@ -116,7 +116,14 @@ function evalExactLeaf(docs: Doc[], node: TermNode, fields: string[], opts: Eval
   const ids = new Set<string>();
   for (const d of docs) {
     values = collectFields(d, fields, opts);
-    matched = values.some(v => strIncludes(v, node.value));
+    // Presence-by-default when searching for an empty, unquoted field value (e.g., key:)
+    if (node.value === '' && node.field && !node.phrase) {
+      const getter = opts.fieldMap?.[node.field];
+      const present = getter ? getter(d) !== undefined : node.field in (d as any);
+      matched = present;
+    } else {
+      matched = values.some(v => strIncludes(v, node.value));
+    }
     if (matched) ids.add(d.id);
   }
   
@@ -238,6 +245,56 @@ export function evaluateQueryAST(ast: ASTNode, docs: Doc[], opts: EvaluateOption
     switch (node.type) {
       case 'Term': {
         const fields = node.field ? [node.field] : defaultFields;
+
+        // Empty-quote semantics: "" means "empty or undefined" for the field(s)
+        if (node.phrase && node.value === '') {
+          if (node.field) {
+            const ids = new Set<string>();
+            const SAMPLE_LIMIT = 5;
+            const sampleMatched: any[] = [];
+            const sampleMissed: any[] = [];
+            let matchedCount = 0;
+
+            for (const d of docs) {
+              const docAny = d as any;
+              const present = (node.field in docAny) || Object.prototype.hasOwnProperty.call(docAny, node.field);
+              const raw = docAny[node.field];
+              const isEmptyOrUndefined =
+                raw == null ||
+                (typeof raw === 'string' && raw.trim().length === 0) ||
+                (Array.isArray(raw) && raw.length === 0);
+              const matched = present && isEmptyOrUndefined;
+              if (matched) {
+                ids.add(d.id);
+                matchedCount++;
+                if (sampleMatched.length < SAMPLE_LIMIT) {
+                  sampleMatched.push({ id: d.id, raw });
+                }
+              } else if (sampleMissed.length < SAMPLE_LIMIT) {
+                sampleMissed.push({ id: d.id, raw });
+              }
+            }
+
+            dbgEval('[empty-quote fielded] summary', {
+              field: node.field,
+              totalDocs: docs.length,
+              matchedCount,
+              sampleMatched,
+              sampleMissed,
+            });
+
+            return { ids, scores: new Map() };
+          } else {
+            // Unfielded "": match docs where ANY default field is empty/undefined
+            for (const d of docs) {
+              for (const f of fields) {
+                const raw = (d as any)[f];
+                if (raw === undefined) { ids.add(d.id); break; }
+              }
+            }
+            return { ids, scores: new Map() };
+          }
+        }
 
         // Regex has highest priority
         if (node.regex) {
