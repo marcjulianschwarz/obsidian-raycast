@@ -205,6 +205,44 @@ class Parser {
     return i;
   }
 
+  private applyFuzzyOperator(
+    rawIn: string,
+    valueTok: Token,
+    regexInfo: RegexInfo | null,
+    isBareTildeLiteral: boolean
+  ): { raw: string; fuzzy: boolean; endPos: number } {
+    let raw = rawIn;
+    let fuzzy = false;
+    let endPos = (valueTok as any).pos?.end ?? (valueTok as any).pos?.end;
+
+    // Do not treat '~' as operator when it's a bare literal or exactly "~"
+    if (isBareTildeLiteral || raw === '~') {
+      return { raw, fuzzy, endPos };
+    }
+
+    // Case A: raw value itself ends with '~' (e.g., key:value~ or key:"phrase"~)
+    if (raw.length > 1 && raw.endsWith('~')) {
+      fuzzy = true;
+      raw = raw.slice(0, -1);
+      return { raw, fuzzy, endPos };
+    }
+
+    // Case B: adjacent standalone '~' token (e.g., value~ or "phrase"~)
+    const nextTok = this.peek();
+    if (
+      !regexInfo &&
+      raw.length > 0 &&
+      nextTok?.kind === 'TILDE' &&
+      nextTok.pos.start === (valueTok as any).pos.end
+    ) {
+      this.eat('TILDE');
+      fuzzy = true;
+      endPos = nextTok.pos.end;
+    }
+
+    return { raw, fuzzy, endPos };
+  }
+
   parse(): ASTNode | GroupNode {
     const node = this.parseOr();
     dbgParse('[Parser.parse] final AST:', j(node));
@@ -294,6 +332,13 @@ class Parser {
     if (!first) throw new Error('Unexpected end of input');
 
     let valueTok = first;
+    let isBareTildeLiteral = false;
+
+    // If the first token is a bare '~', treat it as a literal term
+    if (first.kind === 'TILDE') {
+      isBareTildeLiteral = true;
+      valueTok = { kind: 'TERM', value: '~', pos: first.pos } as any;
+    }
 
     if (first.kind === 'TERM' && this.peek()?.kind === 'COLON') {
       // field present
@@ -338,12 +383,11 @@ class Parser {
       throw new Error(`Unexpected token in term: ${valueTok.kind}`);
     }
 
-    // Post-process raw according to the new rules:
-    // 1) Fuzzy if the raw value ends with '~' (strip it)
-    if (raw.endsWith('~')) {
-      fuzzy = true;
-      raw = raw.slice(0, -1);
-    }
+    // Centralized fuzzy operator handling (covers key:value~, value~, key:"phrase"~, "phrase"~)
+    const fuzzyRes = this.applyFuzzyOperator(raw, valueTok, regexInfo, isBareTildeLiteral);
+    raw = fuzzyRes.raw;
+    fuzzy = fuzzyRes.fuzzy;
+    endPos = fuzzyRes.endPos;
 
     // 2) Quoted phrase if the (possibly de-tilde'd) raw is enclosed in double-quotes
     if (raw.length >= 2 && raw.startsWith('"') && raw.endsWith('"')) {
