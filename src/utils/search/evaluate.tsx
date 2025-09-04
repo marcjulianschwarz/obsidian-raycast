@@ -44,8 +44,6 @@ export type SearchResult = {
 // Utilities
 // ————————————————————————————————————————————————————————————
 
-const DEFAULT_FIELDS = ['title', 'tags', 'path'];
-
 function fold(s: string): string {
   return s
     .normalize('NFD')
@@ -116,11 +114,27 @@ function evalExactLeaf(docs: Doc[], node: TermNode, fields: string[], opts: Eval
   const ids = new Set<string>();
   for (const d of docs) {
     values = collectFields(d, fields, opts);
-    // Presence-by-default when searching for an empty, unquoted field value (e.g., key:)
-    if (node.value === '' && node.field && !node.phrase) {
-      const getter = opts.fieldMap?.[node.field];
-      const present = getter ? getter(d) !== undefined : node.field in (d as any);
-      matched = present;
+    // Bare key:   ⇒ present AND non-empty
+    // key:""      ⇒ handled earlier (empty-only)
+    // key:exists  ⇒ presence-only (empty OR non-empty)
+    // key:has     ⇒ alias for presence-only
+    if (node.field && !node.phrase && node.value === '') {
+      const docAny = d as any;
+      const present = Object.prototype.hasOwnProperty.call(docAny, node.field) || (node.field in docAny);
+      const raw = docAny[node.field];
+      const isEmpty =
+        raw == null ||
+        (typeof raw === 'string' && raw.trim().length === 0) ||
+        (Array.isArray(raw) && raw.length === 0);
+      matched = present && !isEmpty;
+    } else if (node.field && !node.phrase) {
+      const val = String(node.value).toLowerCase();
+      if (val === 'exists' || val === 'has') {
+        const docAny = d as any;
+        matched = Object.prototype.hasOwnProperty.call(docAny, node.field) || (node.field in docAny);
+      } else {
+        matched = values.some(v => strIncludes(v, node.value));
+      }
     } else {
       matched = values.some(v => strIncludes(v, node.value));
     }
@@ -285,11 +299,17 @@ export function evaluateQueryAST(ast: ASTNode, docs: Doc[], opts: EvaluateOption
 
             return { ids, scores: new Map() };
           } else {
-            // Unfielded "": match docs where ANY default field is empty/undefined
+            // Unfielded "": match docs where ANY default field is present AND empty
             for (const d of docs) {
+              const docAny = d as any;
               for (const f of fields) {
-                const raw = (d as any)[f];
-                if (raw === undefined) { ids.add(d.id); break; }
+                const present = (f in docAny) || Object.prototype.hasOwnProperty.call(docAny, f);
+                const raw = docAny[f];
+                const isEmptyOrUndefined =
+                  raw == null ||
+                  (typeof raw === 'string' && raw.trim().length === 0) ||
+                  (Array.isArray(raw) && raw.length === 0);
+                if (present && isEmptyOrUndefined) { ids.add(d.id); break; }
               }
             }
             return { ids, scores: new Map() };
