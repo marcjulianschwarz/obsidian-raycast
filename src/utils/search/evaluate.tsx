@@ -16,7 +16,7 @@ export type Doc = {
 
 export type EvaluateOptions = {
   // Which fields to search when a term is unfielded
-  defaultFields?: string[]; // e.g., ['title','tags','path']
+  defaultFields: string[]; // e.g., ['title','tags','path']
 
   // Map external field names to getters on the doc
   // Example: { tag: (d) => d.tags ?? [], title: (d) => d.title ?? '' }
@@ -235,9 +235,9 @@ function combineScores(sum: Map<string, number>, add: Map<string, number>) {
 // Evaluator
 // ————————————————————————————————————————————————————————————
 
-export function evaluateQueryAST(ast: ASTNode, docs: Doc[], opts: EvaluateOptions = {}): SearchResult {
+export function evaluateQueryAST(ast: ASTNode, docs: Doc[], opts: EvaluateOptions): SearchResult {
   dbgEval('[evaluateQueryAST] AST input:', j(ast));
-  const defaultFields = opts.defaultFields ?? DEFAULT_FIELDS;
+  const defaultFields = opts.defaultFields;
   const fuseCache = new Map<string, Fuse<any>>();
   const universe = new Set(docs.map(d => d.id));
 
