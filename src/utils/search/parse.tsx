@@ -77,6 +77,20 @@ class Parser {
     return i;
   }
 
+  private findQuotedValueEnd(startPos: number): number | null {
+    // Expects input[startPos] === '"'; returns the index AFTER the closing quote, or null if not found
+    const s = this.input;
+    let i = startPos + 1;
+    let escaped = false;
+    while (i < s.length) {
+      const c = s[i++];
+      if (escaped) { escaped = false; continue; }
+      if (c === '\\') { escaped = true; continue; }
+      if (c === '"') { return i; }
+    }
+    return null; // no closing quote
+  }
+
   private applyFuzzyOperator(
     rawIn: string,
     valueTok: Token,
@@ -254,7 +268,20 @@ class Parser {
 
       if (isAdjacent) {
         const valueStart = colonTok.pos.end;
-        const valueEnd = this.findValueEnd(valueStart);
+        let valueEnd: number;
+
+        if (this.input[valueStart] === '"') {
+          const quotedEnd = this.findQuotedValueEnd(valueStart);
+          if (quotedEnd != null) {
+            valueEnd = quotedEnd; // include the closing quote
+          } else {
+            // No closing quote found → fall back to whitespace-delimited term
+            valueEnd = this.findValueEnd(valueStart);
+          }
+        } else {
+          valueEnd = this.findValueEnd(valueStart);
+        }
+
         const rawSlice = this.input.slice(valueStart, valueEnd);
 
         // Advance tokenizer index to skip all tokens covered by the raw slice
