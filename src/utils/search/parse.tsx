@@ -390,11 +390,11 @@ export function parseQuery(input: string): ASTNode {
   dbgParse('[parseQuery] input:', input);
 
   // 1) Pre-validate: if invalid, quietly return an empty AST (no toasts)
-  // const v = validateQuerySyntax(input);
-  // dbgParse('[parseQuery) validation result:', v);
-  // if (!(v as any).ok) {
-  //   return { type: 'Group', child: null, pos: { start: 0, end: 0 } } as GroupNode;
-  // }
+  const v = validateQuerySyntax(input);
+  dbgParse('[parseQuery) validation result:', v);
+  if (!(v as any).ok) {
+    return { type: 'Group', child: null, pos: { start: 0, end: 0 } } as GroupNode;
+  }
 
   const toks = tokenize(input);
   dbgParse('[parseQuery] tokens:', toks);
