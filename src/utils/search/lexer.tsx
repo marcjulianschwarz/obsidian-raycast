@@ -88,7 +88,27 @@ export function tokenize(input: string): Token[] {
     if (ch === '(') { i++; push({ kind: 'LPAREN', pos: { start, end: i } }); continue; }
     if (ch === ')') { i++; push({ kind: 'RPAREN', pos: { start, end: i } }); continue; }
     if (ch === '-') { i++; push({ kind: 'MINUS', pos: { start, end: i } }); continue; }
-    if (ch === ':') { i++; push({ kind: 'COLON', pos: { start, end: i } }); continue; }
+    if (ch === ':') {
+      const prev = i > 0 ? input[i - 1] : undefined;
+      const atBoundary = (i === 0) || (prev !== undefined && (isWhitespace(prev) || isPunct(prev)));
+      if (atBoundary) {
+        // Treat leading ':' or boundary-starting ':' as part of a TERM (e.g., ':note' or ':' literal)
+        let buf = ':';
+        i++;
+        while (i < n) {
+          const c = input[i];
+          if (isWhitespace(c) || isPunct(c)) break;
+          buf += c; i++;
+        }
+        push({ kind: 'TERM', value: buf, pos: { start, end: i } });
+        continue;
+      } else {
+        // Standard key:value separator
+        i++;
+        push({ kind: 'COLON', pos: { start, end: i } });
+        continue;
+      }
+    }
     if (ch === '~') { i++; push({ kind: 'TILDE', pos: { start, end: i } }); continue; }
 
     if (isWhitespace(ch)) {
