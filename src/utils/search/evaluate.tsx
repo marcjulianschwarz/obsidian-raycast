@@ -1,6 +1,7 @@
 import Fuse from 'fuse.js';
-import { ASTNode, TermNode, AndNode, OrNode, NotNode } from './parse';
+import { ASTNode, TermNode } from './parse';
 import { dbgEval, j } from '../debugging/debug';
+import { dumpTargetNoteDebug } from '../debugging/targetNoteDebug';
 
 /**
  * Document shape used by the evaluator. Extend to your needs.
@@ -12,7 +13,7 @@ export type Doc = {
   tags?: string[];
   content?: string;              // note body/content (for content: special case)
   // You can add more fields and map them via EvaluateOptions.fieldMap
-};
+} & Record<string, unknown>; // For testing, allow arbitrary extra fields
 
 export type EvaluateOptions = {
   // Which fields to search when a term is unfielded
@@ -71,7 +72,7 @@ function valueToStrings(v: unknown): string[] {
   return [];
 }
 
-function getFieldValues(doc: Doc, field: string, opts: EvaluateOptions): string[] {
+export function getFieldValues(doc: Doc, field: string, opts: EvaluateOptions): string[] {
   const TARGET = "name-of-your-note"; // for targeted debugging
   const isTarget = String((doc as any).id || "").includes(TARGET);
 
@@ -147,13 +148,11 @@ function evalExactLeaf(docs: Doc[], node: TermNode, fields: string[], opts: Eval
     }
     if (matched) ids.add(d.id);
   }
-  
-  const TARGET = "03.12_Stefans-Desktop-PC-2025";
-  for (const d of docs) {
-    if (String((d as any).id || "").includes(TARGET)) {
-      dbgEval('[evalExactLeaf TARGET]', { fields, queryValue: node.value, values, matched });
-    }
-  }
+
+  // For targeted debugging
+  // const targetNoteTitle = "testme7";
+  // const isActive = Boolean(process.env.DEBUG_EVAL);
+  // dumpTargetNoteDebug(isActive, targetNoteTitle, docs, fields, node, opts, Boolean(matched));
 
   return { ids, scores: new Map() };
 }

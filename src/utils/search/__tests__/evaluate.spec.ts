@@ -1,9 +1,47 @@
 import { parseQuery } from '../parse';
 import { evaluateQueryAST, type EvaluateOptions } from '../evaluate';
+// at top of evaluate.spec.ts (or wherever your fixtures live)
+import { type Doc } from '../evaluate';
 
-const mkDoc = (overrides: any = {}) => ({
-  text: '',
-  fields: {},     // e.g., { test: 'ma "b' }
+export const DOC_BASE: Doc = {
+  id: '/Users/exampleuser/JD/85-89_Test-Area-2/85_Test/85.10_Test/testme7.md',
+  index: '[[85.10_Test]]',
+  created: new Date('2025-09-04T22:37:26.956Z'),
+  modified: new Date('2025-09-04T22:41:28.544Z'),
+  test: 'ma "b',
+  title: 'testme7',
+  path: '/Users/stefankolb/JD/85-89_Test-Area-2/85_Test/85.10_Test/testme7.md',
+  tags: [],
+  content:
+    '---\n' +
+    'index: "[[85.10_Test]]"\n' +
+    'created: \n' +
+    'modified: \n' +
+    'test: ma "b\n' +
+    '---',
+  bookmarked: false,
+  aliases: [],
+  locations: [],
+} as const;
+
+// Create numbered variants from the base fixture for focused tests
+const variant = (n: number, overrides: Partial<Doc> = {}): Doc => ({
+  ...DOC_BASE,
+  id: DOC_BASE.id.replace(/testme\d+\.md$/, `testme${n}.md`),
+  title: `testme${n}`,
+  ...overrides,
+});
+
+export const DOC_TESTME1 = variant(1); // base as-is
+export const DOC_TESTME2 = variant(2, { test: 'hello"world' });
+export const DOC_TESTME3 = variant(3, { tags: ['custom'] });
+export const DOC_TESTME4 = variant(4, { tags: [] });
+export const DOC_TESTME5 = variant(5, { title: 'reABC' }); // for regex test
+export const DOC_TESTME6 = variant(6, { key: 'abc def' } as any); // fielded quoted value
+export const DOC_TESTME7 = variant(7, { title: 'only : here' }); // literal ':'
+
+const mkDoc = (base: Doc, overrides: Partial<Doc> = {}): Doc => ({
+  ...base,
   ...overrides,
 });
 
@@ -12,27 +50,52 @@ const TEST_OPTS = {
 } as const satisfies EvaluateOptions;
 
 describe('evaluate', () => {
-  it('matches fielded phrase with escaped quote', () => {
+  it('matches fielded phrase with escaped quote (DOC_TESTME1)', () => {
     const ast = parseQuery('test:"ma \\"b"');
-    const doc = mkDoc({ fields: { test: 'ma "b' } });
-    expect(evaluateQueryAST(ast, [doc], TEST_OPTS)).toBe(true);
+    const doc = mkDoc(DOC_TESTME1);
+    const res = evaluateQueryAST(ast, [doc], TEST_OPTS);
+    expect(res.hits.map(h => h.id)).toContain(doc.id);
   });
 
-  it('matches colon-after-quote as literal term', () => {
-    const ast = parseQuery('"term":test');
-    const doc = mkDoc({ text: 'term :test' });
-    expect(evaluateQueryAST(ast, [doc], TEST_OPTS)).toBe(true);
+  it(' " included in value of key "test" (DOC_TESTME2)', () => {
+    const ast = parseQuery('test:hello"world');
+    const doc = mkDoc(DOC_TESTME2);
+    const res = evaluateQueryAST(ast, [doc], TEST_OPTS);
+    expect(res.hits.map(h => h.id)).toContain(doc.id);
   });
 
-  it('treats :note as literal', () => {
-    const ast = parseQuery(':note');
-    const doc = mkDoc({ text: 'prefix :note suffix' });
-    expect(evaluateQueryAST(ast, [doc], TEST_OPTS)).toBe(true);
+  it('test tag (DOC_TESTME3)', () => {
+    const ast = parseQuery('tags:custom');
+    const doc = mkDoc(DOC_TESTME3);
+    const res = evaluateQueryAST(ast, [doc], TEST_OPTS);
+    expect(res.hits.map(h => h.id)).toContain(doc.id);
   });
 
-  it('quotes precedence keeps phrases together', () => {
-    const ast = parseQuery('abc "def"');
-    const doc = mkDoc({ text: 'xx abc yy def zz' });
-    expect(evaluateQueryAST(ast, [doc], TEST_OPTS)).toBe(true);
+  it('test empty tags (DOC_TESTME4)', () => {
+    const ast = parseQuery('tags:""');
+    const doc = mkDoc(DOC_TESTME4);
+    const res = evaluateQueryAST(ast, [doc], TEST_OPTS);
+    expect(res.hits.map(h => h.id)).toContain(doc.id);
+  });
+
+  it('regex literal matches (DOC_TESTME5)', () => {
+    const ast = parseQuery('/re.*/i');
+    const doc = mkDoc(DOC_TESTME5);
+    const res = evaluateQueryAST(ast, [doc], TEST_OPTS);
+    expect(res.hits.map(h => h.id)).toContain(doc.id);
+  });
+
+  it('fielded quoted value after colon (DOC_TESTME6)', () => {
+    const ast = parseQuery('key:"abc def"');
+    const doc = mkDoc(DOC_TESTME6);
+    const res = evaluateQueryAST(ast, [doc], TEST_OPTS);
+    expect(res.hits.map(h => h.id)).toContain(doc.id);
+  });
+
+  it('leading colon literal term ":" (DOC_TESTME7)', () => {
+    const ast = parseQuery(':');
+    const doc = mkDoc(DOC_TESTME7);
+    const res = evaluateQueryAST(ast, [doc], TEST_OPTS);
+    expect(res.hits.map(h => h.id)).toContain(doc.id);
   });
 });
