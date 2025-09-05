@@ -91,7 +91,105 @@ class Parser {
     return null; // no closing quote
   }
 
-  private applyFuzzyOperator(
+  private isAdjacent(endA: number, startB: number | undefined): boolean {
+    return typeof startB === 'number' && startB === endA;
+  }
+
+  /**
+   * Resolve field and value token for a term.
+   * - Handles bare '~' literal
+   * - Detects TERM COLON adjacency to form a field
+   * - Creates synthetic TERM for value slices (quoted-after-colon or whitespace-delimited)
+   */
+  private resolveFieldAndValue(first: Token): {
+    field?: string;
+    valueTok: Token;
+    isBareTildeLiteral: boolean;
+    startTok: Token;
+  } {
+    let field: string | undefined;
+    let valueTok: Token = first;
+    let isBareTildeLiteral = false;
+    const startTok = first;
+
+    if (first.kind === 'TILDE') {
+      // Treat standalone '~' as a literal value token
+      isBareTildeLiteral = true;
+      valueTok = { kind: 'TERM', value: '~', pos: first.pos } as any;
+      return { field, valueTok, isBareTildeLiteral, startTok };
+    }
+
+    if (first.kind === 'TERM' && this.peek()?.kind === 'COLON') {
+      field = (first as any).value;
+      const colonTok = this.eat('COLON')!;
+      const next = this.peek();
+      const adjacent = this.isAdjacent(colonTok.pos.end, next?.pos.start);
+
+      if (adjacent) {
+        const valueStart = colonTok.pos.end;
+        let valueEnd: number;
+        if (this.input[valueStart] === '"') {
+          const quotedEnd = this.findQuotedValueEnd(valueStart);
+          valueEnd = quotedEnd != null ? quotedEnd : this.findValueEnd(valueStart);
+        } else {
+          valueEnd = this.findValueEnd(valueStart);
+        }
+        const rawSlice = this.input.slice(valueStart, valueEnd);
+        while (this.peek() && (this.peek() as any).pos.start < valueEnd) this.eat();
+        valueTok = { kind: 'TERM', value: rawSlice, pos: { start: valueStart, end: valueEnd } } as any;
+      } else {
+        // Empty value for this field; keep next token for subsequent term
+        valueTok = { kind: 'TERM', value: '', pos: next ? next.pos : first.pos } as any;
+      }
+    }
+
+    return { field, valueTok, isBareTildeLiteral, startTok };
+  }
+
+  /**
+   * Convert a value token into raw text / phrase flag / regex info.
+   * - Preserves PHRASE tokens as phrase=true
+   * - Detects synthetically quoted TERM ("...")
+   * - Detects regex literals that span exactly the token
+   */
+  private coerceValueFromToken(valueTok: Token): { raw: string; phrase: boolean; regexInfo: RegexInfo | null } {
+    let raw = '';
+    let phrase = false;
+    let regexInfo: RegexInfo | null = null;
+
+    if (valueTok.kind === 'REGEX') {
+      raw = (valueTok as any).raw;
+      regexInfo = { pattern: (valueTok as any).pattern, flags: (valueTok as any).flags, raw: (valueTok as any).raw };
+      return { raw, phrase, regexInfo };
+    }
+
+    if (valueTok.kind === 'PHRASE') {
+      raw = (valueTok as any).value ?? '';
+      phrase = true;
+      return { raw, phrase, regexInfo };
+    }
+
+    // TERM
+    raw = (valueTok as any).value ?? '';
+    if (raw.length >= 2 && raw.startsWith('"') && raw.endsWith('"')) {
+      phrase = true;
+      raw = raw.slice(1, -1);
+      return { raw, phrase, regexInfo };
+    }
+
+    // Regex literal if TERM starts with '/' and spans token
+    if (raw.startsWith('/')) {
+      const rr = readRegex(this.input, (valueTok as any).pos.start);
+      if (rr && rr.end === (valueTok as any).pos.end) {
+        regexInfo = { pattern: rr.token.pattern, flags: rr.token.flags, raw: rr.token.raw };
+        raw = rr.token.raw;
+      }
+    }
+
+    return { raw, phrase, regexInfo };
+  }
+
+  private parseFuzzyOperator(
     rawIn: string,
     valueTok: Token,
     regexInfo: RegexInfo | null,
@@ -239,116 +337,39 @@ class Parser {
   }
 
   private parseTerm(): TermNode {
-    // A term can be: [field ':'] (TERM|PHRASE) ['~']
+    // Consume first token of the term
     const startTok = this.peek();
     if (!startTok) throw new Error('Unexpected end of input while parsing term');
-
-    // Attempt field detection: TERM ':' ahead and then value
-    let field: string | undefined;
     let first = this.eat();
     if (!first) throw new Error('Unexpected end of input');
 
-    let valueTok = first;
-    let isBareTildeLiteral = false;
+    // Centralized resolution of field and value
+    const { field, valueTok, isBareTildeLiteral, startTok: startForPos } = this.resolveFieldAndValue(first);
 
-    // If the first token is a bare '~', treat it as a literal term
-    if (first.kind === 'TILDE') {
-      isBareTildeLiteral = true;
-      valueTok = { kind: 'TERM', value: '~', pos: first.pos } as any;
-    }
+    // Map value token → raw / phrase / regex
+    const v = this.coerceValueFromToken(valueTok);
+    let raw = v.raw;
+    let phrase = v.phrase;
+    let regexInfo: RegexInfo | null = v.regexInfo;
 
-    if (first.kind === 'TERM' && this.peek()?.kind === 'COLON') {
-      // field present
-      field = (first as any).value;
-      const colonTok = this.eat('COLON')!;
-      const next = this.peek();
-
-      // Attach value only if immediately adjacent to ':' (no whitespace).
-      const isAdjacent = !!(next && next.pos.start === colonTok.pos.end);
-
-      if (isAdjacent) {
-        const valueStart = colonTok.pos.end;
-        let valueEnd: number;
-
-        if (this.input[valueStart] === '"') {
-          const quotedEnd = this.findQuotedValueEnd(valueStart);
-          if (quotedEnd != null) {
-            valueEnd = quotedEnd; // include the closing quote
-          } else {
-            // No closing quote found → fall back to whitespace-delimited term
-            valueEnd = this.findValueEnd(valueStart);
-          }
-        } else {
-          valueEnd = this.findValueEnd(valueStart);
-        }
-
-        const rawSlice = this.input.slice(valueStart, valueEnd);
-
-        // Advance tokenizer index to skip all tokens covered by the raw slice
-        while (this.peek() && (this.peek() as any).pos.start < valueEnd) {
-          this.eat();
-        }
-
-        // Create a synthetic TERM token carrying the raw slice and positions
-        valueTok = { kind: 'TERM', value: rawSlice, pos: { start: valueStart, end: valueEnd } } as any;
-      } else {
-        // Empty value for this field; leave next token untouched
-        valueTok = { kind: 'TERM', value: '', pos: next ? next.pos : first.pos } as any;
-      }
-    }
-
-    let phrase = false;
-    let raw = '';
-    let fuzzy = false;
-    let regexInfo: RegexInfo | null = null;
-    let endPos = valueTok.pos.end;
-
-    if (valueTok.kind === 'REGEX') {
-      // Keep existing behavior for standalone regex tokens
-      raw = (valueTok as any).raw;
-      regexInfo = { pattern: (valueTok as any).pattern, flags: (valueTok as any).flags, raw: (valueTok as any).raw };
-    } else if (valueTok.kind === 'PHRASE' || valueTok.kind === 'TERM') {
-      raw = (valueTok as any).value ?? '';
-    } else {
-      throw new Error(`Unexpected token in term: ${valueTok.kind}`);
-    }
-
-    // Centralized fuzzy operator handling (covers key:value~, value~, key:"phrase"~, "phrase"~)
-    const fuzzyRes = this.applyFuzzyOperator(raw, valueTok, regexInfo, isBareTildeLiteral);
+    // Fuzzy operator handling (suffix '~' or adjacent TILDE token)
+    const fuzzyRes = this.parseFuzzyOperator(raw, valueTok, regexInfo, isBareTildeLiteral);
     raw = fuzzyRes.raw;
-    fuzzy = fuzzyRes.fuzzy;
-    endPos = fuzzyRes.endPos;
-
-    // 2) Quoted phrase if the (possibly de-tilde'd) raw is enclosed in double-quotes
-    if (raw.length >= 2 && raw.startsWith('"') && raw.endsWith('"')) {
-      phrase = true;
-      raw = raw.slice(1, -1);
-    }
-
-    // 3) Regex literal if raw starts with '/' — validate with readRegex on the original input slice
-    if (!phrase && raw.startsWith('/')) {
-      const startInInput = (valueTok as any).pos.start;
-      const rr = readRegex(this.input, startInInput);
-      if (rr && rr.end === (valueTok as any).pos.end) {
-        regexInfo = { pattern: rr.token.pattern, flags: rr.token.flags, raw: rr.token.raw };
-        // Keep raw as rr.token.raw for ast/debug consistency
-        raw = rr.token.raw;
-      }
-    }
+    const fuzzy = fuzzyRes.fuzzy;
+    let endPos = fuzzyRes.endPos;
 
     // Special case: `bookmarked:` → treat as `bookmarked:true`
     if (field && field.toLowerCase() === 'bookmarked' && raw === '') {
       raw = 'true';
     }
 
-    // optional trailing '~' has already been handled inside `raw` processing above
-    // Handle the special case: empty quoted phrase + '~' → no-match regex
+    // If phrase is empty and fuzzy is true → set no-match regex (preserve fuzzy flag)
     if (phrase && raw === '' && fuzzy) {
       regexInfo = noMatchRegex();
-      // Keep `fuzzy` true for AST flagging, but execution can treat regex as no-match.
     }
 
-    endPos = (valueTok as any).pos?.end ?? endPos;
+    // Default end position: value token end (if fuzzy didn't extend it)
+    if (!endPos) endPos = (valueTok as any).pos?.end ?? (startForPos as any).pos.end;
 
     dbgParse('[Parser.parseTerm] term parsed:', { field, raw, phrase, fuzzy, regexInfo });
 
@@ -359,8 +380,8 @@ class Parser {
       phrase,
       fuzzy,
       regex: regexInfo,
-      pos: { start: startTok.pos.start, end: endPos },
-    };
+      pos: { start: (startForPos as any).pos.start, end: endPos },
+    } as TermNode;
   }
 }
 
