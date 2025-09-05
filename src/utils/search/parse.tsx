@@ -17,6 +17,29 @@ import { tokenize, readRegex, noMatchRegex } from './lexer';
  *  - To use regular expressions in your search term, surround the expression with forward slashes (/).
  */
 
+// Normalize special field semantics (parser-only)
+function normalizeSpecialField(
+  field: string | undefined,
+  raw: string,
+  phrase: boolean
+): { raw: string; phrase: boolean } {
+  if (!field || field.toLowerCase() !== 'bookmarked') return { raw, phrase };
+
+  // Empty: bookmarked:  -> true
+  // Empty quoted: bookmarked:"" -> false
+  if (raw === '') {
+    return { raw: phrase ? 'false' : 'true', phrase };
+  }
+
+  // Synonyms for presence/true (unquoted)
+  const lc = raw.toLowerCase().trim();
+  if (!phrase && (lc === 'has' || lc === 'exists')) {
+    return { raw: 'true', phrase };
+  }
+
+  return { raw, phrase };
+}
+
 export type TermNode = {
   type: 'Term';
   field?: string;        // e.g., 'tag', 'path', 'title', or frontmatter key
@@ -358,10 +381,7 @@ class Parser {
     const fuzzy = fuzzyRes.fuzzy;
     let endPos = fuzzyRes.endPos;
 
-    // Special case: `bookmarked:` → treat as `bookmarked:true`
-    if (field && field.toLowerCase() === 'bookmarked' && raw === '') {
-      raw = 'true';
-    }
+    ({ raw, phrase } = normalizeSpecialField(field, raw, phrase));
 
     // If phrase is empty and fuzzy is true → set no-match regex (preserve fuzzy flag)
     if (phrase && raw === '' && fuzzy) {
