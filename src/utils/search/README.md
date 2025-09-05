@@ -1,6 +1,6 @@
 ## Query Syntax Principles
 
-An input search query is parsed into `key:value` pairs. Special tokens include `"`, `:`, `(`, `)`, `AND`, `OR`, `-` (NOT), and `~` (fuzzy operator). Values without a specified key are assigned to the default key. Single characters like `:`, `-`, and `~` are treated as literals unless specified otherwise.
+An input search query is parsed into `field:value` pairs. Special tokens include `"`, `:`, `(`, `)`, `AND`, `OR`, `-` (NOT), and `~` (fuzzy operator). Values without a specified field are assigned to the default field. Single characters like `:`, `-`, and `~` are treated as literals unless specified otherwise.
 
 ### Rule 1: Token Separation
 
@@ -30,9 +30,9 @@ AND
 default: jk\"
 ```
 
-### Rule 2: Key-Value Parsing
+### Rule 2: Field-Value Parsing
 
-A key starts after whitespace and ends at the first `:` character. The value includes everything after that `:` up to the next whitespace. If the value starts with a quote (`"`) immediately after the colon, it ends at the next quote or, if no closing quote exists, at the next whitespace.
+A field starts after whitespace and ends at the first `:` character. The value includes everything after that `:` up to the next whitespace. If the value starts with a quote (`"`) immediately after the colon, it ends at the next quote or, if no closing quote exists, at the next whitespace.
 
 **Examples:**
 
@@ -128,11 +128,39 @@ Regular expressions are supported when enclosed in slashes. Optional flags are a
 
 A regex ending with a tilde (`~`), for example `/.../~`, is invalid and yields no results.
 
-### Rule 6: Key Existence Queries
+### Rule 6: Field Existence Queries
 
 - `key:` matches all notes with a non-empty field named `key`.
 - `key:""` matches all notes with an empty field named `key`.
 - `key:exists` or `key:has` matches all notes containing the field `key`, regardless of whether it is empty or not.
+
+### Rule 7: Virtual Fields
+
+Some fields are always present in every note (though they may be empty). These include: 
+
+```
+title
+path
+created
+modified
+tags
+content
+bookmarked
+aliases
+locations
+```
+
+Therefore searches like these
+
+- `aliases:`
+- `content:`
+
+### Rule 8: Special Handling of Bookmarked Field
+
+Every note has a `bookmarked` field that is always set to either `true` or `false`.  
+- The query `bookmarked:` is interpreted as `bookmarked:true`.  
+- The query `bookmarked:""` is interpreted as `bookmarked:false`.
+- The query `bookmarked:exists`or `bookmarked:has` is interpreted as `bookmarked:true`.
 
 ### Validation
 
