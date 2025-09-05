@@ -15,21 +15,21 @@ describe('parse', () => {
   });
 
   it('fielded quoted values stay intact', () => {
-    const ast = parseQuery('key:"sdf fasd"');
+    const ast = parseQuery('key:"abc def"');
     const t = terms(ast)[0];
     expect(t).toMatchObject({
       field: 'key',
-      value: 'sdf fasd',
+      value: 'abc def',
       phrase: true,
     });
   });
 
-  it('treats :note as literal term (no field)', () => {
-    const ast = parseQuery(':note');
+  it('treats :test as literal term (no field)', () => {
+    const ast = parseQuery(':test');
     const t = terms(ast)[0];
     expect(t).toMatchObject({
       field: undefined,
-      value: ':note',
+      value: ':test',
       phrase: false,
     });
   });
