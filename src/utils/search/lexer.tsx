@@ -90,9 +90,12 @@ export function tokenize(input: string): Token[] {
     if (ch === '-') { i++; push({ kind: 'MINUS', pos: { start, end: i } }); continue; }
     if (ch === ':') {
       const prev = i > 0 ? input[i - 1] : undefined;
-      const atBoundary = (i === 0) || (prev !== undefined && (isWhitespace(prev) || isPunct(prev)));
+      const atBoundary =
+        (i === 0) ||
+        (prev !== undefined && (isWhitespace(prev) || isPunct(prev) || prev === '"'));
+
       if (atBoundary) {
-        // Treat leading ':' or boundary-starting ':' as part of a TERM (e.g., ':note' or ':' literal)
+        // Treat leading ':' or a ':' immediately after a closing quote as a literal term start
         let buf = ':';
         i++;
         while (i < n) {
@@ -103,7 +106,7 @@ export function tokenize(input: string): Token[] {
         push({ kind: 'TERM', value: buf, pos: { start, end: i } });
         continue;
       } else {
-        // Standard key:value separator
+        // Standard key:value separator (e.g., key:value)
         i++;
         push({ kind: 'COLON', pos: { start, end: i } });
         continue;
