@@ -64,19 +64,25 @@ export function tokenize(input: string): Token[] {
     }
 
     if (ch === '"') {
-      // Quoted phrase (supports \" escapes)
-      i++; // skip opening quote
+      // Quotes take precedence: try to read a full phrase with escapes.
+      // If no closing quote is found, treat the '\"' as a literal and let TERM logic handle it.
+      let j = i + 1;
       let buf = '';
       let escaped = false;
-      while (i < n) {
-        const c = input[i++];
+      let closed = false;
+      while (j < n) {
+        const c = input[j++];
         if (escaped) { buf += c; escaped = false; continue; }
         if (c === '\\') { escaped = true; continue; }
-        if (c === '"') { break; }
+        if (c === '"') { closed = true; break; }
         buf += c;
       }
-      push({ kind: 'PHRASE', value: buf, pos: { start, end: i } });
-      continue;
+      if (closed) {
+        push({ kind: 'PHRASE', value: buf, pos: { start, end: j } });
+        i = j;
+        continue;
+      }
+      // no closing quote → do not consume; fall through to TERM logic
     }
 
     if (ch === '(') { i++; push({ kind: 'LPAREN', pos: { start, end: i } }); continue; }
@@ -91,11 +97,32 @@ export function tokenize(input: string): Token[] {
       continue;
     }
 
-    // Bare term: read until whitespace or a punctuation we treat as separator
+    // Bare term: read until whitespace or punctuation we treat as separator.
+    // If we encounter '\"' and it begins a valid phrase (has a matching closer ahead),
+    // stop the TERM so the phrase handler can consume it. Otherwise, treat '\"' as literal.
     let buf = '';
     while (i < n) {
       const c = input[i];
       if (isWhitespace(c) || isPunct(c)) break;
+
+      if (c === '"') {
+        // Probe ahead for a matching closing quote with escapes
+        let j = i + 1;
+        let escaped = false;
+        let closed = false;
+        while (j < n) {
+          const cj = input[j++];
+          if (escaped) { escaped = false; continue; }
+          if (cj === '\\') { escaped = true; continue; }
+          if (cj === '"') { closed = true; break; }
+        }
+        if (closed) {
+          // Let the phrase handler take over; don't consume the '\"' here
+          break;
+        }
+        // No closing quote ahead → treat '\"' as a literal
+      }
+
       buf += c; i++;
     }
     push({ kind: 'TERM', value: buf, pos: { start, end: i } });
