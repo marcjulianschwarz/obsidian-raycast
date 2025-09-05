@@ -1,7 +1,7 @@
 import Fuse from 'fuse.js';
-import { ASTNode, TermNode } from './parse';
-import { dbgEval, j } from '../debugging/debug';
-import { dumpTargetNoteDebug } from '../debugging/targetNoteDebug';
+import { ASTNode, TermNode } from './parser';
+import { dbgEval, j } from '../debugging/debugger';
+import { dumpTargetNoteDebug } from '../debugging/targetNoteDebugger';
 
 /**
  * Document shape used by the evaluator. Extend to your needs.
@@ -375,4 +375,4 @@ export function evaluateQueryAST(ast: ASTNode, docs: Doc[], opts: EvaluateOption
 }
 
 // Convenience: run string query directly if caller prefers
-export { parseQuery } from './parse';
+export { parseQuery } from './parser';

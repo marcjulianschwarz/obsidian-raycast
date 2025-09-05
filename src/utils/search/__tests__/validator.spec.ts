@@ -1,4 +1,4 @@
-import { validateQuerySyntax } from '../validate';
+import { validateQuerySyntax } from '../validator';
 
 describe('validate (structural only)', () => {
     it('balanced parentheses', () => {

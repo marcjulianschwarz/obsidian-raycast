@@ -2,9 +2,9 @@ import { Media } from "../interfaces";
 import { Note } from "../../api/vault/notes/notes.types";
 import { SearchNotePreferences } from "../preferences";
 import { getPreferenceValues } from "@raycast/api";
-import { parseQuery } from "./parse";
-import { evaluateQueryAST } from "./evaluate";
-import { dbgSearch, j } from "../debugging/debug";
+import { parseQuery } from "./parser";
+import { evaluateQueryAST } from "./evaluator";
+import { dbgSearch, j } from "../debugging/debugger";
 
 const pref = getPreferenceValues<SearchNotePreferences>();
 

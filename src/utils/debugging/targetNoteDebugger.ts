@@ -1,7 +1,7 @@
-import { Doc, EvaluateOptions } from '../search/evaluate';
-import { TermNode } from '../search/parse';
-import { getFieldValues } from '../search/evaluate'; // if you want to reuse it
-import { dbgEval } from './debug';
+import { Doc, EvaluateOptions } from '../search/evaluator';
+import { TermNode } from '../search/parser';
+import { getFieldValues } from '../search/evaluator'; // if you want to reuse it
+import { dbgEval } from './debugger';
 
 export function dumpTargetNoteDebug(
     isActive: boolean,

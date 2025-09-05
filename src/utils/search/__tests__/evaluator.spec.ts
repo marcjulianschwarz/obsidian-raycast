@@ -1,7 +1,7 @@
-import { parseQuery } from '../parse';
-import { evaluateQueryAST, type EvaluateOptions } from '../evaluate';
+import { parseQuery } from '../parser';
+import { evaluateQueryAST, type EvaluateOptions } from '../evaluator';
 // at top of evaluate.spec.ts (or wherever your fixtures live)
-import { type Doc } from '../evaluate';
+import { type Doc } from '../evaluator';
 
 export const DOC_BASE: Doc = {
     id: '/Users/exampleuser/JD/85-89_Test-Area-2/85_Test/85.10_Test/testme7.md',

@@ -1,4 +1,4 @@
-import { parseQuery } from '../parse';
+import { parseQuery } from '../parser';
 
 function terms(ast: any) {
     if (ast.type === 'And') return ast.children;

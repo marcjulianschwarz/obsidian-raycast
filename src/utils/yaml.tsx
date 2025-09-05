@@ -3,7 +3,7 @@ import { Note } from "../api/vault/notes/notes.types";
 
 import { CODE_BLOCK_REGEX, INLINE_TAGS_REGEX, YAML_FRONTMATTER_REGEX } from "./constants";
 import { sortByAlphabet } from "./utils";
-import { dbgYaml, j } from "./debugging/debug";
+import { dbgYaml, j } from "./debugging/debugger";
 
 export function parsedYAMLFrontmatter(str: string) {
   // Non-greedy, start-anchored: match only the first frontmatter block

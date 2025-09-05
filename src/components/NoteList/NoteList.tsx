@@ -8,7 +8,7 @@ import { NoteListDropdown } from "./NoteListDropdown";
 import { searchFunction } from "../../utils/search/search";
 import { getObsidianTarget, ObsidianTargetType } from "../../utils/utils";
 import { SearchNotePreferences } from "../../utils/preferences";
-import { SortOrder, sortNotesByOrder } from "../../utils/sort";
+import { SortOrder, sortNotesByOrder } from "../../utils/noteSorter";
 
 export function NoteList(props: NoteListProps) {
   const { notes, vault, title, searchArguments, action } = props;

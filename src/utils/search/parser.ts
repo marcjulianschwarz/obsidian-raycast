@@ -1,5 +1,5 @@
-import { dbgParse, j } from '../debugging/debug';
-import { validateQuerySyntax } from './validate';
+import { dbgParse, j } from '../debugging/debugger';
+import { validateQuerySyntax } from './validator';
 
 // Move shared types & lexer helpers to dedicated modules
 import { Position, RegexInfo, Token } from './types';
