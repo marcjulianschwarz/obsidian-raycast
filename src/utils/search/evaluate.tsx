@@ -56,6 +56,12 @@ function strIncludes(haystack: string, needle: string): boolean {
   return fold(haystack).includes(fold(needle));
 }
 
+// Unescape backslash-escaped quotes and backslashes in query literals (phrases only)
+function unescapeQueryLiteral(s: string): string {
+  // \" -> ", \\ -> \
+  return s.replace(/\\([\\"])/g, '$1');
+}
+
 function valueToStrings(v: unknown): string[] {
   if (v == null) return [];
   if (Array.isArray(v)) return v.flatMap(valueToStrings);
@@ -111,6 +117,7 @@ type LeafEval = {
 
 function evalExactLeaf(docs: Doc[], node: TermNode, fields: string[], opts: EvaluateOptions): LeafEval {
   let values, matched;
+  const q = node.phrase ? unescapeQueryLiteral(node.value) : node.value;
   const ids = new Set<string>();
   for (const d of docs) {
     values = collectFields(d, fields, opts);
@@ -136,7 +143,7 @@ function evalExactLeaf(docs: Doc[], node: TermNode, fields: string[], opts: Eval
         matched = values.some(v => strIncludes(v, node.value));
       }
     } else {
-      matched = values.some(v => strIncludes(v, node.value));
+      matched = values.some(v => strIncludes(v, q));
     }
     if (matched) ids.add(d.id);
   }
@@ -206,7 +213,7 @@ function evalFuzzyLeaf(docs: Doc[], node: TermNode, fields: string[], opts: Eval
     fuse = buildFuseIndex(docs, fields, opts);
     fuseCache.set(cacheKey, fuse);
   }
-  const q = node.phrase ? node.value : node.value; // same; phrase semantics handled by parser flag if needed upstream
+  const q = node.phrase ? unescapeQueryLiteral(node.value) : node.value;
   const results = fuse.search(q);
   const ids = new Set<string>();
   const scores = new Map<string, number>();
