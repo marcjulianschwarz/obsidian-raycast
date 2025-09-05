@@ -9,6 +9,26 @@ export function noMatchRegex(): RegexInfo {
 export function isWhitespace(ch: string) { return /\s/.test(ch); }
 export function isPunct(ch: string) { return /[():~]/.test(ch); }
 
+function isBoundary(prev: string | undefined) {
+  return prev === undefined || isWhitespace(prev) || isPunct(prev) || prev === '"';
+}
+
+function readQuoted(input: string, startIndex: number) {
+  // Expects input[startIndex] === '"'. Returns { end, value } if closed; null otherwise.
+  let j = startIndex + 1;
+  const n = input.length;
+  let buf = '';
+  let escaped = false;
+  while (j < n) {
+    const c = input[j++];
+    if (escaped) { buf += c; escaped = false; continue; }
+    if (c === '\\') { escaped = true; continue; }
+    if (c === '"') { return { end: j, value: buf }; }
+    buf += c;
+  }
+  return null; // no closing quote
+}
+
 export function readRegex(input: string, startIndex: number) {
   // expects input[startIndex] === '/'
   let i = startIndex + 1;
@@ -64,25 +84,13 @@ export function tokenize(input: string): Token[] {
     }
 
     if (ch === '"') {
-      // Quotes take precedence: try to read a full phrase with escapes.
-      // If no closing quote is found, treat the '\"' as a literal and let TERM logic handle it.
-      let j = i + 1;
-      let buf = '';
-      let escaped = false;
-      let closed = false;
-      while (j < n) {
-        const c = input[j++];
-        if (escaped) { buf += c; escaped = false; continue; }
-        if (c === '\\') { escaped = true; continue; }
-        if (c === '"') { closed = true; break; }
-        buf += c;
-      }
-      if (closed) {
-        push({ kind: 'PHRASE', value: buf, pos: { start, end: j } });
-        i = j;
+      const q = readQuoted(input, i);
+      if (q) {
+        push({ kind: 'PHRASE', value: q.value, pos: { start, end: q.end } });
+        i = q.end;
         continue;
       }
-      // no closing quote → do not consume; fall through to TERM logic
+      // no closing quote → fall through to TERM logic
     }
 
     if (ch === '(') { i++; push({ kind: 'LPAREN', pos: { start, end: i } }); continue; }
@@ -90,9 +98,7 @@ export function tokenize(input: string): Token[] {
     if (ch === '-') { i++; push({ kind: 'MINUS', pos: { start, end: i } }); continue; }
     if (ch === ':') {
       const prev = i > 0 ? input[i - 1] : undefined;
-      const atBoundary =
-        (i === 0) ||
-        (prev !== undefined && (isWhitespace(prev) || isPunct(prev) || prev === '"'));
+      const atBoundary = isBoundary(prev);
 
       if (atBoundary) {
         // Treat leading ':' or a ':' immediately after a closing quote as a literal term start
@@ -106,7 +112,6 @@ export function tokenize(input: string): Token[] {
         push({ kind: 'TERM', value: buf, pos: { start, end: i } });
         continue;
       } else {
-        // Standard key:value separator (e.g., key:value)
         i++;
         push({ kind: 'COLON', pos: { start, end: i } });
         continue;
@@ -121,29 +126,16 @@ export function tokenize(input: string): Token[] {
     }
 
     // Bare term: read until whitespace or punctuation we treat as separator.
-    // If we encounter '\"' and it begins a valid phrase (has a matching closer ahead),
-    // stop the TERM so the phrase handler can consume it. Otherwise, treat '\"' as literal.
+    // If we encounter '"' and it begins a valid phrase, stop so the phrase handler can consume it.
     let buf = '';
     while (i < n) {
       const c = input[i];
       if (isWhitespace(c) || isPunct(c)) break;
 
       if (c === '"') {
-        // Probe ahead for a matching closing quote with escapes
-        let j = i + 1;
-        let escaped = false;
-        let closed = false;
-        while (j < n) {
-          const cj = input[j++];
-          if (escaped) { escaped = false; continue; }
-          if (cj === '\\') { escaped = true; continue; }
-          if (cj === '"') { closed = true; break; }
-        }
-        if (closed) {
-          // Let the phrase handler take over; don't consume the '\"' here
-          break;
-        }
-        // No closing quote ahead → treat '\"' as a literal
+        const q = readQuoted(input, i);
+        if (q) break; // let phrase branch handle it next
+        // else treat '"' as literal within the term
       }
 
       buf += c; i++;
