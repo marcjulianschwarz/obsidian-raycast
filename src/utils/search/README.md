@@ -23,7 +23,7 @@ default: def
 AND
 default: g
 AND
-default:
+default: ' ' (whitespace)
 AND
 default: hi
 AND
@@ -134,9 +134,12 @@ A regex ending with a tilde (`~`), for example `/.../~`, is invalid and yields n
 - `key:""` matches all notes with an empty field named `key`.
 - `key:exists` or `key:has` matches all notes containing the field `key`, regardless of whether it is empty or not.
 
+**Hint:** Trailing and leading whitespace in field values is trimmed during comparison.
+Therefore, a field containing only a single whitespace will be treated as empty/undefined.
+
 ### Rule 7: Virtual Fields
 
-Some fields are always present in every note (though they may be empty). These include: 
+Some fields are always present in every note (though they may be empty). These include:
 
 ```
 title
@@ -157,8 +160,9 @@ Therefore searches like these
 
 ### Rule 8: Special Handling of Bookmarked Field
 
-Every note has a `bookmarked` field that is always set to either `true` or `false`.  
-- The query `bookmarked:` is interpreted as `bookmarked:true`.  
+Every note has a `bookmarked` field that is always set to either `true` or `false`.
+
+- The query `bookmarked:` is interpreted as `bookmarked:true`.
 - The query `bookmarked:""` is interpreted as `bookmarked:false`.
 - The query `bookmarked:exists`or `bookmarked:has` is interpreted as `bookmarked:true`.
 
@@ -167,28 +171,31 @@ Every note has a `bookmarked` field that is always set to either `true` or `fals
 In these cases, the query is considered invalid and will not be passed to the parser:
 
 - **UNBALANCED_PARENS** — Occurs when opening and closing parentheses `(` and `)` are not balanced.
-  
-  **Examples (invalid):**
-  ```
-  (abc OR def      
-  abc) AND (def    
-  (abc AND (def    
-  ```
 
-- **DANGLING_OPERATOR** — Occurs when a binary logical operator such as `AND` or `OR` appears without a valid term on one side.
-  
   **Examples (invalid):**
+
   ```
-  AND abc          
-  abc OR           
-  abc AND OR def            
+  (abc OR def  
+  abc) AND (def  
+  (abc AND (def  
+  ```
+  
+- **DANGLING_OPERATOR** — Occurs when a binary logical operator such as `AND` or `OR` appears without a valid term on one side.
+
+  **Examples (invalid):**
+
+  ```
+  AND abc      
+  abc OR       
+  abc AND OR def        
   ```
 
 - **UNFINISHED_REGEX** — Occurs when a regular expression starts with `/` but has no closing `/` (with optional flags).
-  
+
   **Examples (invalid):**
+
   ```
-  /abc             
-  key:/tag(.*      
+  /abc         
+  key:/tag(.*  
   /"unterminated  
   ```
