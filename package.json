@@ -19,6 +19,7 @@
     "denis_ufimtsev"
   ],
   "license": "MIT",
+  "type": "module",
   "preferences": [
     {
       "name": "vaultPath",
@@ -713,6 +714,8 @@
     "fix-lint": "ray lint --fix",
     "lint": "ray lint",
     "publish": "ray publish",
-    "test": "vitest"
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui"
   }
 }
