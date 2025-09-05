@@ -6,30 +6,34 @@ function KVs(toks: any[]) {
 
 describe('lexer', () => {
   it('quotes take precedence over whitespace', () => {
-    const toks = tokenize('abc "def"x" "cx ab"');
+    // quotes take precedence over whitespace splitting
+    const toks = tokenize('abc "def"g" "hi jk"');
     expect(KVs(toks)).toEqual([
       { kind: 'TERM',   value: 'abc' },
       { kind: 'PHRASE', value: 'def' },
-      { kind: 'TERM',   value: 'x' },      // quote without closer ahead = literal inside TERM
-      { kind: 'PHRASE', value: ' ' },      // quoted single space
-      { kind: 'PHRASE', value: 'cx ab' },  // quoted phrase
+      { kind: 'TERM',   value: 'g' },
+      { kind: 'PHRASE', value: ' ' },
+      { kind: 'TERM',   value: 'hi' },
+      { kind: 'TERM',   value: 'jk"' },
     ]);
   });
 
   it('fielded quoted value after colon', () => {
-    const toks = tokenize('key:"sdf fasd"');
+    const toks = tokenize('key:"abc def"');
     expect(KVs(toks)).toEqual([
       { kind: 'TERM',   value: 'key' },
       // depending on your lexer, this may be COLON+PHRASE or synthetic TERM in parser; here we assert lexer-level:
       // COLON token should exist:
       { kind: 'COLON',  value: undefined },
-      { kind: 'PHRASE', value: 'sdf fasd' },
+      { kind: 'PHRASE', value: 'abc def' },
     ]);
   });
 
   it('leading colon and :term are literal terms', () => {
-    expect(KVs(tokenize(':'))).toEqual([{ kind: 'TERM', value: ':' }]);
-    expect(KVs(tokenize(':note'))).toEqual([{ kind: 'TERM', value: ':note' }]);
+    expect(KVs(tokenize(':'))).toEqual([
+      { kind: 'TERM', value: ':' }]);
+    expect(KVs(tokenize(':test'))).toEqual([
+      { kind: 'TERM', value: ':test' }]);
   });
 
   it('colon right after closing quote is literal term start', () => {
