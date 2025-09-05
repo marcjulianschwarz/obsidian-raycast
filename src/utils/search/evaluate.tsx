@@ -150,9 +150,9 @@ function evalExactLeaf(docs: Doc[], node: TermNode, fields: string[], opts: Eval
   }
 
   // For targeted debugging
-  // const targetNoteTitle = "testme7";
-  // const isActive = Boolean(process.env.DEBUG_EVAL);
-  // dumpTargetNoteDebug(isActive, targetNoteTitle, docs, fields, node, opts, Boolean(matched));
+  const targetNoteTitle = "testme7";
+  const isActive = Boolean(process.env.DEBUG_EVAL);
+  dumpTargetNoteDebug(isActive, targetNoteTitle, docs, fields, node, opts, Boolean(matched));
 
   return { ids, scores: new Map() };
 }
