@@ -252,7 +252,7 @@ class Parser {
 
   parse(): ASTNode | GroupNode {
     const node = this.parseOr();
-    dbgParse('[Parser.parse] final AST:', j(node));
+    dbgParse('parse, final AST:', j(node));
     // If multiple top-level nodes without OR, we already handled as AND inside parseAnd
     return node;
   }
@@ -391,7 +391,7 @@ class Parser {
     // Default end position: value token end (if fuzzy didn't extend it)
     if (!endPos) endPos = (valueTok as any).pos?.end ?? (startForPos as any).pos.end;
 
-    dbgParse('[Parser.parseTerm] term parsed:', { field, raw, phrase, fuzzy, regexInfo });
+    dbgParse('parseTerm, term parsed:', { field, raw, phrase, fuzzy, regexInfo });
 
     return {
       type: 'Term',
@@ -407,20 +407,20 @@ class Parser {
 
 // Public API
 export function parseQuery(input: string): ASTNode {
-  dbgParse('[parseQuery] input:', input);
+  dbgParse('parseQuery, input:', input);
 
   // 1) Pre-validate: if invalid, quietly return an empty AST (no toasts)
   const v = validateQuerySyntax(input);
-  dbgParse('[parseQuery) validation result:', v);
+  dbgParse('parseQuery, validation result:', v);
   if (!(v as any).ok) {
     return { type: 'Group', child: null, pos: { start: 0, end: 0 } } as GroupNode;
   }
 
   const toks = tokenize(input);
-  dbgParse('[parseQuery] tokens:', toks);
+  dbgParse('parseQuery, tokens:', toks);
   const p = new Parser(toks, input);
   const ast = p.parse();
-  dbgParse('[parseQuery] AST output:', j(ast));
+  dbgParse('parseQuery, AST output:', j(ast));
   return ast;
 }
 
@@ -429,7 +429,7 @@ export function parseQuery(input: string): ASTNode {
 // ————————————————————————————————————————————————————————————
 
 export function astToString(node: ASTNode): string {
-  dbgParse('[astToString] node:', node);
+  dbgParse('astToString, node:', node);
   switch (node.type) {
     case 'Term': {
       const f = node.field ? `${node.field}:` : '';

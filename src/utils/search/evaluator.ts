@@ -79,7 +79,7 @@ export function getFieldValues(doc: Doc, field: string, opts: EvaluateOptions): 
   // Special case: content: → none-empty notes only
   if (field.toLowerCase() === 'content') {
     const out = valueToStrings(doc.content).map(s => s.trim()).filter(s => s.length > 0);
-    if (isTarget) dbgEval('[getFieldValues TARGET content]', { out });
+    if (isTarget) dbgEval('getFieldValues, TARGET content,', { out });
     return out;
   }
 
@@ -89,7 +89,7 @@ export function getFieldValues(doc: Doc, field: string, opts: EvaluateOptions): 
   const val = (doc as any)[field];
   const out = valueToStrings(val);
   if (isTarget && (field === "title" || field === "tags" || field === "path")) {
-    dbgEval("[getFieldValues TARGET]", { field, out });
+    dbgEval("getFieldValues, TARGET,", { field, out });
   }
   return out;
 }
@@ -151,8 +151,7 @@ function evalExactLeaf(docs: Doc[], node: TermNode, fields: string[], opts: Eval
 
   // For targeted debugging
   const targetNoteTitle = "testme7";
-  const isActive = Boolean(process.env.DEBUG_EVAL);
-  dumpTargetNoteDebug(isActive, targetNoteTitle, docs, fields, node, opts, Boolean(matched));
+  dumpTargetNoteDebug(targetNoteTitle, docs, fields, node, opts, Boolean(matched));
 
   return { ids, scores: new Map() };
 }
@@ -175,7 +174,7 @@ function buildFuseIndex(docs: Doc[], fields: string[], opts: EvaluateOptions) {
 
 function evalRegexLeaf(docs: Doc[], node: TermNode, fields: string[], opts: EvaluateOptions): LeafEval {
   // 1. Log at function start
-  dbgEval('[evalRegexLeaf] start', { pattern: node.regex?.pattern, flags: node.regex?.flags, docCount: docs.length });
+  dbgEval('evalRegexLeaf, start', { pattern: node.regex?.pattern, flags: node.regex?.flags, docCount: docs.length });
   const ids = new Set<string>();
   const scores = new Map<string, number>();
 
@@ -186,7 +185,7 @@ function evalRegexLeaf(docs: Doc[], node: TermNode, fields: string[], opts: Eval
   try {
     re = new RegExp(node.regex.pattern, node.regex.flags);
     // 2. Log compiled regex
-    dbgEval('[evalRegexLeaf] compiled regex', re);
+    dbgEval('evalRegexLeaf, compiled regex', re);
   } catch {
     // Invalid regex → no matches (you could also choose to fallback to literal)
     return { ids, scores };
@@ -196,12 +195,12 @@ function evalRegexLeaf(docs: Doc[], node: TermNode, fields: string[], opts: Eval
     const values = collectFields(d, fields, opts);
     const matched = values.some(v => re.test(v));
     if (matched) {
-      dbgEval('[evalRegexLeaf] MATCH', { id: d.id, testedValues: values.length });
+      dbgEval('evalRegexLeaf, MATCH', { id: d.id, testedValues: values.length });
       ids.add(d.id);
     }
   }
   // 6. Log total matches before returning
-  dbgEval('[evalRegexLeaf] done', { matchCount: ids.size });
+  dbgEval('evalRegexLeaf, done', { matchCount: ids.size });
   return { ids, scores };
 }
 
@@ -256,7 +255,7 @@ function combineScores(sum: Map<string, number>, add: Map<string, number>) {
 // ————————————————————————————————————————————————————————————
 
 export function evaluateQueryAST(ast: ASTNode, docs: Doc[], opts: EvaluateOptions): SearchResult {
-  dbgEval('[evaluateQueryAST] AST input:', j(ast));
+  dbgEval('evaluateQueryAST, AST input:', j(ast));
   const defaultFields = opts.defaultFields;
   const fuseCache = new Map<string, Fuse<any>>();
   const universe = new Set(docs.map(d => d.id));
@@ -295,7 +294,7 @@ export function evaluateQueryAST(ast: ASTNode, docs: Doc[], opts: EvaluateOption
               }
             }
 
-            dbgEval('[empty-quote fielded] summary', {
+            dbgEval('empty-quote fielded, summary', {
               field: node.field,
               totalDocs: docs.length,
               matchedCount,

@@ -1,10 +1,9 @@
 import { Doc, EvaluateOptions } from '../search/evaluator';
 import { TermNode } from '../search/parser';
 import { getFieldValues } from '../search/evaluator'; // if you want to reuse it
-import { dbgEval } from './debugger';
+import { dbgEval, targetNoteDebugActive } from './debugger';
 
 export function dumpTargetNoteDebug(
-    isActive: boolean,
     targetNoteTitle: string,
     docs: Doc[],
     fields: string[],
@@ -12,7 +11,8 @@ export function dumpTargetNoteDebug(
     opts: EvaluateOptions,
     matched: boolean
 ) {
-    if (isActive) return;
+    const isActive = targetNoteDebugActive;
+    if (!isActive) return;
 
     const TARGET = targetNoteTitle;
     for (const d of docs) {
@@ -35,7 +35,7 @@ export function dumpTargetNoteDebug(
 
             const testDocJson = JSON.stringify(d, null, 2);
 
-            dbgEval('[evalExactLeaf TARGET DUMP]', {
+            dbgEval('evalExactLeaf, TARGET DUMP', {
                 targetId: d.id,
                 query: { fields, raw: node.value, phrase: node.phrase, fuzzy: node.fuzzy, regex: node.regex?.pattern },
                 matched,

@@ -7,6 +7,7 @@ import path from "path";
 import { directoryCreationErrorToast, fileWriteErrorToast } from "../../../components/Toasts";
 import { CODE_BLOCK_REGEX } from "../../../utils/constants";
 import { applyTemplates } from "../../templating/templating.service";
+import { dbgNS } from "../../../utils/debugging/debugger";
 
 export async function appendSelectedTextTo(note: Note) {
   let { appendSelectedTemplate } = getPreferenceValues<SearchNotePreferences>();
@@ -74,20 +75,20 @@ function incrementJDex(pref: NoteFormPreferences, params: CreateNoteParams): { s
 function addMatchingJDexCategoryTag(pref: NoteFormPreferences, params: CreateNoteParams) {
   const availableTags = params.availableTags;
   const category = params.fullName.match(/^\d{2}/);
-  console.log("Category:", category); // Debug
+  dbgNS("Category:", category); // Debug
 
   // Try to find a matching tag
   const matchingTag = availableTags?.find(
     tag => tag.startsWith(pref.jdexRootTag) && tag.includes(`/${category}_`)
   );
 
-  console.log("Matching tag:", matchingTag);
+  dbgNS("Matching tag:", matchingTag);
 
   if (matchingTag) {
-    console.log("→ Found matching tag:", matchingTag);
-    console.log("→ Before pushing:", [...params.tags]);
+    dbgNS("→ Found matching tag:", matchingTag);
+    dbgNS("→ Before pushing:", [...params.tags]);
     params.tags.unshift(matchingTag);
-    console.log("→ After pushing:", [...params.tags]);
+    dbgNS("→ After pushing:", [...params.tags]);
   }
 }
 
@@ -122,7 +123,7 @@ export async function createNote(vault: Vault, params: CreateNoteParams) {
   addMatchingJDexCategoryTag(pref, params);
   // === JDex Handling End ===
 
-  console.log(params.content);
+  dbgNS(params.content);
 
   params.content = createObsidianProperties(params, pref) + (params.content ?? "");
   params.content = await applyTemplates(params.content);
@@ -194,10 +195,10 @@ function parseYAMLKeys(input: string): string {
     .replace(new RegExp(ESC_LBRACE, 'g'), '{')
     .replace(new RegExp(ESC_RBRACE, 'g'), '}');
 
-  // console.log("Parsed YAML keys input:", input);
-  // console.log("Parsed YAML keys input escaped:", input);
-  // console.log("Parsed YAML keys result escaped:", escapedResult);
-  // console.log("Parsed YAML keys result:", result);
+  // dbgNS("Parsed YAML keys input:", input);
+  // dbgNS("Parsed YAML keys input escaped:", input);
+  // dbgNS("Parsed YAML keys result escaped:", escapedResult);
+  // dbgNS("Parsed YAML keys result:", result);
 
   return result;
 }

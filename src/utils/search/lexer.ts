@@ -1,5 +1,5 @@
 // src/utils/search/lexer.ts
-import { dbgParse } from '../debugging/debugger';
+import { dbgLexer } from '../debugging/debugger';
 import { Position, RegexInfo, Token } from './types';
 
 export function noMatchRegex(): RegexInfo {
@@ -153,6 +153,6 @@ export function tokenize(input: string): Token[] {
     }
     if (t.kind !== 'WS') normalized.push(t);
   }
-  dbgParse('[tokenize] normalized tokens:', normalized);
+  dbgLexer('tokenize normalized tokens:', normalized);
   return normalized;
 }

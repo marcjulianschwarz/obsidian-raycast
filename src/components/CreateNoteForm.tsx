@@ -9,6 +9,7 @@ import { getAllFolderPaths } from "../utils/folderPaths";
 import { useNotes } from "../utils/hooks";
 import { useState } from "react";
 import { tagsForNotes } from "../utils/yaml";
+import { dbgCNF } from "../utils/debugging/debugger";
 
 export function CreateNoteForm(props: { vault: Vault; showTitle: boolean }) {
   const { vault, showTitle } = props;
@@ -47,7 +48,7 @@ export function CreateNoteForm(props: { vault: Vault; showTitle: boolean }) {
     return getAllFolderPaths(vault);
   }, [vault]);
 
-  console.log("Available tags:", availableTags);
+  dbgCNF("Available tags:", availableTags);
 
   async function createNewNote(params: CreateNoteParams, path: string | undefined = undefined) {
     if (path !== undefined) {
@@ -63,7 +64,7 @@ export function CreateNoteForm(props: { vault: Vault; showTitle: boolean }) {
     }
 
     if (!saved) {
-      console.log("Note creation was cancelled.");
+      dbgCNF("Note creation was cancelled.");
     } else {
       if (copyToClipboard && params.fullName) {
         await Clipboard.copy(params.fullName);
