@@ -7,7 +7,7 @@ import path from "path";
 import { directoryCreationErrorToast, fileWriteErrorToast } from "../../../components/Toasts";
 import { CODE_BLOCK_REGEX } from "../../../utils/constants";
 import { applyTemplates } from "../../templating/templating.service";
-import { dbgNS } from "../../../utils/debugging/debugger";
+import { dbgNS } from "../../logger/debugger";
 
 export async function appendSelectedTextTo(note: Note) {
   let { appendSelectedTemplate } = getPreferenceValues<SearchNotePreferences>();

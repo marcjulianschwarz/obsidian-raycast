@@ -1,4 +1,4 @@
-import { dbgParse, j } from '../debugging/debugger';
+import { dbgParse, j } from '../../api/logger/debugger';
 import { validateQuerySyntax } from './validator';
 
 // Move shared types & lexer helpers to dedicated modules

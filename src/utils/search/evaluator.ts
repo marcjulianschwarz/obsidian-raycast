@@ -1,7 +1,7 @@
 import Fuse from 'fuse.js';
 import { ASTNode, TermNode } from './parser';
-import { dbgEval, j } from '../debugging/debugger';
-import { dumpTargetNoteDebug } from '../debugging/targetNoteDebugger';
+import { dbgEval, j } from '../../api/logger/debugger';
+import { dumpTargetNoteDebug } from '../../api/logger/targetNoteDebugger';
 
 /**
  * Document shape used by the evaluator. Extend to your needs.

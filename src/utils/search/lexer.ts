@@ -1,5 +1,5 @@
 // src/utils/search/lexer.ts
-import { dbgLexer } from '../debugging/debugger';
+import { dbgLexer } from '../../api/logger/debugger';
 import { Position, RegexInfo, Token } from './types';
 
 export function noMatchRegex(): RegexInfo {

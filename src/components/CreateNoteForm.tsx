@@ -9,7 +9,7 @@ import { getAllFolderPaths } from "../utils/folderPaths";
 import { useNotes } from "../utils/hooks";
 import { useState } from "react";
 import { tagsForNotes } from "../utils/yaml";
-import { dbgCNF } from "../utils/debugging/debugger";
+import { dbgCNF } from "../api/logger/debugger";
 
 export function CreateNoteForm(props: { vault: Vault; showTitle: boolean }) {
   const { vault, showTitle } = props;

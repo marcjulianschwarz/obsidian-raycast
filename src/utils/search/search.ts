@@ -4,7 +4,7 @@ import { SearchNotePreferences } from "../preferences";
 import { getPreferenceValues } from "@raycast/api";
 import { parseQuery } from "./parser";
 import { evaluateQueryAST } from "./evaluator";
-import { dbgSearch, j } from "../debugging/debugger";
+import { dbgSearch, j } from "../../api/logger/debugger";
 
 const pref = getPreferenceValues<SearchNotePreferences>();
 

@@ -12,7 +12,7 @@ import { getBookmarkedNotePaths } from "./notes/bookmarks/bookmarks.service";
 import { Note } from "./notes/notes.types";
 import { ObsidianJSON, Vault } from "./vault.types";
 import matter from "gray-matter";
-import { dbgLoadNotes, dbgExcludeNotes } from "../../utils/debugging/debugger";
+import { dbgLoadNotes, dbgExcludeNotes } from "../logger/debugger";
 import { getSelectedTextContent } from "../../utils/utils";
 
 function getVaultNameFromPath(vaultPath: string): string {
