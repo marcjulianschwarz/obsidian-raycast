@@ -1,6 +1,6 @@
 ## Query Syntax Principles
 
-An input search query is parsed into `field:value` pairs. Special tokens include `"`, `:`, `(`, `)`, `AND`, `OR`, `-` (NOT), and `~` (fuzzy operator). Values without a specified field are assigned to the default field. Single characters like `:`, `-`, and `~` are treated as literals unless specified otherwise.
+An input search query is parsed into `field:value` pairs. Special tokens include `"`, `:`, `(`, `)`, `AND`, `OR`, `-` (NOT), and `~` (fuzzy operator). Values without a specified field are assigned to the default field. Single characters like `:`, `-`, and `~` are treated as literals unless specified otherwise. For comparisons, strings are normalized by trimming leading and trailing whitespace and converting to lowercase, except when using regular expressions (`/.../flags`), where flags are preserved.
 
 ### Rule 1: Token Separation
 
@@ -126,7 +126,7 @@ Regular expressions are supported when enclosed in slashes. Optional flags are a
 
 #### Fuzzy Search and Regular Expressions
 
-A regex ending with a tilde (`~`), for example `/.../~`, is invalid and yields no results.
+A regex ending with a tilde (`~`), for example `/.../~`, is interpreted as a non-match and yields no results, without affecting the rest of the query.
 
 ### Rule 6: Field Existence Queries
 
@@ -134,8 +134,7 @@ A regex ending with a tilde (`~`), for example `/.../~`, is invalid and yields n
 - `key:""` matches all notes with an empty field named `key`.
 - `key:exists` or `key:has` matches all notes containing the field `key`, regardless of whether it is empty or not.
 
-**Hint:** Trailing and leading whitespace in field values is trimmed during comparison.
-Therefore, a field containing only a single whitespace will be treated as empty/undefined.
+**Hint:** Whitespace-only field values are trimmed and treated as undefined.
 
 ### Rule 7: Virtual Fields
 
@@ -155,10 +154,12 @@ locations
 
 Therefore searches like these
 
-- `aliases:`
-- `content:`
+- `aliases:has`
+- `content:exists`
 
-### Rule 8: Special Handling of Bookmarked Field
+return all notes.
+
+### Rule 8: Special Handling of `Bookmarked` Field
 
 Every note has a `bookmarked` field that is always set to either `true` or `false`.
 
