@@ -76,6 +76,38 @@ export function isPathExcluded(pathToCheck: string, excludedPaths: string[], vau
 
 export const DEFAULT_EXCLUDED_PATHS = [".git", ".obsidian", ".trash", ".excalidraw", ".mobile"];
 
+function isPathIncluded(
+  fullPath: string,
+  includedFolders: string[] | null,
+  vaultRoot?: string,
+  forTraversal = false
+): boolean {
+  // If includes are empty → include everything. '/' normalizes to '' and matches all.
+  if (!includedFolders || includedFolders.length === 0) return true;
+  if (!vaultRoot) return true;
+
+  const rel = path.relative(vaultRoot, fullPath);
+  const relNorm = rel.split(path.sep).join(path.sep);
+
+  return includedFolders.some((inc) => {
+    const incNorm = inc.replace(/^\.+/, "").replace(/^\/*/, ""); // trim leading ./ and /
+    if (incNorm === "") return true; // '/' wildcard
+
+    if (forTraversal) {
+      // Allow descending into ancestors of an included path
+      if (relNorm === "") return true; // at root: must traverse to reach includes
+      return (
+        relNorm === incNorm ||
+        relNorm.startsWith(incNorm + path.sep) ||
+        incNorm.startsWith(relNorm + path.sep)
+      );
+    }
+
+    // Strict: only paths that are inside one of the included folders
+    return relNorm === incNorm || relNorm.startsWith(incNorm + path.sep);
+  });
+}
+
 function walkFilesHelper(
   pathToWalk: string,
   excludedFolders: string[],
@@ -86,33 +118,6 @@ function walkFilesHelper(
 ) {
   const files = fs.readdirSync(pathToWalk);
   const { configFileName } = getPreferenceValues();
-
-  const isIncluded = (fullPath: string, forTraversal = false) => {
-    // If includes are empty → include everything. '/' normalizes to '' and matches all.
-    if (!includedFolders || includedFolders.length === 0) return true;
-    if (!vaultRoot) return true;
-
-    const rel = path.relative(vaultRoot, fullPath);
-    const relNorm = rel.split(path.sep).join(path.sep);
-
-    return includedFolders.some((inc) => {
-      const incNorm = inc.replace(/^\.+/, "").replace(/^\/*/, ""); // trim leading ./ and /
-      if (incNorm === "") return true; // '/' wildcard
-
-      if (forTraversal) {
-        // Allow descending into ancestors of an included path
-        if (relNorm === "") return true; // at root: must traverse to reach includes
-        return (
-          relNorm === incNorm ||
-          relNorm.startsWith(incNorm + path.sep) ||
-          incNorm.startsWith(relNorm + path.sep)
-        );
-      }
-
-      // Strict: only paths that are inside one of the included folders
-      return relNorm === incNorm || relNorm.startsWith(incNorm + path.sep);
-    });
-  };
 
   for (const file of files) {
     const fullPath = path.join(pathToWalk, file);
@@ -126,7 +131,7 @@ function walkFilesHelper(
         try { dbgExcludeNotes('[walk] skip dir (excluded):', path.relative(vaultRoot, fullPath)); } catch {}
         continue;
       }
-      if (!isIncluded(fullPath, true)) {
+      if (!isPathIncluded(fullPath, includedFolders, vaultRoot, true)) {
         try { if (vaultRoot) dbgExcludeNotes('[walk] skip dir (not included/ancestor):', path.relative(vaultRoot, fullPath)); } catch {}
         continue;
       } else {
@@ -142,7 +147,7 @@ function walkFilesHelper(
       const notSpecial = file !== ".md" && !file.includes(".excalidraw");
       const notObsidianCfg = !(vaultRoot && isPathExcluded(pathToWalk, [".obsidian", configFileName], vaultRoot));
       const notExcluded = !(vaultRoot && isPathExcluded(pathToWalk, excludedFolders, vaultRoot));
-      const inIncludedTree = isIncluded(pathToWalk, false);
+      const inIncludedTree = isPathIncluded(pathToWalk, includedFolders, vaultRoot, false);
 
       const shouldAdd = allowedByExtension && notSpecial && notObsidianCfg && notExcluded && inIncludedTree;
 
