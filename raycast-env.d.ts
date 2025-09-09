@@ -12,10 +12,10 @@ type ExtensionPreferences = {
   "vaultPath"?: string,
   /** Config filename - Override the vault config filename (default: .obsidian) */
   "configFileName": string,
-  /** Include following folders - Folders to include (vault-relative). Vault root is default. */
-  "includedFolders"?: string,
-  /** Exclude following folders - Folders to exclude (vault-relative1). Exclusions take precedence. */
-  "excludedFolders"?: string,
+  /** Include following files - Files to include (vault-relative). Vault root is default. */
+  "includedPatterns"?: string,
+  /** Exclude following files - Files to exclude (vault-relative1). Exclusions take precedence. */
+  "excludedPatterns"?: string,
   /** Remove content - Hide YAML frontmatter for copying and viewing notes */
   "removeYAML"?: boolean,
   /** undefined - Hide LaTeX (surrounded by $$ or $) for copying and viewing notes */

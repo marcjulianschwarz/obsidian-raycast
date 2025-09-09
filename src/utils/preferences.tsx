@@ -4,8 +4,8 @@ export interface GlobalPreferences {
   removeYAML: boolean;
   removeLinks: boolean;
   removeLatex: boolean;
-  excludedFolders: string;
-  includedFolders: string;
+  excludedPatterns: string;
+  includedPatterns: string;
 }
 
 export interface AppendNotePreferences {

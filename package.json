@@ -39,20 +39,20 @@
       "description": "Override the vault config filename (default: .obsidian)"
     },
     {
-      "name": "includedFolders",
+      "name": "includedPatterns",
       "type": "textfield",
-      "title": "Include following folders",
-      "placeholder": "folder1/folder2, folder3, ...",
+      "title": "Include following files",
+      "placeholder": "**/folder/**, *.pdf, ...",
       "required": false,
-      "description": "Folders to include (vault-relative). Vault root is default."
+      "description": "Files to include (vault-relative). Vault root is default."
     },
     {
-      "name": "excludedFolders",
+      "name": "excludedPatterns",
       "type": "textfield",
-      "placeholder": "folder1/folder2, folder3, ...",
-      "title": "Exclude following folders",
+      "placeholder": "**/folder/**, *.pdf, ...",
+      "title": "Exclude following files",
       "required": false,
-      "description": "Folders to exclude (vault-relative1). Exclusions take precedence."
+      "description": "Files to exclude (vault-relative1). Exclusions take precedence."
     },
     {
       "name": "removeYAML",
@@ -453,7 +453,7 @@
           "name": "defaultKeys",
           "type": "textfield",
           "label": "Default YAML Keys",
-          "title": "Default YAML Keys", 
+          "title": "Default YAML Keys",
           "required": false,
           "description": "Adds YAML keys automatically",
           "placeholder": "e.g, {key1,a b c} {key2,{x,y,z}} {key3,uvw}"
@@ -694,6 +694,7 @@
     "gray-matter": "^4.0.3",
     "lunr": "^2.3.9",
     "luxon": "^3.4.4",
+    "minimatch": "^10.0.3",
     "uuid": "^8.3.2",
     "yaml": "^2.1.1"
   },

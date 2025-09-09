@@ -14,6 +14,7 @@ import { ObsidianJSON, Vault } from "./vault.types";
 import matter from "gray-matter";
 import { dbgLoadNotes, dbgExcludeNotes } from "../logger/debugger";
 import { getSelectedTextContent } from "../../utils/utils";
+import { minimatch } from "minimatch";
 
 function getVaultNameFromPath(vaultPath: string): string {
   const name = vaultPath
@@ -56,62 +57,62 @@ export async function loadObsidianJson(): Promise<Vault[]> {
 }
 
 /**
- * Checks if a path should be excluded based on exclusion rules.
- * NOTE: Excluded paths are treated **only as relative to the vault root**.
+ * Checks if a path should be excluded based on glob-style patterns.
+ * Patterns are matched against the path relative to the vault root.
  */
 export function isPathExcluded(pathToCheck: string, excludedPaths: string[], vaultRoot: string) {
   const absPath = path.normalize(pathToCheck);
   const relPath = path.normalize(path.relative(vaultRoot, absPath));
 
-  return excludedPaths.some((excluded) => {
-    if (!excluded) return false;
+  return excludedPaths.some((pattern) => {
+    if (!pattern) return false;
+    // Strip leading './' or '/' from user-provided pattern
+    const cleanPattern = pattern.replace(/^\/+/, '').replace(/^\.\/*/, '');
+    if (cleanPattern === '') return false;
 
-    // Force relative-to-root semantics: strip any leading './' or '/' from the pattern
-    const pattern = path.normalize(excluded.replace(/^\/+/, '').replace(/^\.\/*/, ''));
-    if (pattern === '') return false;
-
-    return relPath === pattern || relPath.startsWith(pattern + path.sep);
+    return minimatch(relPath, cleanPattern, { dot: true });
   });
 }
 
 export const DEFAULT_EXCLUDED_PATHS = [".git", ".obsidian", ".trash", ".excalidraw", ".mobile"];
 
+/**
+ * Checks if a path should be included based on glob-style patterns.
+ * Patterns are matched against the path **relative** to the vault root.
+ * When `forTraversal` is true (i.e., for directories), we allow partial
+ * matches so ancestors of potential matches are traversed.
+ */
 function isPathIncluded(
   fullPath: string,
-  includedFolders: string[] | null,
+  includedPatterns: string[],
   vaultRoot?: string,
   forTraversal = false
 ): boolean {
-  // If includes are empty → include everything. '/' normalizes to '' and matches all.
-  if (!includedFolders || includedFolders.length === 0) return true;
+  // If includes are empty → include everything.
+  if (!includedPatterns || includedPatterns.length === 0) return true;
   if (!vaultRoot) return true;
 
-  const rel = path.relative(vaultRoot, fullPath);
-  const relNorm = rel.split(path.sep).join(path.sep);
+  const relPath = path.normalize(path.relative(vaultRoot, fullPath));
 
-  return includedFolders.some((inc) => {
-    const incNorm = inc.replace(/^\.+/, "").replace(/^\/*/, ""); // trim leading ./ and /
-    if (incNorm === "") return true; // '/' wildcard
+  return includedPatterns.some((pattern) => {
+    if (!pattern) return false;
 
-    if (forTraversal) {
-      // Allow descending into ancestors of an included path
-      if (relNorm === "") return true; // at root: must traverse to reach includes
-      return (
-        relNorm === incNorm ||
-        relNorm.startsWith(incNorm + path.sep) ||
-        incNorm.startsWith(relNorm + path.sep)
-      );
-    }
+    // Trim leading './' and '/' from user-provided pattern
+    const clean = pattern.replace(/^\/+/, "").replace(/^\.\/*/, "");
+    if (clean === "") return true; // treat '/' (or empty after trim) as wildcard include
 
-    // Strict: only paths that are inside one of the included folders
-    return relNorm === incNorm || relNorm.startsWith(incNorm + path.sep);
+    // For traversal we allow partial matches so ancestors of matches are included
+    const opts: any = { dot: true };
+    if (forTraversal) opts.partial = true;
+
+    return minimatch(relPath, clean, opts);
   });
 }
 
 function walkFilesHelper(
   pathToWalk: string,
-  excludedFolders: string[],
-  includedFolders: string[] | null,
+  excludedPatterns: string[],
+  includedPatterns: string[],
   fileEndings: string[],
   resultFiles: string[],
   vaultRoot?: string
@@ -127,27 +128,27 @@ function walkFilesHelper(
     if (stats.isDirectory()) {
       if (file === configFileName) continue;
       if (DEFAULT_EXCLUDED_PATHS.includes(file)) continue;
-      if (vaultRoot && isPathExcluded(fullPath, excludedFolders, vaultRoot)) {
+      if (vaultRoot && isPathExcluded(fullPath, excludedPatterns, vaultRoot)) {
         try { dbgExcludeNotes('[walk] skip dir (excluded):', path.relative(vaultRoot, fullPath)); } catch {}
         continue;
       }
-      if (!isPathIncluded(fullPath, includedFolders, vaultRoot, true)) {
+      if (!isPathIncluded(fullPath, includedPatterns, vaultRoot, true)) {
         try { if (vaultRoot) dbgExcludeNotes('[walk] skip dir (not included/ancestor):', path.relative(vaultRoot, fullPath)); } catch {}
         continue;
       } else {
         try { if (vaultRoot) dbgExcludeNotes('[walk] traverse dir:', path.relative(vaultRoot, fullPath)); } catch {}
       }
       // Recursively process subdirectory
-      walkFilesHelper(fullPath, excludedFolders, includedFolders, fileEndings, resultFiles, vaultRoot);
+      walkFilesHelper(fullPath, excludedPatterns, includedPatterns, fileEndings, resultFiles, vaultRoot);
     } else {
       const extension = path.extname(file);
       const relFile = vaultRoot ? path.relative(vaultRoot, fullPath) : fullPath;
 
       const allowedByExtension = fileEndings.includes(extension);
       const notSpecial = file !== ".md" && !file.includes(".excalidraw");
-      const notObsidianCfg = !(vaultRoot && isPathExcluded(pathToWalk, [".obsidian", configFileName], vaultRoot));
-      const notExcluded = !(vaultRoot && isPathExcluded(pathToWalk, excludedFolders, vaultRoot));
-      const inIncludedTree = isPathIncluded(pathToWalk, includedFolders, vaultRoot, false);
+      const notObsidianCfg = !(vaultRoot && isPathExcluded(fullPath, [".obsidian", configFileName], vaultRoot));
+      const notExcluded = !(vaultRoot && isPathExcluded(fullPath, excludedPatterns, vaultRoot));
+      const inIncludedTree = isPathIncluded(fullPath, includedPatterns, vaultRoot, false);
 
       const shouldAdd = allowedByExtension && notSpecial && notObsidianCfg && notExcluded && inIncludedTree;
 
@@ -171,37 +172,37 @@ function walkFilesHelper(
   return resultFiles;
 }
 
-/** Gets a list of folders that are marked as excluded inside of the Raycast preferences */
-function getExcludedFolders(): string[] {
+/** Gets a list of patterns that are marked as excluded inside of the Raycast preferences */
+function getExcludedPatterns(): string[] {
   const preferences = getPreferenceValues<SearchNotePreferences>();
-  const foldersString = preferences.excludedFolders;
-  if (!foldersString) return [];
+  const patternsString = preferences.excludedPatterns;
+  if (!patternsString) return [];
 
-  const folders = foldersString.split(",").map((folder) => folder.trim());
-  return folders;
+  const patterns = patternsString.split(",").map((pattern) => pattern.trim());
+  return patterns;
 }
 
-/** Gets a list of folders that are explicitly included inside of the Raycast preferences */
-function getIncludedFolders(): string[] {
+/** Gets a list of patterns that are explicitly included inside of the Raycast preferences */
+function getIncludedPatterns(): string[] {
   const preferences = getPreferenceValues<SearchNotePreferences>();
-  const foldersString = (preferences as any).includedFolders as string | undefined;
-  if (!foldersString || foldersString.trim() === "") return ["/"]; // default to root
-  return foldersString.split(",").map((folder) => folder.trim()).filter((f) => f !== "");
+  const patternsString = (preferences as any).includedPatterns as string | undefined;
+  if (!patternsString || patternsString.trim() === "") return ["/"]; // default to root
+  return patternsString.split(",").map((pattern) => pattern.trim()).filter((f) => f !== "");
 }
 
 /** Returns a list of file paths for all notes. */
 function getFilePaths(vault: Vault): string[] {
-  const excludedFolders = getExcludedFolders();
-  const userIgnoredFolders = getUserIgnoreFilters(vault);
-  excludedFolders.push(...userIgnoredFolders);
+  const excludedPatterns = getExcludedPatterns();
+  const userIgnoredPatterns = getUserIgnoreFilters(vault);
+  excludedPatterns.push(...userIgnoredPatterns);
 
-  const includedFolders = getIncludedFolders();
+  const includedPatterns = getIncludedPatterns();
 
-  const files = walkFilesHelper(vault.path, excludedFolders, includedFolders, [".md"], [], vault.path);
+  const files = walkFilesHelper(vault.path, excludedPatterns, includedPatterns, [".md"], [], vault.path);
   return files;
 }
 
-/** Gets a list of folders that are ignored by the user inside of Obsidian */
+/** Gets a list of patterns that are ignored by the user inside of Obsidian */
 export function getUserIgnoreFilters(vault: Vault): string[] {
   const { configFileName } = getPreferenceValues<GlobalPreferences>();
   const appJSONPath = `${vault.path}/${configFileName || ".obsidian"}/app.json`;
@@ -313,12 +314,12 @@ export function loadNotes(vault: Vault): Note[] {
 
 /** Gets a list of file paths for all media. */
 function getMediaFilePaths(vault: Vault) {
-  const excludedFolders = getExcludedFolders();
-  const includedFolders = getIncludedFolders();
+  const excludedPatterns = getExcludedPatterns();
+  const includedPatterns = getIncludedPatterns();
   const files = walkFilesHelper(
     vault.path,
-    excludedFolders,
-    includedFolders,
+    excludedPatterns,
+    includedPatterns,
     [...AUDIO_FILE_EXTENSIONS, ...VIDEO_FILE_EXTENSIONS, ".jpg", ".png", ".gif", ".mp4", ".pdf"],
     [],
     vault.path
