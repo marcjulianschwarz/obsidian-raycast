@@ -53,6 +53,8 @@ export const DOC_TESTME15 = variant(15, { tags: ['work', 'foo'] });
 export const DOC_TESTME16 = variant(16, { tags: ['workshop'] });
 export const DOC_TESTME17 = variant(17, { tags: ['nested/work'] });
 export const DOC_TESTME18 = variant(18, { title: '', tags: [] });
+export const DOC_TESTME19 = variant(19, { meta: 'value' } as any);
+export const DOC_TESTME20 = variant(20, { meta: '' } as any);
 
 const mkDoc = (base: Doc, overrides: Partial<Doc> = {}): Doc => ({
     ...base,
@@ -85,11 +87,11 @@ describe('evaluate', () => {
         expect(res.hits.map(h => h.id)).toContain(doc.id);
     });
 
-    it('matches a document with empty tags (DOC_TESTME4)', () => {
+    it('does not match empty tags via tags:"" (DOC_TESTME4)', () => {
         const ast = parseQuery('tags:""');
         const doc = mkDoc(DOC_TESTME4);
         const res = evaluateQueryAST(ast, [doc], TEST_OPTS);
-        expect(res.hits.map(h => h.id)).toContain(doc.id);
+        expect(res.hits).toHaveLength(0);
     });
 
     it('regex literal matches (DOC_TESTME5)', () => {
@@ -207,25 +209,59 @@ describe('evaluate', () => {
         expect(hitIds).toContain(docs[1].id);
     });
 
-    it('treats file:has and file:exists via title alias (DOC_TESTME15)', () => {
-        const astHas = parseQuery('file:has');
-        const astExists = parseQuery('file:exists');
-        const doc = mkDoc(DOC_TESTME15);
+    it('file: behaves like file:any for virtual title (DOC_TESTME15, DOC_TESTME18)', () => {
+        const ast = parseQuery('file:');
+        const docs = [mkDoc(DOC_TESTME15), mkDoc(DOC_TESTME18)];
         const opts = { ...TEST_OPTS, defaultFields: ['title'], fieldMap: { file: (d) => d.title } } satisfies EvaluateOptions;
-        const resHas = evaluateQueryAST(astHas, [doc], opts);
-        const resExists = evaluateQueryAST(astExists, [doc], opts);
-        expect(resHas.hits.map(h => h.id)).toContain(doc.id);
-        expect(resExists.hits.map(h => h.id)).toContain(doc.id);
+        const res = evaluateQueryAST(ast, docs, opts);
+        const ids = res.hits.map(h => h.id);
+        expect(ids).toContain(docs[0].id);
+        expect(ids).not.toContain(docs[1].id);
     });
 
-    it('matches file:"" against empty title (DOC_TESTME18)', () => {
+    it('tags: behaves like tags:any for virtual tags (DOC_TESTME3, DOC_TESTME4)', () => {
+        const ast = parseQuery('tags:');
+        const docs = [mkDoc(DOC_TESTME3), mkDoc(DOC_TESTME4)];
+        const res = evaluateQueryAST(ast, docs, { ...TEST_OPTS, defaultFields: ['title'], fieldMap: { tags: (d) => (d as any).tags } });
+        const ids = res.hits.map(h => h.id);
+        expect(ids).toContain(docs[0].id);
+        expect(ids).not.toContain(docs[1].id);
+    });
+
+    it('does not match file:"" for virtual title field (DOC_TESTME18)', () => {
         const ast = parseQuery('file:""');
         const docEmpty = mkDoc(DOC_TESTME18);
         const docFull = mkDoc(DOC_TESTME15);
         const opts = { ...TEST_OPTS, defaultFields: ['title'], fieldMap: { file: (d) => d.title } } satisfies EvaluateOptions;
         const res = evaluateQueryAST(ast, [docEmpty, docFull], opts);
         const ids = res.hits.map(h => h.id);
-        expect(ids).toContain(docEmpty.id);
+        expect(ids).not.toContain(docEmpty.id);
         expect(ids).not.toContain(docFull.id);
     });
+
+    it('meta: matches notes with the field present (DOC_TESTME19, DOC_TESTME20)', () => {
+        const docs = [mkDoc(DOC_TESTME19), mkDoc(DOC_TESTME20), mkDoc(DOC_TESTME1)];
+        const res = evaluateQueryAST(parseQuery('meta:'), docs, TEST_OPTS);
+        const ids = res.hits.map(h => h.id);
+        expect(ids).toContain(docs[0].id);
+        expect(ids).toContain(docs[1].id);
+        expect(ids).not.toContain(docs[2].id);
+    });
+
+    it('meta:"" matches only empty values (DOC_TESTME20)', () => {
+        const docs = [mkDoc(DOC_TESTME19), mkDoc(DOC_TESTME20)];
+        const res = evaluateQueryAST(parseQuery('meta:""'), docs, TEST_OPTS);
+        const ids = res.hits.map(h => h.id);
+        expect(ids).toContain(docs[1].id);
+        expect(ids).not.toContain(docs[0].id);
+    });
+
+    it('meta:any matches only non-empty values (DOC_TESTME19)', () => {
+        const docs = [mkDoc(DOC_TESTME19), mkDoc(DOC_TESTME20)];
+        const res = evaluateQueryAST(parseQuery('meta:any'), docs, TEST_OPTS);
+        const ids = res.hits.map(h => h.id);
+        expect(ids).toContain(docs[0].id);
+        expect(ids).not.toContain(docs[1].id);
+    });
+
 });

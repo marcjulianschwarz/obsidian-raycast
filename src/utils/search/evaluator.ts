@@ -41,6 +41,22 @@ export type SearchResult = {
   diagnostics?: { ast?: string };
 };
 
+const VIRTUAL_FIELDS = new Set([
+  'title',
+  'file',
+  'path',
+  'created',
+  'modified',
+  'tag',
+  'tags',
+  'content',
+  'bookmarked',
+  'aliases',
+  'anyname',
+  'locations',
+  'full',
+]);
+
 // ————————————————————————————————————————————————————————————
 // Utilities
 // ————————————————————————————————————————————————————————————
@@ -63,6 +79,10 @@ function strEqualsCaseFold(a: string, b: string): boolean {
 
 function isEmptyStringValue(v: string): boolean {
   return v.trim().length === 0;
+}
+
+function hasNonEmptyValue(values: string[]): boolean {
+  return values.some(v => !isEmptyStringValue(v));
 }
 
 // Unescape backslash-escaped quotes and backslashes in query literals (phrases only)
@@ -112,40 +132,41 @@ function collectFields(doc: Doc, fields: string[], opts: EvaluateOptions): strin
 // Leaf evaluation
 // ————————————————————————————————————————————————————————————
 
-/**
- * Note on empty fielded terms:
- * Currently, queries like `key:` with an empty value will match all documents that contain the field,
- * because the evaluator uses substring logic (`strIncludes(v, "")`), which always returns true.
- * This can lead to “all notes are included” behavior if the field exists on every note,
- * even though the value is empty. This also aligns with Obsidian’s search plugin.
- */
 type LeafEval = {
   ids: Set<string>;
   scores: Map<string, number>; // only populated for fuzzy
 };
 
-function evalExactLeaf(docs: Doc[], node: TermNode, fields: string[], opts: EvaluateOptions): LeafEval {
-  let values, matched;
+function evalExactLeaf(
+  docs: Doc[],
+  node: TermNode,
+  fields: string[],
+  opts: EvaluateOptions,
+  primaryField?: string,
+  forcePresenceNonEmpty = false
+): LeafEval {
+  let matched;
   const q = node.phrase ? unescapeQueryLiteral(node.value) : node.value;
   const ids = new Set<string>();
   for (const d of docs) {
-    values = collectFields(d, fields, opts);
+    const values = collectFields(d, fields, opts);
+    const targetField = primaryField;
+    const docAny = d as any;
+    const propertyPresent = targetField
+      ? Object.prototype.hasOwnProperty.call(docAny, targetField) || (targetField in docAny)
+      : false;
+    const hasValues = values.length > 0 || propertyPresent;
+    const hasNonEmpty = hasNonEmptyValue(values);
     // Bare key:   ⇒ present AND non-empty
     // key:""      ⇒ handled earlier (empty-only)
     // key:exists  ⇒ presence-only (empty OR non-empty)
     // key:has     ⇒ alias for presence-only
-    if (node.field && !node.phrase && node.value === '') {
-      const docAny = d as any;
-      const propertyPresent = Object.prototype.hasOwnProperty.call(docAny, node.field) || (node.field in docAny);
-      const present = values.length > 0 || propertyPresent;
-      const hasNonEmpty = values.some(v => typeof v === 'string' ? !isEmptyStringValue(v) : true);
-      matched = present && hasNonEmpty;
-    } else if (node.field && !node.phrase) {
-      const val = String(node.value).toLowerCase();
-      if (val === 'exists' || val === 'has') {
-        const docAny = d as any;
-        const propertyPresent = Object.prototype.hasOwnProperty.call(docAny, node.field) || (node.field in docAny);
-        matched = values.length > 0 || propertyPresent;
+    if (targetField && !node.phrase) {
+      const valLower = node.value.toLowerCase();
+      if (node.value === '') {
+        matched = forcePresenceNonEmpty ? hasNonEmpty : hasValues;
+      } else if (valLower === 'any') {
+        matched = hasNonEmpty;
       } else {
         matched = values.some(v => strIncludes(v, node.value));
       }
@@ -271,6 +292,11 @@ export function evaluateQueryAST(ast: ASTNode, docs: Doc[], opts: EvaluateOption
       case 'Term': {
         const fields = node.field ? [node.field] : overrideField ? [overrideField] : defaultFields;
         const effectiveField = (node.field ?? overrideField)?.toLowerCase();
+        const isVirtualField = effectiveField ? VIRTUAL_FIELDS.has(effectiveField) : false;
+
+        if (isVirtualField && node.phrase && node.value === '') {
+          return { ids: new Set(), scores: new Map() };
+        }
 
         // Empty-quote semantics: "" means "empty or undefined" for the field(s)
         if (node.phrase && node.value === '') {
@@ -286,9 +312,7 @@ export function evaluateQueryAST(ast: ASTNode, docs: Doc[], opts: EvaluateOption
               const docAny = d as any;
               const propertyPresent = (node.field in docAny) || Object.prototype.hasOwnProperty.call(docAny, node.field);
               const present = values.length > 0 || propertyPresent;
-              const isEmptyOrUndefined =
-                values.length === 0 ||
-                values.every(v => typeof v === 'string' ? isEmptyStringValue(v) : false);
+              const isEmptyOrUndefined = values.length === 0 || values.every(isEmptyStringValue);
               const matched = present && isEmptyOrUndefined;
               if (matched) {
                 ids.add(d.id);
@@ -313,14 +337,12 @@ export function evaluateQueryAST(ast: ASTNode, docs: Doc[], opts: EvaluateOption
           } else {
             // Unfielded "": match docs where ANY default field is present AND empty
             for (const d of docs) {
-              const docAny = d as any;
               for (const f of fields) {
-                const present = (f in docAny) || Object.prototype.hasOwnProperty.call(docAny, f);
-                const raw = docAny[f];
-                const isEmptyOrUndefined =
-                  raw == null ||
-                  (typeof raw === 'string' && raw.trim().length === 0) ||
-                  (Array.isArray(raw) && raw.length === 0);
+                const valuesForField = getFieldValues(d, f, opts);
+                const docAny = d as any;
+                const propertyPresent = (f in docAny) || Object.prototype.hasOwnProperty.call(docAny, f);
+                const present = valuesForField.length > 0 || propertyPresent;
+                const isEmptyOrUndefined = valuesForField.length === 0 || valuesForField.every(isEmptyStringValue);
                 if (present && isEmptyOrUndefined) { ids.add(d.id); break; }
               }
             }
@@ -364,7 +386,15 @@ export function evaluateQueryAST(ast: ASTNode, docs: Doc[], opts: EvaluateOption
           return { ids, scores: new Map() };
         }
 
-        return evalExactLeaf(docs, node, fields, opts);
+        const primaryField = node.field ?? overrideField;
+        return evalExactLeaf(
+          docs,
+          node,
+          fields,
+          opts,
+          primaryField,
+          Boolean(primaryField && isVirtualField)
+        );
       }
       case 'Not': {
         const inner = evalNode(node.child, overrideField);
