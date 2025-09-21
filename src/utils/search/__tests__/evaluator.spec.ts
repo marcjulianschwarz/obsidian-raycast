@@ -49,6 +49,8 @@ export const DOC_TESTME11 = variant(11, { content: ' x ' });
 export const DOC_TESTME12 = variant(12, { tag: ['foo', 'bar'] } as any);
 export const DOC_TESTME13 = variant(13, { tag: ['baz'] } as any);
 export const DOC_TESTME14 = variant(14, { tags: ['alpha'], title: 'RegexNote.md' });
+export const DOC_TESTME15 = variant(15, { tags: ['work', 'foo'] });
+export const DOC_TESTME16 = variant(16, { tags: ['workshop'] });
 
 const mkDoc = (base: Doc, overrides: Partial<Doc> = {}): Doc => ({
     ...base,
@@ -178,5 +180,19 @@ describe('evaluate', () => {
         const doc = mkDoc(DOC_TESTME12);
         const res = evaluateQueryAST(ast, [doc], { ...TEST_OPTS, defaultFields: ['title'], fieldMap: { tag: (d) => (d as any).tag } });
         expect(res.hits.map(h => h.id)).toContain(doc.id);
+    });
+
+    it('matches tag field exactly (DOC_TESTME15)', () => {
+        const ast = parseQuery('tag:work');
+        const doc = mkDoc(DOC_TESTME15);
+        const res = evaluateQueryAST(ast, [doc], { ...TEST_OPTS, defaultFields: ['title'], fieldMap: { tag: (d) => (d as any).tags } });
+        expect(res.hits.map(h => h.id)).toContain(doc.id);
+    });
+
+    it('does not treat tag field as substring (DOC_TESTME16)', () => {
+        const ast = parseQuery('tag:work');
+        const doc = mkDoc(DOC_TESTME16);
+        const res = evaluateQueryAST(ast, [doc], { ...TEST_OPTS, defaultFields: ['title'], fieldMap: { tag: (d) => (d as any).tags } });
+        expect(res.hits.map(h => h.id)).not.toContain(doc.id);
     });
 });

@@ -57,6 +57,10 @@ function strIncludes(haystack: string, needle: string): boolean {
   return fold(haystack).includes(fold(needle));
 }
 
+function strEqualsCaseFold(a: string, b: string): boolean {
+  return fold(a) === fold(b);
+}
+
 // Unescape backslash-escaped quotes and backslashes in query literals (phrases only)
 function unescapeQueryLiteral(s: string): string {
   // \" -> ", \\ -> \
@@ -264,6 +268,7 @@ export function evaluateQueryAST(ast: ASTNode, docs: Doc[], opts: EvaluateOption
     switch (node.type) {
       case 'Term': {
         const fields = node.field ? [node.field] : overrideField ? [overrideField] : defaultFields;
+        const effectiveField = (node.field ?? overrideField)?.toLowerCase();
 
         // Empty-quote semantics: "" means "empty or undefined" for the field(s)
         if (node.phrase && node.value === '') {
@@ -332,6 +337,19 @@ export function evaluateQueryAST(ast: ASTNode, docs: Doc[], opts: EvaluateOption
         }
 
         // Otherwise: exact (folded includes)
+        const exactMatchField = effectiveField;
+        if (exactMatchField === 'tag' || exactMatchField === 'tags') {
+          const target = node.value.startsWith('#') ? node.value.slice(1) : node.value;
+          const ids = new Set<string>();
+          for (const d of docs) {
+            const tagValues = collectFields(d, fields, opts).map(v => (typeof v === 'string' && v.startsWith('#') ? v.slice(1) : v));
+            if (tagValues.some(v => strEqualsCaseFold(v, target))) {
+              ids.add(d.id);
+            }
+          }
+          return { ids, scores: new Map() };
+        }
+
         return evalExactLeaf(docs, node, fields, opts);
       }
       case 'Not': {
