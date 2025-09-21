@@ -51,6 +51,7 @@ export const DOC_TESTME13 = variant(13, { tag: ['baz'] } as any);
 export const DOC_TESTME14 = variant(14, { tags: ['alpha'], title: 'RegexNote.md' });
 export const DOC_TESTME15 = variant(15, { tags: ['work', 'foo'] });
 export const DOC_TESTME16 = variant(16, { tags: ['workshop'] });
+export const DOC_TESTME17 = variant(17, { tags: ['nested/work'] });
 
 const mkDoc = (base: Doc, overrides: Partial<Doc> = {}): Doc => ({
     ...base,
@@ -194,5 +195,14 @@ describe('evaluate', () => {
         const doc = mkDoc(DOC_TESTME16);
         const res = evaluateQueryAST(ast, [doc], { ...TEST_OPTS, defaultFields: ['title'], fieldMap: { tag: (d) => (d as any).tags } });
         expect(res.hits.map(h => h.id)).not.toContain(doc.id);
+    });
+
+    it('matches tags field partially (DOC_TESTME16, DOC_TESTME17)', () => {
+        const ast = parseQuery('tags:work');
+        const docs = [mkDoc(DOC_TESTME16), mkDoc(DOC_TESTME17)];
+        const res = evaluateQueryAST(ast, docs, { ...TEST_OPTS, defaultFields: ['title'], fieldMap: { tags: (d) => (d as any).tags } });
+        const hitIds = res.hits.map(h => h.id);
+        expect(hitIds).toContain(docs[0].id);
+        expect(hitIds).toContain(docs[1].id);
     });
 });

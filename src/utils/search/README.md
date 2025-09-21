@@ -133,7 +133,8 @@ A regex ending with a tilde (`~`), for example `/.../~`, is interpreted as a non
 - `key:` matches all notes with a non-empty field named `key`.
 - `key:""` matches all notes with an empty field named `key`.
 - `key:exists` or `key:has` matches all notes containing the field `key`, regardless of whether it is empty or not.
-- `tag:#foo` is normalized to `tag:foo` (hash stripped for compatibility with Obsidian) and matches tags exactly. For partial tag matches, use regex such as `tag:/foo/`.
+- `tag:#foo` is normalized to `tag:foo` (hash stripped for compatibility with Obsidian) and matches tags exactly.
+- `tags:foo` performs a partial match across tag values (case-insensitive substring). Use this when you want to match nested tags without writing regex.
 - `field:( ... )` scopes the nested query to that field. For example, `tag:(foo OR bar)` matches notes whose tags include either `foo` or `bar`.
 
 **Hint:** Whitespace-only field values are trimmed and treated as undefined.

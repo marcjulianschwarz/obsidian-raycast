@@ -338,12 +338,24 @@ export function evaluateQueryAST(ast: ASTNode, docs: Doc[], opts: EvaluateOption
 
         // Otherwise: exact (folded includes)
         const exactMatchField = effectiveField;
-        if (exactMatchField === 'tag' || exactMatchField === 'tags') {
+        if (exactMatchField === 'tag') {
           const target = node.value.startsWith('#') ? node.value.slice(1) : node.value;
           const ids = new Set<string>();
           for (const d of docs) {
             const tagValues = collectFields(d, fields, opts).map(v => (typeof v === 'string' && v.startsWith('#') ? v.slice(1) : v));
             if (tagValues.some(v => strEqualsCaseFold(v, target))) {
+              ids.add(d.id);
+            }
+          }
+          return { ids, scores: new Map() };
+        }
+
+        if (exactMatchField === 'tags') {
+          const target = node.value;
+          const ids = new Set<string>();
+          for (const d of docs) {
+            const tagValues = collectFields(d, fields, opts);
+            if (tagValues.some(v => strIncludes(v, target))) {
               ids.add(d.id);
             }
           }
