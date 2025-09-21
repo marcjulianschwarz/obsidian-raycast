@@ -1,5 +1,5 @@
 import Fuse from 'fuse.js';
-import { ASTNode, TermNode } from './parser';
+import { ASTNode, TermNode, FieldGroupNode } from './parser';
 import { dbgEval, j } from '../../api/logger/debugger';
 import { dumpTargetNoteDebug } from '../../api/logger/targetNoteDebugger';
 
@@ -260,10 +260,10 @@ export function evaluateQueryAST(ast: ASTNode, docs: Doc[], opts: EvaluateOption
   const fuseCache = new Map<string, Fuse<any>>();
   const universe = new Set(docs.map(d => d.id));
 
-  function evalNode(node: ASTNode): { ids: Set<string>, scores: Map<string, number> } {
+  function evalNode(node: ASTNode, overrideField?: string): { ids: Set<string>, scores: Map<string, number> } {
     switch (node.type) {
       case 'Term': {
-        const fields = node.field ? [node.field] : defaultFields;
+        const fields = node.field ? [node.field] : overrideField ? [overrideField] : defaultFields;
 
         // Empty-quote semantics: "" means "empty or undefined" for the field(s)
         if (node.phrase && node.value === '') {
@@ -335,14 +335,14 @@ export function evaluateQueryAST(ast: ASTNode, docs: Doc[], opts: EvaluateOption
         return evalExactLeaf(docs, node, fields, opts);
       }
       case 'Not': {
-        const inner = evalNode(node.child);
+        const inner = evalNode(node.child, overrideField);
         return { ids: setDifference(universe, inner.ids), scores: new Map() };
       }
       case 'And': {
         let acc: Set<string> | null = null;
         const scoreAcc = new Map<string, number>();
         for (const c of node.children) {
-          const { ids, scores } = evalNode(c);
+          const { ids, scores } = evalNode(c, overrideField);
           acc = acc ? setIntersection(acc, ids) : ids;
           combineScores(scoreAcc, scores);
           if (acc.size === 0) break;
@@ -353,14 +353,20 @@ export function evaluateQueryAST(ast: ASTNode, docs: Doc[], opts: EvaluateOption
         let acc = new Set<string>();
         const scoreAcc = new Map<string, number>();
         for (const c of node.children) {
-          const { ids, scores } = evalNode(c);
+          const { ids, scores } = evalNode(c, overrideField);
           acc = setUnion(acc, ids);
           combineScores(scoreAcc, scores);
         }
         return { ids: acc, scores: scoreAcc };
       }
       case 'Group': {
-        return node.child ? evalNode(node.child) : { ids: new Set(), scores: new Map() };
+        return node.child ? evalNode(node.child, overrideField) : { ids: new Set(), scores: new Map() };
+      }
+      case 'FieldGroup': {
+        if (!node.child) {
+          return { ids: new Set(), scores: new Map() };
+        }
+        return evalNode(node.child, node.field);
       }
     }
   }

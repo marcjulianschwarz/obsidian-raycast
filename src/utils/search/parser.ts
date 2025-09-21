@@ -74,7 +74,14 @@ export type GroupNode = {
   pos: Position;
 };
 
-export type ASTNode = TermNode | NotNode | AndNode | OrNode | GroupNode;
+export type FieldGroupNode = {
+  type: 'FieldGroup';
+  field: string;
+  child: ASTNode | null;
+  pos: Position;
+};
+
+export type ASTNode = TermNode | NotNode | AndNode | OrNode | GroupNode | FieldGroupNode;
 
 // ————————————————————————————————————————————————————————————
 // Parser (recursive descent)
@@ -129,17 +136,21 @@ class Parser {
     valueTok: Token;
     isBareTildeLiteral: boolean;
     startTok: Token;
+    valueIsGroup: boolean;
+    groupPosStart?: number;
   } {
     let field: string | undefined;
     let valueTok: Token = first;
     let isBareTildeLiteral = false;
+    let valueIsGroup = false;
+    let groupPosStart: number | undefined;
     const startTok = first;
 
     if (first.kind === 'TILDE') {
       // Treat standalone '~' as a literal value token
       isBareTildeLiteral = true;
       valueTok = { kind: 'TERM', value: '~', pos: first.pos } as any;
-      return { field, valueTok, isBareTildeLiteral, startTok };
+      return { field, valueTok, isBareTildeLiteral, startTok, valueIsGroup, groupPosStart };
     }
 
     if (first.kind === 'TERM' && this.peek()?.kind === 'COLON') {
@@ -149,6 +160,12 @@ class Parser {
       const adjacent = this.isAdjacent(colonTok.pos.end, next?.pos.start);
 
       if (adjacent) {
+        if (next?.kind === 'LPAREN') {
+          valueIsGroup = true;
+          valueTok = next;
+          groupPosStart = colonTok.pos.end;
+          return { field, valueTok, isBareTildeLiteral, startTok, valueIsGroup, groupPosStart };
+        }
         const valueStart = colonTok.pos.end;
         let valueEnd: number;
         if (this.input[valueStart] === '"') {
@@ -166,7 +183,7 @@ class Parser {
       }
     }
 
-    return { field, valueTok, isBareTildeLiteral, startTok };
+    return { field, valueTok, isBareTildeLiteral, startTok, valueIsGroup, groupPosStart };
   }
 
   /**
@@ -359,7 +376,7 @@ class Parser {
     } as NotNode;
   }
 
-  private parseTerm(): TermNode {
+  private parseTerm(): TermNode | FieldGroupNode {
     // Consume first token of the term
     const startTok = this.peek();
     if (!startTok) throw new Error('Unexpected end of input while parsing term');
@@ -367,7 +384,20 @@ class Parser {
     if (!first) throw new Error('Unexpected end of input');
 
     // Centralized resolution of field and value
-    const { field, valueTok, isBareTildeLiteral, startTok: startForPos } = this.resolveFieldAndValue(first);
+    const { field, valueTok, isBareTildeLiteral, startTok: startForPos, valueIsGroup, groupPosStart } = this.resolveFieldAndValue(first);
+    if (valueIsGroup) {
+      const lp = this.eat('LPAREN');
+      const inner = this.peek()?.kind === 'RPAREN' ? null : this.parseOr();
+      const rp = this.eat('RPAREN');
+      const startPos = (startForPos as any).pos.start;
+      const endPos = rp ? rp.pos.end : (inner as any)?.pos?.end ?? (lp?.pos.end ?? (groupPosStart ?? startPos));
+      return {
+        type: 'FieldGroup',
+        field: field ?? '',
+        child: inner,
+        pos: { start: startPos, end: endPos },
+      } as FieldGroupNode;
+    }
 
     // Map value token → raw / phrase / regex
     const v = this.coerceValueFromToken(valueTok);
@@ -452,6 +482,8 @@ export function astToString(node: ASTNode): string {
       return `(${node.children.map(astToString).join(' OR ')})`;
     case 'Group':
       return `( ${node.child ? astToString(node.child) : ''} )`;
+    case 'FieldGroup':
+      return `${node.field}:(${node.child ? astToString(node.child) : ''})`;
   }
 }
 

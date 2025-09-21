@@ -2,7 +2,7 @@ import { parseQuery } from '../parser';
 
 function terms(ast: any) {
     if (ast.type === 'And') return ast.children;
-    if (ast.type === 'Term') return [ast];
+    if (ast.type === 'Term' || ast.type === 'FieldGroup') return [ast];
     return [];
 }
 
@@ -59,5 +59,18 @@ describe('parse', () => {
     it('strips leading hash in explicit tag field', () => {
         const t = terms(parseQuery('tag:#work'))[0];
         expect(t).toMatchObject({ field: 'tag', value: 'work', phrase: false });
+    });
+
+    it('parses field-scoped groups', () => {
+        const ast = parseQuery('tag:(foo OR bar)');
+        const node = terms(ast)[0];
+        expect(node.type).toBe('FieldGroup');
+        expect(node.field).toBe('tag');
+        expect(node.child?.type).toBe('Or');
+        const childTerms = (node.child as any).children.filter((c: any) => c.type === 'Term');
+        expect(childTerms.map((c: any) => ({ field: c.field, value: c.value }))).toEqual([
+            { field: undefined, value: 'foo' },
+            { field: undefined, value: 'bar' },
+        ]);
     });
 });

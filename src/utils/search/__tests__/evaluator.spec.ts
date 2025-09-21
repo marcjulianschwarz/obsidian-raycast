@@ -46,6 +46,8 @@ export const DOC_TESTME8 = variant(8, { bookmarked: true });
 export const DOC_TESTME9 = variant(9, { test: '~' });
 export const DOC_TESTME10 = variant(10, { test: 'abc', content: 'x y' });
 export const DOC_TESTME11 = variant(11, { content: ' x ' });
+export const DOC_TESTME12 = variant(12, { tag: ['foo', 'bar'] } as any);
+export const DOC_TESTME13 = variant(13, { tag: ['baz'] } as any);
 
 const mkDoc = (base: Doc, overrides: Partial<Doc> = {}): Doc => ({
     ...base,
@@ -144,5 +146,15 @@ describe('evaluate', () => {
         const doc = mkDoc(DOC_TESTME11);
         const res = evaluateQueryAST(ast, [doc], TEST_OPTS);
         expect(res.hits.map(h => h.id)).toContain(doc.id);
+    });
+
+    it('evaluates field-scoped groups (DOC_TESTME12, DOC_TESTME13)', () => {
+        const ast = parseQuery('tag:(foo OR qux)');
+        const docMatch = mkDoc(DOC_TESTME12);
+        const docMiss = mkDoc(DOC_TESTME13);
+        const res = evaluateQueryAST(ast, [docMatch, docMiss], { ...TEST_OPTS, defaultFields: ['title'], fieldMap: { tag: (d) => (d as any).tag } });
+        const hitIds = res.hits.map(h => h.id);
+        expect(hitIds).toContain(docMatch.id);
+        expect(hitIds).not.toContain(docMiss.id);
     });
 });

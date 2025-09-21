@@ -134,6 +134,7 @@ A regex ending with a tilde (`~`), for example `/.../~`, is interpreted as a non
 - `key:""` matches all notes with an empty field named `key`.
 - `key:exists` or `key:has` matches all notes containing the field `key`, regardless of whether it is empty or not.
 - `tag:#foo` is normalized to `tag:foo` (hash stripped for compatibility with Obsidian).
+- `field:( ... )` scopes the nested query to that field. For example, `tag:(foo OR bar)` matches notes whose tags include either `foo` or `bar`.
 
 **Hint:** Whitespace-only field values are trimmed and treated as undefined.
 
