@@ -48,6 +48,7 @@ export const DOC_TESTME10 = variant(10, { test: 'abc', content: 'x y' });
 export const DOC_TESTME11 = variant(11, { content: ' x ' });
 export const DOC_TESTME12 = variant(12, { tag: ['foo', 'bar'] } as any);
 export const DOC_TESTME13 = variant(13, { tag: ['baz'] } as any);
+export const DOC_TESTME14 = variant(14, { tags: ['alpha'], title: 'RegexNote.md' });
 
 const mkDoc = (base: Doc, overrides: Partial<Doc> = {}): Doc => ({
     ...base,
@@ -156,5 +157,26 @@ describe('evaluate', () => {
         const hitIds = res.hits.map(h => h.id);
         expect(hitIds).toContain(docMatch.id);
         expect(hitIds).not.toContain(docMiss.id);
+    });
+
+    it('matches regex on default fields (DOC_TESTME14)', () => {
+        const ast = parseQuery('/RegexNote/');
+        const doc = mkDoc(DOC_TESTME14);
+        const res = evaluateQueryAST(ast, [doc], { ...TEST_OPTS, defaultFields: ['title'] });
+        expect(res.hits.map(h => h.id)).toContain(doc.id);
+    });
+
+    it('matches regex with flags on explicit field (DOC_TESTME14)', () => {
+        const ast = parseQuery('file:/regexnote/i');
+        const doc = mkDoc(DOC_TESTME14);
+        const res = evaluateQueryAST(ast, [doc], { ...TEST_OPTS, defaultFields: ['title'], fieldMap: { file: (d) => d.title } });
+        expect(res.hits.map(h => h.id)).toContain(doc.id);
+    });
+
+    it('matches regex against tag field (DOC_TESTME12)', () => {
+        const ast = parseQuery('tag:/fo+/');
+        const doc = mkDoc(DOC_TESTME12);
+        const res = evaluateQueryAST(ast, [doc], { ...TEST_OPTS, defaultFields: ['title'], fieldMap: { tag: (d) => (d as any).tag } });
+        expect(res.hits.map(h => h.id)).toContain(doc.id);
     });
 });

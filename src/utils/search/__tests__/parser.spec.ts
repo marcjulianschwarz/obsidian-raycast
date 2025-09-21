@@ -73,4 +73,20 @@ describe('parse', () => {
             { field: undefined, value: 'bar' },
         ]);
     });
+
+    it('parses standalone regex with flags', () => {
+        const t = terms(parseQuery('/foo+/gi'))[0];
+        expect(t).toMatchObject({
+            field: undefined,
+            regex: { pattern: 'foo+', flags: 'gi', raw: '/foo+/gi' },
+        });
+    });
+
+    it('parses fielded regex', () => {
+        const t = terms(parseQuery('tag:/ba(r|z)/'))[0];
+        expect(t).toMatchObject({
+            field: 'tag',
+            regex: { pattern: 'ba(r|z)', flags: '', raw: '/ba(r|z)/' },
+        });
+    });
 });
