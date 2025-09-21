@@ -52,6 +52,7 @@ export const DOC_TESTME14 = variant(14, { tags: ['alpha'], title: 'RegexNote.md'
 export const DOC_TESTME15 = variant(15, { tags: ['work', 'foo'] });
 export const DOC_TESTME16 = variant(16, { tags: ['workshop'] });
 export const DOC_TESTME17 = variant(17, { tags: ['nested/work'] });
+export const DOC_TESTME18 = variant(18, { title: '', tags: [] });
 
 const mkDoc = (base: Doc, overrides: Partial<Doc> = {}): Doc => ({
     ...base,
@@ -204,5 +205,27 @@ describe('evaluate', () => {
         const hitIds = res.hits.map(h => h.id);
         expect(hitIds).toContain(docs[0].id);
         expect(hitIds).toContain(docs[1].id);
+    });
+
+    it('treats file:has and file:exists via title alias (DOC_TESTME15)', () => {
+        const astHas = parseQuery('file:has');
+        const astExists = parseQuery('file:exists');
+        const doc = mkDoc(DOC_TESTME15);
+        const opts = { ...TEST_OPTS, defaultFields: ['title'], fieldMap: { file: (d) => d.title } } satisfies EvaluateOptions;
+        const resHas = evaluateQueryAST(astHas, [doc], opts);
+        const resExists = evaluateQueryAST(astExists, [doc], opts);
+        expect(resHas.hits.map(h => h.id)).toContain(doc.id);
+        expect(resExists.hits.map(h => h.id)).toContain(doc.id);
+    });
+
+    it('matches file:"" against empty title (DOC_TESTME18)', () => {
+        const ast = parseQuery('file:""');
+        const docEmpty = mkDoc(DOC_TESTME18);
+        const docFull = mkDoc(DOC_TESTME15);
+        const opts = { ...TEST_OPTS, defaultFields: ['title'], fieldMap: { file: (d) => d.title } } satisfies EvaluateOptions;
+        const res = evaluateQueryAST(ast, [docEmpty, docFull], opts);
+        const ids = res.hits.map(h => h.id);
+        expect(ids).toContain(docEmpty.id);
+        expect(ids).not.toContain(docFull.id);
     });
 });

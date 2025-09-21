@@ -61,6 +61,10 @@ function strEqualsCaseFold(a: string, b: string): boolean {
   return fold(a) === fold(b);
 }
 
+function isEmptyStringValue(v: string): boolean {
+  return v.trim().length === 0;
+}
+
 // Unescape backslash-escaped quotes and backslashes in query literals (phrases only)
 function unescapeQueryLiteral(s: string): string {
   // \" -> ", \\ -> \
@@ -132,18 +136,16 @@ function evalExactLeaf(docs: Doc[], node: TermNode, fields: string[], opts: Eval
     // key:has     ⇒ alias for presence-only
     if (node.field && !node.phrase && node.value === '') {
       const docAny = d as any;
-      const present = Object.prototype.hasOwnProperty.call(docAny, node.field) || (node.field in docAny);
-      const raw = docAny[node.field];
-      const isEmpty =
-        raw == null ||
-        (typeof raw === 'string' && raw.trim().length === 0) ||
-        (Array.isArray(raw) && raw.length === 0);
-      matched = present && !isEmpty;
+      const propertyPresent = Object.prototype.hasOwnProperty.call(docAny, node.field) || (node.field in docAny);
+      const present = values.length > 0 || propertyPresent;
+      const hasNonEmpty = values.some(v => typeof v === 'string' ? !isEmptyStringValue(v) : true);
+      matched = present && hasNonEmpty;
     } else if (node.field && !node.phrase) {
       const val = String(node.value).toLowerCase();
       if (val === 'exists' || val === 'has') {
         const docAny = d as any;
-        matched = Object.prototype.hasOwnProperty.call(docAny, node.field) || (node.field in docAny);
+        const propertyPresent = Object.prototype.hasOwnProperty.call(docAny, node.field) || (node.field in docAny);
+        matched = values.length > 0 || propertyPresent;
       } else {
         matched = values.some(v => strIncludes(v, node.value));
       }
@@ -280,22 +282,22 @@ export function evaluateQueryAST(ast: ASTNode, docs: Doc[], opts: EvaluateOption
             let matchedCount = 0;
 
             for (const d of docs) {
+              const values = collectFields(d, fields, opts);
               const docAny = d as any;
-              const present = (node.field in docAny) || Object.prototype.hasOwnProperty.call(docAny, node.field);
-              const raw = docAny[node.field];
+              const propertyPresent = (node.field in docAny) || Object.prototype.hasOwnProperty.call(docAny, node.field);
+              const present = values.length > 0 || propertyPresent;
               const isEmptyOrUndefined =
-                raw == null ||
-                (typeof raw === 'string' && raw.trim().length === 0) ||
-                (Array.isArray(raw) && raw.length === 0);
+                values.length === 0 ||
+                values.every(v => typeof v === 'string' ? isEmptyStringValue(v) : false);
               const matched = present && isEmptyOrUndefined;
               if (matched) {
                 ids.add(d.id);
                 matchedCount++;
                 if (sampleMatched.length < SAMPLE_LIMIT) {
-                  sampleMatched.push({ id: d.id, raw });
+                  sampleMatched.push({ id: d.id, raw: values });
                 }
               } else if (sampleMissed.length < SAMPLE_LIMIT) {
-                sampleMissed.push({ id: d.id, raw });
+                sampleMissed.push({ id: d.id, raw: values });
               }
             }
 
