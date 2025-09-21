@@ -22,4 +22,9 @@ describe('validate (structural only)', () => {
         expect(validateQuerySyntax('"abc" AND def')).toEqual({ ok: true });
         expect(validateQuerySyntax('"abc')).toEqual({ ok: true }); // validator doesn’t enforce quotes
     });
+
+    it('treats AND/OR inside field values as literals', () => {
+        expect(validateQuerySyntax('status:AND')).toEqual({ ok: true });
+        expect(validateQuerySyntax('tag:orphan')).toEqual({ ok: true });
+    });
 });

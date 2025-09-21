@@ -33,6 +33,14 @@ function isTermChar(ch: string) {
 
 function startsOperator(input: string, i: number) {
   // AND / OR, case-insensitive, must be bounded by separators
+  const prev = i > 0 ? input[i - 1] : undefined;
+  const isPrevBoundary =
+    prev === undefined ||
+    isWhitespace(prev) ||
+    prev === '(' ||
+    prev === ')';
+  if (!isPrevBoundary) return null;
+
   const rest = input.slice(i);
   if (/^(AND)(?![A-Za-z0-9_])/.test(rest)) return { op: 'AND', len: 3 } as const;
   if (/^(OR)(?![A-Za-z0-9_])/.test(rest)) return { op: 'OR', len: 2 } as const;
