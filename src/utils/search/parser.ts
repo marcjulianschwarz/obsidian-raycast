@@ -25,10 +25,11 @@ function normalizeSpecialField(
 ): { raw: string; phrase: boolean } {
   if (!field || field.toLowerCase() !== 'bookmarked') return { raw, phrase };
 
-  // Empty: bookmarked:  -> true
-  // Empty quoted: bookmarked:"" -> false
   if (raw === '') {
-    return { raw: phrase ? 'false' : 'true', phrase };
+    if (phrase) {
+      return { raw, phrase };
+    }
+    return { raw: 'true', phrase };
   }
 
   // Synonyms for presence/true (unquoted)

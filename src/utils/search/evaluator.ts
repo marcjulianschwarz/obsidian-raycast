@@ -161,8 +161,29 @@ function evalExactLeaf(
     // key:""      ⇒ handled earlier (empty-only)
     // key:exists  ⇒ presence-only (empty OR non-empty)
     // key:has     ⇒ alias for presence-only
-    if (targetField && !node.phrase) {
-      const valLower = node.value.toLowerCase();
+    const valLower = node.value.toLowerCase();
+    if (targetField === 'bookmarked') {
+      const isTrue = values.some(v => strEqualsCaseFold(v, 'true'));
+      if (node.phrase) {
+        if (node.value === '') {
+          matched = false;
+        } else if (valLower === 'true') {
+          matched = isTrue;
+        } else if (valLower === 'false') {
+          matched = values.some(v => strEqualsCaseFold(v, 'false'));
+        } else {
+          matched = values.some(v => strEqualsCaseFold(v, node.value));
+        }
+      } else {
+        if (node.value === '' || valLower === 'any' || valLower === 'true') {
+          matched = isTrue;
+        } else if (valLower === 'false') {
+          matched = false;
+        } else {
+          matched = values.some(v => strEqualsCaseFold(v, node.value));
+        }
+      }
+    } else if (targetField && !node.phrase) {
       if (node.value === '') {
         matched = forcePresenceNonEmpty ? hasNonEmpty : hasValues;
       } else if (valLower === 'any') {
@@ -294,7 +315,7 @@ export function evaluateQueryAST(ast: ASTNode, docs: Doc[], opts: EvaluateOption
         const effectiveField = (node.field ?? overrideField)?.toLowerCase();
         const isVirtualField = effectiveField ? VIRTUAL_FIELDS.has(effectiveField) : false;
 
-        if (isVirtualField && node.phrase && node.value === '') {
+        if (isVirtualField && effectiveField !== 'bookmarked' && node.phrase && node.value === '') {
           return { ids: new Set(), scores: new Map() };
         }
 

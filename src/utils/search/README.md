@@ -4,7 +4,7 @@ An input search query is parsed into `field:value` pairs. Special tokens include
 
 ### Rule 1: Token Separation
 
-The raw query string is split by quotes and whitespace. Quotes (`"`) take precedence over whitespace (` `). An opening quote without a matching closing quote is treated as a literal character. Escaped quotes (`\"`) are parsed as literal quotes.
+The raw query string is split by quotes, whitespace, and certain punctuation characters (`(`, `)`, `:`, `-`, `~`). Quotes (`"`) take precedence over whitespace, so anything inside balanced quotes is preserved as a single unit. An opening quote without a matching closing quote is treated as a literal character. Escaped quotes (`\"`) are parsed as literal quotes.
 
 **Example:**
 
@@ -16,23 +16,20 @@ abc "def"g" "hi jk"
 
 is parsed as:
 
-```
-default: abc
-AND
-default: def
-AND
-default: g
-AND
-default: ' ' (whitespace)
-AND
-default: hi
-AND
-default: jk\"
+```json
+[
+  { "field": "default", "value": "abc" },
+  { "field": "default", "value": "def" },
+  { "field": "default", "value": "g" },
+  { "field": "default", "value": " " },
+  { "field": "default", "value": "hi" },
+  { "field": "default", "value": "jk\"" }
+]
 ```
 
 ### Rule 2: Field-Value Parsing
 
-A field starts after whitespace and ends at the first `:` character. The value includes everything after that `:` up to the next whitespace. If the value starts with a quote (`"`) immediately after the colon, it ends at the next quote or, if no closing quote exists, at the next whitespace.
+A field name is whatever appears before the first `:`. (If the colon appears at the start of the term, or there is no real token before it, the colon is treated literally rather than as a field separator.) The value begins immediately after that colon and runs until the next whitespace. If the value starts with a quote right after the colon, it ends at the matching closing quote (or, if missing, at the next whitespace).
 
 **Examples:**
 
@@ -44,12 +41,12 @@ A field starts after whitespace and ends at the first `:` character. The value i
 
   is parsed as:
 
+  ```json
+  [
+    { "field": "key", "value": ":val1-:~)" },
+    { "field": "default", "value": "abc" }
+  ]
   ```
-  key: :val1-:~)
-  AND
-  default: abc
-  ```
-
 - Query:
 
   ```
@@ -58,22 +55,24 @@ A field starts after whitespace and ends at the first `:` character. The value i
 
   is parsed as:
 
+  ```json
+  [
+    { "field": "key", "value": "abc def" }
+  ]
   ```
-  key: abc def
-  ```
-
 - Query with missing closing quote:
 
   ```
-  key:"abc def
+  key:"abc \"def
   ```
 
   is parsed as:
 
-  ```
-  key: \"abc
-  AND
-  default: def
+  ```json
+  [
+    { "field": "key", "value": "\"abc" },
+    { "field": "default", "value": "\"def" }
+  ]
   ```
 
 ### Rule 3: Tilde (`~`) as Fuzzy Operator
@@ -128,48 +127,48 @@ Regular expressions are supported when enclosed in slashes. Optional flags are a
 
 A regex ending with a tilde (`~`), for example `/.../~`, is interpreted as a non-match and yields no results, without affecting the rest of the query.
 
-### Rule 6: Field Existence Queries
+### Rule 6: Field Presence and Value Queries
 
-- `key:` matches all notes where the field `key` exists (empty or not).
-- `key:""` matches all notes where the field `key` exists and is empty.
-- `key:any` matches all notes where the field `key` exists and contains a non-empty value.
+- For most frontmatter fields (for example `status` or `meta`):
+  - `field:` matches notes where the field exists, regardless of whether the value is empty.
+  - `field:""` matches notes where the field exists and is empty (after trimming whitespace).
+  - `field:any` matches notes where the field exists and contains a non-empty value.
 - `tag:#foo` is normalized to `tag:foo` (hash stripped for compatibility with Obsidian) and matches tags exactly.
 - `tags:foo` performs a partial match across tag values (case-insensitive substring). Use this when you want to match nested tags without writing regex.
 - `field:( ... )` scopes the nested query to that field. For example, `tag:(foo OR bar)` matches notes whose tags include either `foo` or `bar`.
-- Virtual fields (`title`, `file`, `path`, `content`, `tags`, `bookmarked`, `aliases`, `locations`, …) treat `field:` as `field:any`, ignore `field:""`, and respect `field:any`.
+- Virtual fields (see the list below) treat `field:` the same as `field:any`, ignore `field:""`, and honour `field:any`.
+- `bookmarked:` and `bookmarked:any` return bookmarked notes; `bookmarked:""` and `bookmarked:false` yield no matches. `bookmarked:true` is supported for explicit checks.
 
 **Hint:** Whitespace-only field values are trimmed and treated as undefined.
 
 ### Rule 7: Virtual Fields
 
-Some fields are always present in every note (though they may be empty). These include:
+The fields listed below are always present in every note (though their values may be empty).
 
-```
-title
-path
-created
-modified
-tags
-content
-bookmarked
-aliases
-locations
-```
+- `title`
+- `file`
+- `path`
+- `created`
+- `modified`
+- `tag`
+- `tags`
+- `content`
+- `bookmarked`
+- `aliases`
+- `anyname`
+- `locations`
+- `full`
 
-Therefore searches like these
-
-- `aliases:has`
-- `content:exists`
-
-return all notes.
+For these virtual fields, `field:` behaves like `field:any`, and `field:""` yields no results.
 
 ### Rule 8: Special Handling of `Bookmarked` Field
 
-Every note has a `bookmarked` field that is always set to either `true` or `false`.
+Every note includes a `bookmarked` field, set to either `true` or `false`.
 
-- The query `bookmarked:` is interpreted as `bookmarked:true`.
-- The query `bookmarked:""` is interpreted as `bookmarked:false`.
-- The query `bookmarked:exists`or `bookmarked:has` is interpreted as `bookmarked:true`.
+- `bookmarked:` → same as `bookmarked:true`
+- `bookmarked:any` → same as `bookmarked:true`
+- `bookmarked:""` → never matches
+- `bookmarked:false` → never matches (treated as if absent)
 
 ### Validation
 
@@ -184,23 +183,21 @@ In these cases, the query is considered invalid and will not be passed to the pa
   abc) AND (def  
   (abc AND (def  
   ```
-  
 - **DANGLING_OPERATOR** — Occurs when a binary logical operator such as `AND` or `OR` appears without a valid term on one side.
 
   **Examples (invalid):**
 
   ```
-  AND abc      
-  abc OR       
-  abc AND OR def        
+  AND abc  
+  abc OR   
+  abc AND OR def  
   ```
-
 - **UNFINISHED_REGEX** — Occurs when a regular expression starts with `/` but has no closing `/` (with optional flags).
 
   **Examples (invalid):**
 
   ```
-  /abc         
+  /abc   
   key:/tag(.*  
   /"unterminated  
   ```

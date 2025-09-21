@@ -127,6 +127,23 @@ describe('evaluate', () => {
         expect(res.hits.map(h => h.id)).toContain(doc.id);
     });
 
+    it('bookmarked presence operators behave consistently', () => {
+        const bookmarkedDoc = mkDoc(DOC_TESTME8);
+        const unbookmarkedDoc = mkDoc(DOC_TESTME1);
+
+        const queries = ['bookmarked:', 'bookmarked:any', 'bookmarked:true'];
+        for (const q of queries) {
+            const res = evaluateQueryAST(parseQuery(q), [bookmarkedDoc, unbookmarkedDoc], TEST_OPTS);
+            const ids = res.hits.map(h => h.id);
+            expect(ids).toContain(bookmarkedDoc.id);
+            expect(ids).not.toContain(unbookmarkedDoc.id);
+        }
+        const emptyQuoted = evaluateQueryAST(parseQuery('bookmarked:""'), [bookmarkedDoc, unbookmarkedDoc], TEST_OPTS);
+        expect(emptyQuoted.hits).toHaveLength(0);
+        const falseRes = evaluateQueryAST(parseQuery('bookmarked:false'), [bookmarkedDoc, unbookmarkedDoc], TEST_OPTS);
+        expect(falseRes.hits).toHaveLength(0);
+    });
+
     it('match single ~ in field "field" (DOC_TESTME9)', () => {
         const ast = parseQuery('test:~');
         const doc = mkDoc(DOC_TESTME9);

@@ -47,7 +47,7 @@ describe('parse', () => {
         expect(t).toMatchObject({ field: 'bookmarked', value: 'true', phrase: false });
 
         t = terms(parseQuery('bookmarked:""'))[0];
-        expect(t).toMatchObject({ field: 'bookmarked', value: 'false', phrase: true });
+        expect(t).toMatchObject({ field: 'bookmarked', value: '', phrase: true });
 
         t = terms(parseQuery('bookmarked:has'))[0];
         expect(t).toMatchObject({ field: 'bookmarked', value: 'true', phrase: false });
