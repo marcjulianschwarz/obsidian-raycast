@@ -55,4 +55,9 @@ describe('parse', () => {
         t = terms(parseQuery('bookmarked:exists'))[0];
         expect(t).toMatchObject({ field: 'bookmarked', value: 'true', phrase: false });
     });
+
+    it('strips leading hash in explicit tag field', () => {
+        const t = terms(parseQuery('tag:#work'))[0];
+        expect(t).toMatchObject({ field: 'tag', value: 'work', phrase: false });
+    });
 });

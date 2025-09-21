@@ -381,6 +381,10 @@ class Parser {
     const fuzzy = fuzzyRes.fuzzy;
     let endPos = fuzzyRes.endPos;
 
+    if (field && field.toLowerCase() === 'tag' && !phrase && !regexInfo && raw.startsWith('#') && raw.length > 1) {
+      raw = raw.slice(1);
+    }
+
     ({ raw, phrase } = normalizeSpecialField(field, raw, phrase));
 
     // If phrase is empty and fuzzy is true → set no-match regex (preserve fuzzy flag)
