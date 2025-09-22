@@ -165,6 +165,21 @@ The fields listed below are always present in every note (though their values ma
 
 For these virtual fields, `field:` behaves like `field:any`, and `field:""` yields no results.
 
+#### Virtual Fields Not Implemented
+
+Obsidian also recognises additional virtual helpers such as:
+
+- `line`
+- `block`
+- `section`
+- `task`
+- `task-todo`
+- `task-done`
+- `match-case`
+- `ignore-case`
+  
+These modifiers are **not** currently supported in this Raycast search pipeline; queries that reference them fall back to plain text matching and will not mirror Obsidian’s behaviour.
+
 ### Rule 8: Special Handling of `Bookmarked` Field
 
 Every note includes a `bookmarked` field, set to either `true` or `false`.
