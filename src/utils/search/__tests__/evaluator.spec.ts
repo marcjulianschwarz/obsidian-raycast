@@ -55,6 +55,10 @@ export const DOC_TESTME17 = variant(17, { tags: ['nested/work'] });
 export const DOC_TESTME18 = variant(18, { title: '', tags: [] });
 export const DOC_TESTME19 = variant(19, { meta: 'value' } as any);
 export const DOC_TESTME20 = variant(20, { meta: '' } as any);
+export const DOC_TESTME21 = variant(21, { locations: ['Main Raindrop', 'Secondary'] });
+export const DOC_TESTME22 = variant(22, { locations: ['Main Garden', 'Raindrop Alley'] });
+export const DOC_TESTME23 = variant(23, { locations: ['Main Street', 'Gallery'] });
+export const DOC_TESTME24 = variant(24, { locations: ['Garden Walk'] });
 
 const mkDoc = (base: Doc, overrides: Partial<Doc> = {}): Doc => ({
     ...base,
@@ -180,6 +184,31 @@ describe('evaluate', () => {
         const hitIds = res.hits.map(h => h.id);
         expect(hitIds).toContain(docMatch.id);
         expect(hitIds).not.toContain(docMiss.id);
+    });
+
+    it('requires AND clauses inside a field group to match the same entry (DOC_TESTME21, DOC_TESTME22)', () => {
+        const docs = [mkDoc(DOC_TESTME21), mkDoc(DOC_TESTME22)];
+        const res = evaluateQueryAST(parseQuery('locations:(Main Raindrop)'), docs, TEST_OPTS);
+        const ids = res.hits.map(h => h.id);
+        expect(ids).toContain(docs[0].id);
+        expect(ids).not.toContain(docs[1].id);
+    });
+
+    it('evaluates OR inside a field group per entry (DOC_TESTME21, DOC_TESTME24)', () => {
+        const docs = [mkDoc(DOC_TESTME21), mkDoc(DOC_TESTME24)];
+        const res = evaluateQueryAST(parseQuery('locations:(Main OR Raindrop)'), docs, TEST_OPTS);
+        const ids = res.hits.map(h => h.id);
+        expect(ids).toContain(docs[0].id);
+        expect(ids).not.toContain(docs[1].id);
+    });
+
+    it('applies NOT clauses within a field group to the same entry (DOC_TESTME21, DOC_TESTME22, DOC_TESTME23)', () => {
+        const docs = [mkDoc(DOC_TESTME22), mkDoc(DOC_TESTME21), mkDoc(DOC_TESTME23)];
+        const res = evaluateQueryAST(parseQuery('locations:(Main -Raindrop)'), docs, TEST_OPTS);
+        const ids = res.hits.map(h => h.id);
+        expect(ids).toContain(docs[0].id);
+        expect(ids).toContain(docs[2].id);
+        expect(ids).not.toContain(docs[1].id);
     });
 
     it('matches regex on default fields (DOC_TESTME14)', () => {

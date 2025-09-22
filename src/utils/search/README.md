@@ -84,7 +84,7 @@ The tilde (`~`) is treated as a suffix fuzzy operator only in these cases:
 - `"abc def"~`
 - `key:"abc def"~`
 
-**All other uses of `~` are treated as literal characters.**
+Once the parser has flagged that term as fuzzy it stays fuzzy wherever it appears: inside parentheses, under `-`/`AND`/`OR`, or within `field:( ... )` groups. The fuzziness applies to whichever field value is being evaluated at that point.All other uses of `~` are treated as literal characters.
 
 **Examples:**
 
@@ -135,7 +135,11 @@ A regex ending with a tilde (`~`), for example `/.../~`, is interpreted as a non
   - `field:any` matches notes where the field exists and contains a non-empty value.
 - `tag:#foo` is normalized to `tag:foo` (hash stripped for compatibility with Obsidian) and matches tags exactly.
 - `tags:foo` performs a partial match across tag values (case-insensitive substring). Use this when you want to match nested tags without writing regex.
-- `field:( ... )` scopes the nested query to that field. For example, `tag:(foo OR bar)` matches notes whose tags include either `foo` or `bar`.
+- `field:( ... )` scopes the nested query to that field. The clauses inside the parentheses are evaluated against each individual value for the field, and a note matches only if a single value satisfies the entire inner expression. For example:
+  - `tag:(foo OR bar)` matches notes that have at least one tag equal to `foo` or `bar`.
+  - `locations:(Main Raindrop)` matches notes where one `locations` value contains both `Main` and `Raindrop` together (different entries cannot satisfy the terms independently).
+  - `locations:(Main -Raindrop)` keeps entries that include `Main` while excluding those that also contain `Raindrop`.
+    Fuzzy terms (e.g. `term~`) and regexes inside the group operate on that same single value.
 - Virtual fields (see the list below) treat `field:` the same as `field:any`, ignore `field:""`, and honour `field:any`.
 - `bookmarked:` and `bookmarked:any` return bookmarked notes; `bookmarked:""` and `bookmarked:false` yield no matches. `bookmarked:true` is supported for explicit checks.
 

@@ -122,9 +122,24 @@ export function getFieldValues(doc: Doc, field: string, opts: EvaluateOptions): 
   return out;
 }
 
-function collectFields(doc: Doc, fields: string[], opts: EvaluateOptions): string[] {
+function collectFields(
+  doc: Doc,
+  fields: string[],
+  opts: EvaluateOptions,
+  entryOverride?: EntryOverride
+): string[] {
   const out: string[] = [];
-  for (const f of fields) out.push(...getFieldValues(doc, f, opts));
+  for (const f of fields) {
+    if (
+      entryOverride &&
+      doc.id === entryOverride.docId &&
+      f.toLowerCase() === entryOverride.fieldLower
+    ) {
+      out.push(...entryOverride.values);
+    } else {
+      out.push(...getFieldValues(doc, f, opts));
+    }
+  }
   return out;
 }
 
@@ -137,19 +152,27 @@ type LeafEval = {
   scores: Map<string, number>; // only populated for fuzzy
 };
 
+type EntryOverride = {
+  docId: string;
+  field: string;
+  fieldLower: string;
+  values: string[];
+};
+
 function evalExactLeaf(
   docs: Doc[],
   node: TermNode,
   fields: string[],
   opts: EvaluateOptions,
   primaryField?: string,
-  forcePresenceNonEmpty = false
+  forcePresenceNonEmpty = false,
+  entryOverride?: EntryOverride
 ): LeafEval {
   let matched;
   const q = node.phrase ? unescapeQueryLiteral(node.value) : node.value;
   const ids = new Set<string>();
   for (const d of docs) {
-    const values = collectFields(d, fields, opts);
+    const values = collectFields(d, fields, opts, entryOverride);
     const targetField = primaryField;
     const docAny = d as any;
     const propertyPresent = targetField
@@ -204,12 +227,17 @@ function evalExactLeaf(
   return { ids, scores: new Map() };
 }
 
-function buildFuseIndex(docs: Doc[], fields: string[], opts: EvaluateOptions) {
+function buildFuseIndex(
+  docs: Doc[],
+  fields: string[],
+  opts: EvaluateOptions,
+  entryOverride?: EntryOverride
+) {
   // Build a single index over the desired fields, mapping them onto a joined string per doc for simplicity.
   // For better weighting, you could use Fuse keys per field; here we keep it lightweight.
   const items = docs.map(d => ({
     id: d.id,
-    blob: collectFields(d, fields, opts).join(' \n '),
+    blob: collectFields(d, fields, opts, entryOverride).join(' \n '),
   }));
   return new Fuse(items, {
     includeScore: true,
@@ -220,7 +248,13 @@ function buildFuseIndex(docs: Doc[], fields: string[], opts: EvaluateOptions) {
   });
 }
 
-function evalRegexLeaf(docs: Doc[], node: TermNode, fields: string[], opts: EvaluateOptions): LeafEval {
+function evalRegexLeaf(
+  docs: Doc[],
+  node: TermNode,
+  fields: string[],
+  opts: EvaluateOptions,
+  entryOverride?: EntryOverride
+): LeafEval {
   // 1. Log at function start
   dbgEval('evalRegexLeaf, start', { pattern: node.regex?.pattern, flags: node.regex?.flags, docCount: docs.length });
   const ids = new Set<string>();
@@ -240,7 +274,7 @@ function evalRegexLeaf(docs: Doc[], node: TermNode, fields: string[], opts: Eval
   }
 
   for (const d of docs) {
-    const values = collectFields(d, fields, opts);
+    const values = collectFields(d, fields, opts, entryOverride);
     const matched = values.some(v => re.test(v));
     if (matched) {
       dbgEval('evalRegexLeaf, MATCH', { id: d.id, testedValues: values.length });
@@ -252,12 +286,26 @@ function evalRegexLeaf(docs: Doc[], node: TermNode, fields: string[], opts: Eval
   return { ids, scores };
 }
 
-function evalFuzzyLeaf(docs: Doc[], node: TermNode, fields: string[], opts: EvaluateOptions, fuseCache: Map<string, Fuse<any>>): LeafEval {
-  const cacheKey = fields.join('|');
-  let fuse = fuseCache.get(cacheKey);
-  if (!fuse) {
-    fuse = buildFuseIndex(docs, fields, opts);
-    fuseCache.set(cacheKey, fuse);
+function evalFuzzyLeaf(
+  docs: Doc[],
+  node: TermNode,
+  fields: string[],
+  opts: EvaluateOptions,
+  fuseCache: Map<string, Fuse<any>>,
+  entryOverride?: EntryOverride,
+  allowCache = true
+): LeafEval {
+  let fuse: Fuse<any>;
+  if (allowCache && !entryOverride) {
+    const cacheKey = fields.join('|');
+    let cached = fuseCache.get(cacheKey);
+    if (!cached) {
+      cached = buildFuseIndex(docs, fields, opts);
+      fuseCache.set(cacheKey, cached);
+    }
+    fuse = cached;
+  } else {
+    fuse = buildFuseIndex(docs, fields, opts, entryOverride);
   }
   const q = node.phrase ? unescapeQueryLiteral(node.value) : node.value;
   const results = fuse.search(q);
@@ -288,12 +336,6 @@ function setUnion(a: Set<string>, b: Set<string>): Set<string> {
   return out;
 }
 
-function setDifference(a: Set<string>, b: Set<string>): Set<string> {
-  const out = new Set<string>();
-  for (const x of a) if (!b.has(x)) out.add(x);
-  return out;
-}
-
 function combineScores(sum: Map<string, number>, add: Map<string, number>) {
   for (const [id, s] of add) sum.set(id, (sum.get(id) ?? 0) + s);
 }
@@ -306,9 +348,13 @@ export function evaluateQueryAST(ast: ASTNode, docs: Doc[], opts: EvaluateOption
   dbgEval('evaluateQueryAST, AST input:', j(ast));
   const defaultFields = opts.defaultFields;
   const fuseCache = new Map<string, Fuse<any>>();
-  const universe = new Set(docs.map(d => d.id));
-
-  function evalNode(node: ASTNode, overrideField?: string): { ids: Set<string>, scores: Map<string, number> } {
+  function evalNode(
+    node: ASTNode,
+    overrideField?: string,
+    docsForEval: Doc[] = docs,
+    entryOverride?: EntryOverride,
+    allowCache = !entryOverride && docsForEval === docs
+  ): { ids: Set<string>, scores: Map<string, number> } {
     switch (node.type) {
       case 'Term': {
         const fields = node.field ? [node.field] : overrideField ? [overrideField] : defaultFields;
@@ -328,8 +374,8 @@ export function evaluateQueryAST(ast: ASTNode, docs: Doc[], opts: EvaluateOption
             const sampleMissed: any[] = [];
             let matchedCount = 0;
 
-            for (const d of docs) {
-              const values = collectFields(d, fields, opts);
+            for (const d of docsForEval) {
+              const values = collectFields(d, fields, opts, entryOverride);
               const docAny = d as any;
               const propertyPresent = (node.field in docAny) || Object.prototype.hasOwnProperty.call(docAny, node.field);
               const present = values.length > 0 || propertyPresent;
@@ -348,7 +394,7 @@ export function evaluateQueryAST(ast: ASTNode, docs: Doc[], opts: EvaluateOption
 
             dbgEval('empty-quote fielded, summary', {
               field: node.field,
-              totalDocs: docs.length,
+              totalDocs: docsForEval.length,
               matchedCount,
               sampleMatched,
               sampleMissed,
@@ -356,10 +402,11 @@ export function evaluateQueryAST(ast: ASTNode, docs: Doc[], opts: EvaluateOption
 
             return { ids, scores: new Map() };
           } else {
+            const ids = new Set<string>();
             // Unfielded "": match docs where ANY default field is present AND empty
-            for (const d of docs) {
+            for (const d of docsForEval) {
               for (const f of fields) {
-                const valuesForField = getFieldValues(d, f, opts);
+                const valuesForField = collectFields(d, [f], opts, entryOverride);
                 const docAny = d as any;
                 const propertyPresent = (f in docAny) || Object.prototype.hasOwnProperty.call(docAny, f);
                 const present = valuesForField.length > 0 || propertyPresent;
@@ -373,12 +420,12 @@ export function evaluateQueryAST(ast: ASTNode, docs: Doc[], opts: EvaluateOption
 
         // Regex has highest priority
         if (node.regex) {
-          return evalRegexLeaf(docs, node, fields, opts);
+          return evalRegexLeaf(docsForEval, node, fields, opts, entryOverride);
         }
 
         // Fuzzy next (only for terms explicitly suffixed with ~)
         if (node.fuzzy) {
-          return evalFuzzyLeaf(docs, node, fields, opts, fuseCache);
+          return evalFuzzyLeaf(docsForEval, node, fields, opts, fuseCache, entryOverride, allowCache);
         }
 
         // Otherwise: exact (folded includes)
@@ -386,8 +433,8 @@ export function evaluateQueryAST(ast: ASTNode, docs: Doc[], opts: EvaluateOption
         if (exactMatchField === 'tag') {
           const target = node.value.startsWith('#') ? node.value.slice(1) : node.value;
           const ids = new Set<string>();
-          for (const d of docs) {
-            const tagValues = collectFields(d, fields, opts).map(v => (typeof v === 'string' && v.startsWith('#') ? v.slice(1) : v));
+          for (const d of docsForEval) {
+            const tagValues = collectFields(d, fields, opts, entryOverride).map(v => (typeof v === 'string' && v.startsWith('#') ? v.slice(1) : v));
             if (tagValues.some(v => strEqualsCaseFold(v, target))) {
               ids.add(d.id);
             }
@@ -398,8 +445,8 @@ export function evaluateQueryAST(ast: ASTNode, docs: Doc[], opts: EvaluateOption
         if (exactMatchField === 'tags') {
           const target = node.value;
           const ids = new Set<string>();
-          for (const d of docs) {
-            const tagValues = collectFields(d, fields, opts);
+          for (const d of docsForEval) {
+            const tagValues = collectFields(d, fields, opts, entryOverride);
             if (tagValues.some(v => strIncludes(v, target))) {
               ids.add(d.id);
             }
@@ -409,23 +456,28 @@ export function evaluateQueryAST(ast: ASTNode, docs: Doc[], opts: EvaluateOption
 
         const primaryField = node.field ?? overrideField;
         return evalExactLeaf(
-          docs,
+          docsForEval,
           node,
           fields,
           opts,
           primaryField,
-          Boolean(primaryField && isVirtualField)
+          Boolean(primaryField && isVirtualField),
+          entryOverride
         );
       }
       case 'Not': {
-        const inner = evalNode(node.child, overrideField);
-        return { ids: setDifference(universe, inner.ids), scores: new Map() };
+        const inner = evalNode(node.child, overrideField, docsForEval, entryOverride, allowCache);
+        const ids = new Set<string>();
+        for (const d of docsForEval) {
+          if (!inner.ids.has(d.id)) ids.add(d.id);
+        }
+        return { ids, scores: new Map() };
       }
       case 'And': {
         let acc: Set<string> | null = null;
         const scoreAcc = new Map<string, number>();
         for (const c of node.children) {
-          const { ids, scores } = evalNode(c, overrideField);
+          const { ids, scores } = evalNode(c, overrideField, docsForEval, entryOverride, allowCache);
           acc = acc ? setIntersection(acc, ids) : ids;
           combineScores(scoreAcc, scores);
           if (acc.size === 0) break;
@@ -436,25 +488,60 @@ export function evaluateQueryAST(ast: ASTNode, docs: Doc[], opts: EvaluateOption
         let acc = new Set<string>();
         const scoreAcc = new Map<string, number>();
         for (const c of node.children) {
-          const { ids, scores } = evalNode(c, overrideField);
+          const { ids, scores } = evalNode(c, overrideField, docsForEval, entryOverride, allowCache);
           acc = setUnion(acc, ids);
           combineScores(scoreAcc, scores);
         }
         return { ids: acc, scores: scoreAcc };
       }
       case 'Group': {
-        return node.child ? evalNode(node.child, overrideField) : { ids: new Set(), scores: new Map() };
+        return node.child
+          ? evalNode(node.child, overrideField, docsForEval, entryOverride, allowCache)
+          : { ids: new Set(), scores: new Map() };
       }
       case 'FieldGroup': {
         if (!node.child) {
           return { ids: new Set(), scores: new Map() };
         }
-        return evalNode(node.child, node.field);
+        const ids = new Set<string>();
+        const scoreAcc = new Map<string, number>();
+        const fieldName = node.field;
+        const fieldLower = fieldName.toLowerCase();
+
+        for (const d of docsForEval) {
+          const entryValues = getFieldValues(d, fieldName, opts);
+          if (entryValues.length === 0) continue;
+
+          for (const value of entryValues) {
+            const override: EntryOverride = {
+              docId: d.id,
+              field: fieldName,
+              fieldLower,
+              values: [value],
+            };
+
+            const { ids: childIds, scores } = evalNode(
+              node.child,
+              fieldName,
+              [d],
+              override,
+              false
+            );
+
+            if (childIds.has(d.id)) {
+              ids.add(d.id);
+              combineScores(scoreAcc, scores);
+              break;
+            }
+          }
+        }
+
+        return { ids, scores: scoreAcc };
       }
     }
   }
 
-  const { ids, scores } = evalNode(ast);
+  const { ids, scores } = evalNode(ast, undefined, docs, undefined, true);
   // Convert to sorted list: lower score first; exact-only docs have score 0
   const hits: SearchHit[] = Array.from(ids).map(id => ({ id, score: scores.get(id) ?? 0 }));
   hits.sort((a, b) => a.score - b.score || a.id.localeCompare(b.id));
