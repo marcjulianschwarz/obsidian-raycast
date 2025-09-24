@@ -191,7 +191,8 @@ function evalExactLeaf(
         } else if (valLower === 'true') {
           matched = isTrue;
         } else if (valLower === 'false') {
-          matched = values.some(v => strEqualsCaseFold(v, 'false'));
+          // Treat quoted "false" the same as unquoted false: never matches
+          matched = false;
         } else {
           matched = values.some(v => strEqualsCaseFold(v, node.value));
         }
