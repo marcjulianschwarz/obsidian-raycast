@@ -119,15 +119,10 @@ describe('evaluate', () => {
         expect(res.hits.map(h => h.id)).toContain(doc.id);
     });
 
-    it('normalizes bookmarked:has and bookmarked:exists to bookmarked:true (DOC_TESTME8)', () => {
+    it('treats bookmarked:any same as bookmarked:true (DOC_TESTME8)', () => {
         const doc = mkDoc(DOC_TESTME8);
-
-        let ast = parseQuery('bookmarked:has');
-        let res = evaluateQueryAST(ast, [doc], TEST_OPTS);
-        expect(res.hits.map(h => h.id)).toContain(doc.id);
-
-        ast = parseQuery('bookmarked:exists');
-        res = evaluateQueryAST(ast, [doc], TEST_OPTS);
+        const ast = parseQuery('bookmarked:any');
+        const res = evaluateQueryAST(ast, [doc], TEST_OPTS);
         expect(res.hits.map(h => h.id)).toContain(doc.id);
     });
 

@@ -17,27 +17,12 @@ import { tokenize, readRegex, noMatchRegex } from './lexer';
  *  - To use regular expressions in your search term, surround the expression with forward slashes (/).
  */
 
-// Normalize special field semantics (parser-only)
+// Parser is neutral for special fields; evaluation layer handles semantics
 function normalizeSpecialField(
-  field: string | undefined,
+  _field: string | undefined,
   raw: string,
   phrase: boolean
 ): { raw: string; phrase: boolean } {
-  if (!field || field.toLowerCase() !== 'bookmarked') return { raw, phrase };
-
-  if (raw === '') {
-    if (phrase) {
-      return { raw, phrase };
-    }
-    return { raw: 'true', phrase };
-  }
-
-  // Synonyms for presence/true (unquoted)
-  const lc = raw.toLowerCase().trim();
-  if (!phrase && (lc === 'has' || lc === 'exists')) {
-    return { raw: 'true', phrase };
-  }
-
   return { raw, phrase };
 }
 

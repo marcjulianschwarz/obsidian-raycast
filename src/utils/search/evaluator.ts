@@ -180,10 +180,8 @@ function evalExactLeaf(
       : false;
     const hasValues = values.length > 0 || propertyPresent;
     const hasNonEmpty = hasNonEmptyValue(values);
-    // Bare key:   ⇒ present AND non-empty
+    // Bare key:   ⇒ present AND non-empty (handled via forcePresenceNonEmpty for virtual fields)
     // key:""      ⇒ handled earlier (empty-only)
-    // key:exists  ⇒ presence-only (empty OR non-empty)
-    // key:has     ⇒ alias for presence-only
     const valLower = node.value.toLowerCase();
     if (targetField === 'bookmarked') {
       const isTrue = values.some(v => strEqualsCaseFold(v, 'true'));

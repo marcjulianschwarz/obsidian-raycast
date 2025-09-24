@@ -42,18 +42,9 @@ describe('parse', () => {
         expect(ts[1]).toMatchObject({ field: undefined, value: ':test', phrase: false });
     });
 
-    it('normalizes bookmarked field semantics', () => {
-        let t = terms(parseQuery('bookmarked:'))[0];
-        expect(t).toMatchObject({ field: 'bookmarked', value: 'true', phrase: false });
-
-        t = terms(parseQuery('bookmarked:""'))[0];
-        expect(t).toMatchObject({ field: 'bookmarked', value: '', phrase: true });
-
-        t = terms(parseQuery('bookmarked:has'))[0];
-        expect(t).toMatchObject({ field: 'bookmarked', value: 'true', phrase: false });
-
-        t = terms(parseQuery('bookmarked:exists'))[0];
-        expect(t).toMatchObject({ field: 'bookmarked', value: 'true', phrase: false });
+    it('parses bookmarked:any neutrally', () => {
+        const t = terms(parseQuery('bookmarked:any'))[0];
+        expect(t).toMatchObject({ field: 'bookmarked', value: 'any', phrase: false });
     });
 
     it('strips leading hash in explicit tag field', () => {
