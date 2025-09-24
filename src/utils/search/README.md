@@ -27,11 +27,16 @@ is parsed as:
 ]
 ```
 
+**Examples:**
+
 ### Rule 2: Field-Value Parsing
 
-A field name is whatever appears before the first `:`. (If the colon appears at the start of the term, or there is no real token before it, the colon is treated literally rather than as a field separator.) The value begins immediately after that colon and runs until the next whitespace. If the value starts with a quote right after the colon, it ends at the matching closing quote (or, if missing, at the next whitespace).
+- A field name is whatever appears before the first occurrence of `:` in a string. (If the colon appears at the start of the term, it is treated literally rather than as a field separator.)
+- The value begins immediately after that colon and continues until the next whitespace.
+- If the value starts with a quote immediately after the colon, it ends at the matching closing quote (or, if missing, at the next whitespace).
+- If the value starts with a parenthesis, it ends at the matching closing parenthesis (or, if missing, the entire expression is invalid).
 
-**Examples:**
+**Examples**
 
 - Query:
 
@@ -77,21 +82,27 @@ A field name is whatever appears before the first `:`. (If the colon appears at 
 
 ### Rule 3: Tilde (`~`) as Fuzzy Operator
 
-The tilde (`~`) is treated as a suffix fuzzy operator only in these cases:
+The tilde (**~**) acts as a suffix fuzzy marker only when it appears immediately after a term or a quoted phrase (no whitespace).
+
+**Exmaples**:
 
 - `abc~`
 - `key:abc~`
 - `"abc def"~`
 - `key:"abc def"~`
 
-Once the parser has flagged that term as fuzzy it stays fuzzy wherever it appears: inside parentheses, under `-`/`AND`/`OR`, or within `field:( ... )` groups. The fuzziness applies to whichever field value is being evaluated at that point.All other uses of `~` are treated as literal characters.
+**Scope and propagation:** When a term is marked fuzzy, that property stays with the term wherever it appears (inside parentheses, under `-`/`AND`/`OR`, or within `field:(...)` groups). Fuzziness applies to the field value being evaluated at that point.
 
-**Examples:**
+**In all other cases, tilde is treated as a literal character.**
 
 - `~`
 - `key:~`
 - `~key:abc`
-- `regex~`
+
+#### Edge Cases
+
+- Regular expressions are not eligible for fuzziness. A regex followed by `~` (e.g., `/regex/~` or `key:/regex/~`) is treated as a non-match and does not affect the rest of the query.
+- An empty quoted term with `~` (e.g.,`""~`or `key:""~`) also results in a non-match.
 
 ### Rule 4: Hyphen (`-`) as Unary Operator
 
@@ -104,7 +115,7 @@ A hyphen (`-`) is treated as a unary NOT operator only when it starts a string l
 - `-key:abc`
 - `-"abc def"`
 - `-(...)`
-- `-regex`
+- `-/regex/`
 
 **In all other cases, hyphen is treated as a literal character.**
 
@@ -118,14 +129,10 @@ A hyphen (`-`) is treated as a unary NOT operator only when it starts a string l
 
 Regular expressions are supported when enclosed in slashes. Optional flags are allowed.
 
-- `/.../`
-- `key:/.../`
-- `/.../i`
-- `key:/.../i`
+- `/regex/flags`
+- `key:/regex/flags`
 
-#### Fuzzy Search and Regular Expressions
-
-A regex ending with a tilde (`~`), for example `/.../~`, is interpreted as a non-match and yields no results, without affecting the rest of the query.
+If flags include anything outside **gimsyu**, `/regex/flags` yields zero hits.
 
 ### Rule 6: Field Presence and Value Queries
 
@@ -177,7 +184,7 @@ Obsidian also recognises additional virtual helpers such as:
 - `task-done`
 - `match-case`
 - `ignore-case`
-  
+
 These modifiers are **not** currently supported in this Raycast search pipeline; queries that reference them fall back to plain text matching and will not mirror Obsidian’s behaviour.
 
 ### Rule 8: Special Handling of `Bookmarked` Field
