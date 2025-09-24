@@ -20,10 +20,9 @@ export function searchFunction(notes: Note[], searchQuery: string): Note[] {
     return notes; // graceful fallback on malformed query
   }
 
-  // TEMP DEBUG: Find and return a specific note for debugging
-  // const foundNote = notes.find((n) => n.title === "<note_title>");
-  // Logger.debug(true, "[search.tsx] Found specific note", foundNote);
-  // return foundNote ? [foundNote] : [];
+  // TEMP DEBUG: Find and log a specific note for debugging (scoped via dbgSearch)
+  const foundNote = notes.find((n) => n.title === "<note_title>");
+  dbgSearch("Found specific note", foundNote ? j(foundNote, 0) : "NOT FOUND");
 
   // 2) Build docs: expose all note fields (custom props included) + stable id
   const docs = notes.map((n) => ({
@@ -31,16 +30,16 @@ export function searchFunction(notes: Note[], searchQuery: string): Note[] {
     ...n,         // exposes custom/frontmatter keys (e.g., index, status, locations, etc.)
   }));
 
-  // TEMP DEBUG: inspect the specific note before evaluation
-  // const TARGET = "<note_title>";
-  // const sample = docs.find((d) => String(d.id).includes(TARGET));
-  // dbgSearch("[search.tsx] target doc sample", sample ? {
-  //   id: sample.id,
-  //   title: sample.title,
-  //   path: sample.path,
-  //   tags: sample.tags,
-  //   aliases: sample.aliases,
-  // } : "NOT FOUND in docs");
+  // TEMP DEBUG: Inspect a specific note before evaluation (scoped via dbgSearch)
+  const TARGET = "<note_title>";
+  const sample = docs.find((d) => String(d.id).includes(TARGET));
+  dbgSearch("Target doc sample", sample ? {
+    id: sample?.id,
+    title: (sample as any)?.title,
+    path: (sample as any)?.path,
+    tags: (sample as any)?.tags,
+    aliases: (sample as any)?.aliases,
+  } : "NOT FOUND in docs");
 
   // 3) Evaluate (Fuse only kicks in for terms with ~; content is only used when the term targets it)
   //console.log("DOCS", JSON.stringify(docs.slice(0, 5), null, 2));

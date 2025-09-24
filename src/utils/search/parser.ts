@@ -312,20 +312,7 @@ class Parser {
       const end = endTok ? endTok.pos.end : (inner as any)?.pos.end ?? start + 1;
       return { type: 'Group', child: inner!, pos: { start, end } };
     }
-    // if (t.kind === 'TILDE') {
-    //   // Standalone '~' → treat as no-match (power-user strict)
-    //   const start = t.pos.start;
-    //   this.eat('TILDE');
-    //   return {
-    //     type: 'Term',
-    //     field: undefined,
-    //     value: '',
-    //     phrase: false,
-    //     fuzzy: false,
-    //     regex: noMatchRegex(),
-    //     pos: { start, end: t.pos.end },
-    //   };
-    // }
+    // Standalone '~' is treated as a literal elsewhere; no special handling here
     return this.parseTerm();
   }
 
