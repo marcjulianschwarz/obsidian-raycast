@@ -13,8 +13,12 @@ import { Note } from "./notes/notes.types";
 import { ObsidianJSON, Vault } from "./vault.types";
 import matter from "gray-matter";
 import { dbgLoadNotes, dbgExcludeNotes } from "../logger/debugger";
-import { getSelectedTextContent } from "../../utils/utils";
 import { minimatch } from "minimatch";
+
+// Ensure cross-platform glob matching by converting paths to POSIX style
+function toPosix(p: string): string {
+  return p.replace(/\\/g, "/");
+}
 
 function getVaultNameFromPath(vaultPath: string): string {
   const name = vaultPath
@@ -62,7 +66,7 @@ export async function loadObsidianJson(): Promise<Vault[]> {
  */
 export function isPathExcluded(pathToCheck: string, excludedPaths: string[], vaultRoot: string) {
   const absPath = path.normalize(pathToCheck);
-  const relPath = path.normalize(path.relative(vaultRoot, absPath));
+  const relPath = toPosix(path.relative(vaultRoot, absPath));
 
   return excludedPaths.some((pattern) => {
     if (!pattern) return false;
@@ -92,7 +96,7 @@ function isPathIncluded(
   if (!includedPatterns || includedPatterns.length === 0) return true;
   if (!vaultRoot) return true;
 
-  const relPath = path.normalize(path.relative(vaultRoot, fullPath));
+  const relPath = toPosix(path.relative(vaultRoot, fullPath));
 
   return includedPatterns.some((pattern) => {
     if (!pattern) return false;
@@ -115,10 +119,10 @@ function walkFilesHelper(
   includedPatterns: string[],
   fileEndings: string[],
   resultFiles: string[],
-  vaultRoot?: string
+  vaultRoot?: string,
+  configFileName?: string
 ) {
   const files = fs.readdirSync(pathToWalk);
-  const { configFileName } = getPreferenceValues();
 
   for (const file of files) {
     const fullPath = path.join(pathToWalk, file);
@@ -129,17 +133,17 @@ function walkFilesHelper(
       if (file === configFileName) continue;
       if (DEFAULT_EXCLUDED_PATHS.includes(file)) continue;
       if (vaultRoot && isPathExcluded(fullPath, excludedPatterns, vaultRoot)) {
-        try { dbgExcludeNotes('[walk] skip dir (excluded):', path.relative(vaultRoot, fullPath)); } catch {}
+        try { dbgExcludeNotes('walk - skip dir (excluded):', path.relative(vaultRoot, fullPath)); } catch {}
         continue;
       }
       if (!isPathIncluded(fullPath, includedPatterns, vaultRoot, true)) {
-        try { if (vaultRoot) dbgExcludeNotes('[walk] skip dir (not included/ancestor):', path.relative(vaultRoot, fullPath)); } catch {}
+        try { if (vaultRoot) dbgExcludeNotes('walk - skip dir (not included/ancestor):', path.relative(vaultRoot, fullPath)); } catch {}
         continue;
       } else {
-        try { if (vaultRoot) dbgExcludeNotes('[walk] traverse dir:', path.relative(vaultRoot, fullPath)); } catch {}
+        try { if (vaultRoot) dbgExcludeNotes('walk - traverse dir:', path.relative(vaultRoot, fullPath)); } catch {}
       }
       // Recursively process subdirectory
-      walkFilesHelper(fullPath, excludedPatterns, includedPatterns, fileEndings, resultFiles, vaultRoot);
+      walkFilesHelper(fullPath, excludedPatterns, includedPatterns, fileEndings, resultFiles, vaultRoot, configFileName);
     } else {
       const extension = path.extname(file);
       const relFile = vaultRoot ? path.relative(vaultRoot, fullPath) : fullPath;
@@ -153,11 +157,11 @@ function walkFilesHelper(
       const shouldAdd = allowedByExtension && notSpecial && notObsidianCfg && notExcluded && inIncludedTree;
 
       if (shouldAdd) {
-        try { if (vaultRoot) dbgExcludeNotes('[walk] add file:', relFile); } catch {}
+        try { if (vaultRoot) dbgExcludeNotes('walk - add file:', relFile); } catch {}
         resultFiles.push(fullPath);
       } else {
         try {
-          if (vaultRoot) dbgExcludeNotes('[walk] skip file:', relFile, {
+          if (vaultRoot) dbgExcludeNotes('walk - skip file:', relFile, {
             allowedByExtension,
             notSpecial,
             notObsidianCfg,
@@ -198,7 +202,17 @@ function getFilePaths(vault: Vault): string[] {
 
   const includedPatterns = getIncludedPatterns();
 
-  const files = walkFilesHelper(vault.path, excludedPatterns, includedPatterns, [".md"], [], vault.path);
+  const { configFileName } = getPreferenceValues<GlobalPreferences>();
+
+  const files = walkFilesHelper(
+    vault.path,
+    excludedPatterns,
+    includedPatterns,
+    [".md"],
+    [],
+    vault.path,
+    configFileName
+  );
   return files;
 }
 
@@ -255,12 +269,14 @@ export function loadNotes(vault: Vault): Note[] {
   const notes: Note[] = [];
   const filePaths = getFilePaths(vault);
   const bookmarkedFilePaths = getBookmarkedNotePaths(vault);
+  const bookmarkedSet = new Set(bookmarkedFilePaths);
 
   for (const filePath of filePaths) {
 
     const fileName = path.basename(filePath);
     const title = fileName.replace(/\.md$/, "") || "default";
     const content = getNoteFileContent(filePath, false);
+    const stat = fs.statSync(filePath);
     const relativePath = path.relative(vault.path, filePath);
 
     const { data } = matter(content); // Parses YAML frontmatter
@@ -280,7 +296,7 @@ export function loadNotes(vault: Vault): Note[] {
 
     const tagsFromParser = tagsForString(content);
 
-    dbgLoadNotes("[loadNotes] tag debug", {
+    dbgLoadNotes("loadNotes - tag debug", {
       title,
       tagsFromYamlViaMatter,
       tagsFromParser,
@@ -293,11 +309,11 @@ export function loadNotes(vault: Vault): Note[] {
       // IMPORTANT: The following properties override any YAML frontmatter properties
       title: title,
       path: filePath,
-      created: fs.statSync(filePath).birthtime,
-      modified: fs.statSync(filePath).mtime,
-      tags: tagsForString(content),
+      created: stat.birthtime,
+      modified: stat.mtime,
+      tags: tagsFromParser,
       content: content,
-      bookmarked: bookmarkedFilePaths.includes(relativePath),
+      bookmarked: bookmarkedSet.has(relativePath),
       aliases: aliases,
       locations: locations,
     };
@@ -315,14 +331,20 @@ export function loadNotes(vault: Vault): Note[] {
 /** Gets a list of file paths for all media. */
 function getMediaFilePaths(vault: Vault) {
   const excludedPatterns = getExcludedPatterns();
+  const userIgnoredPatterns = getUserIgnoreFilters(vault);
+  excludedPatterns.push(...userIgnoredPatterns);
   const includedPatterns = getIncludedPatterns();
+
+  const { configFileName } = getPreferenceValues<GlobalPreferences>();
+
   const files = walkFilesHelper(
     vault.path,
     excludedPatterns,
     includedPatterns,
     [...AUDIO_FILE_EXTENSIONS, ...VIDEO_FILE_EXTENSIONS, ".jpg", ".png", ".gif", ".mp4", ".pdf"],
     [],
-    vault.path
+    vault.path,
+    configFileName
   );
   return files;
 }
