@@ -21,16 +21,13 @@ export function CreateNoteForm(props: { vault: Vault; showTitle: boolean }) {
     : [];
   const showJDex = prefEnableJDex || false;
 
-  function parseFolderActions() {
-    if (folderActions) {
-      const folders = folderActions
-        .split(",")
-        .filter((folder) => !!folder)
-        .map((folder: string) => folder.trim());
-      return folders;
-    }
-    return [];
-  }
+  const folderActionTargets = useMemo(() => {
+    if (!folderActions) return [] as string[];
+    return folderActions
+      .split(",")
+      .map((folder) => folder.trim())
+      .filter((folder) => folder.length > 0);
+  }, [folderActions]);
 
   const [copyToClipboard, setCopyToClipboard] = useState(false);
   const [allNotes] = useNotes(vault);
@@ -41,7 +38,7 @@ export function CreateNoteForm(props: { vault: Vault; showTitle: boolean }) {
   const availableLocations = useMemo(() => {
     if (!allNotes) return [];
     const locations = Array.from(new Set(allNotes.flatMap((note) => note.locations ?? [])));
-    return locations
+    return locations;
   }, [allNotes]);
 
   const availableFolderPaths = useMemo(() => {
@@ -56,7 +53,7 @@ export function CreateNoteForm(props: { vault: Vault; showTitle: boolean }) {
     }
 
     params.availableTags = availableTags;
-    params.allNotes = allNotes;
+    params.allNotes = allNotes ?? [];
 
     const saved = await createNote(vault, params);
     if (saved) {
@@ -82,7 +79,7 @@ export function CreateNoteForm(props: { vault: Vault; showTitle: boolean }) {
       actions={
         <ActionPanel>
           <Action.SubmitForm title="Create" onSubmit={createNewNote} />
-          {parseFolderActions()?.map((folder, index) => (
+          {folderActionTargets.map((folder, index) => (
             <Action.SubmitForm
               title={"Create in " + folder}
               onSubmit={(props: CreateNoteParams) => createNewNote(props, folder)}
@@ -128,7 +125,7 @@ export function CreateNoteForm(props: { vault: Vault; showTitle: boolean }) {
       )}
       {availableTags.length > 0 && (
         <Form.TagPicker id="tags" title="Tags" defaultValue={defaultTagsArray}>
-          {availableTags?.map((tag) => (
+          {availableTags.map((tag) => (
             <Form.TagPicker.Item value={tag} title={tag} key={tag} />
           ))}
         </Form.TagPicker>
