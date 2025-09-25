@@ -1,5 +1,5 @@
 import { List, ActionPanel } from "@raycast/api";
-import React from "react";
+import React, { useEffect, useMemo } from "react";
 import fs from "fs";
 
 import { readingTime, wordCount, trimPathToMaxLength, createdDateFor, fileSizeFor } from "../../utils/utils";
@@ -21,9 +21,13 @@ export function NoteListItem(props: {
 
   const noteHasBeenMoved = !fs.existsSync(note.path);
 
-  if (noteHasBeenMoved) {
-    renewCache(vault);
-  }
+  useEffect(() => {
+    if (noteHasBeenMoved) {
+      renewCache(vault);
+    }
+  }, [noteHasBeenMoved, vault]);
+
+  const filteredContent = useMemo(() => filterContent(note.content), [note.content]);
 
   function TagList() {
     if (note.tags.length > 0) {
@@ -62,15 +66,15 @@ export function NoteListItem(props: {
       ]}
       detail={
         <List.Item.Detail
-          markdown={filterContent(note.content)}
+          markdown={filteredContent}
           metadata={
             pref.showMetadata ? (
               <List.Item.Detail.Metadata>
-                <List.Item.Detail.Metadata.Label title="Character Count" text={note.content.length.toString()} />
-                <List.Item.Detail.Metadata.Label title="Word Count" text={wordCount(note.content).toString()} />
+                <List.Item.Detail.Metadata.Label title="Character Count" text={filteredContent.length.toString()} />
+                <List.Item.Detail.Metadata.Label title="Word Count" text={wordCount(filteredContent).toString()} />
                 <List.Item.Detail.Metadata.Label
                   title="Reading Time"
-                  text={readingTime(note.content).toString() + " min read"}
+                  text={readingTime(filteredContent).toString() + " min read"}
                 />
                 <TagList />
                 <Link />

@@ -14,9 +14,11 @@ export function NoteList(props: NoteListProps) {
   const { notes, vault, title, searchArguments, action } = props;
 
   const pref = getPreferenceValues<SearchNotePreferences>();
-  const [sortOrder, setSortOrder] = useState<SortOrder>(
-    (pref.prefSortOrder as SortOrder) || "az"
-  );
+  const validSortOrders: SortOrder[] = ["az", "za", "mn", "mo", "cn", "co"];
+  const initialSortOrder: SortOrder = validSortOrders.includes(pref.prefSortOrder as SortOrder)
+    ? (pref.prefSortOrder as SortOrder)
+    : "az";
+  const [sortOrder, setSortOrder] = useState<SortOrder>(initialSortOrder);
   
   const [searchText, setSearchText] = useState(
     searchArguments?.searchArgument || searchArguments?.initialSearchText || ""
@@ -29,6 +31,7 @@ export function NoteList(props: NoteListProps) {
   const list = useMemo(() => searchFunction(prefilteredNotes, searchText), [prefilteredNotes, searchText]);
   const sorted = useMemo(() => sortNotesByOrder(list, sortOrder), [list, sortOrder]);
   const _notes = sorted.slice(0, MAX_RENDERED_NOTES);
+  const trimmedSearchText = searchText.trim();
 
   const searchAccessory = useMemo(
     () => <NoteListDropdown sortOrder={sortOrder} setSortOrder={setSortOrder} />,
@@ -36,7 +39,11 @@ export function NoteList(props: NoteListProps) {
   );
 
   function onNoteCreation() {
-    const target = getObsidianTarget({ type: ObsidianTargetType.NewNote, vault: vault, name: searchText });
+    const name = trimmedSearchText || pref.prefNoteName;
+    if (!name) {
+      return;
+    }
+    const target = getObsidianTarget({ type: ObsidianTargetType.NewNote, vault: vault, name });
     open(target);
     //TODO: maybe dispatch here. But what if the user cancels the creation in Obsidian or renames it there? Then the cache would be out of sync.
   }
@@ -56,9 +63,9 @@ export function NoteList(props: NoteListProps) {
       searchBarPlaceholder="Type search query..."
       searchBarAccessory={searchAccessory}
     >
-      {_notes.length === 0 ? (
+      {_notes.length === 0 && trimmedSearchText ? (
         <List.Item
-          title={`🗒️ Create Note "${searchText}"`}
+          title={`🗒️ Create Note "${trimmedSearchText}"`}
           actions={
             <ActionPanel>
               <Action title="Create Note" onAction={onNoteCreation} />

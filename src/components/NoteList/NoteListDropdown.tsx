@@ -1,6 +1,5 @@
 import { List, Icon } from "@raycast/api";
-
-type SortOrder = "az" | "za" | "mn" | "mo" | "cn" | "co";
+import { SortOrder } from "../../utils/noteSorter";
 
 export function NoteListDropdown(props: {
   sortOrder: SortOrder;
