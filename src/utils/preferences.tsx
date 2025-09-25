@@ -42,6 +42,7 @@ export interface SearchNotePreferences extends GlobalPreferences, AppendNotePref
   yamlProperties: string;
   initialSearchText: string;
   prefilterSearchQuery: string;
+  prefNoteName: string;
 }
 
 export interface RandomNotePreferences extends GlobalPreferences, AppendNotePreferences {}
