@@ -120,7 +120,7 @@ function walkFilesHelper(
   fileEndings: string[],
   resultFiles: string[],
   vaultRoot?: string,
-  configFileName?: string
+  configFileName: string = ".obsidian"
 ) {
   const files = fs.readdirSync(pathToWalk);
 
@@ -202,7 +202,7 @@ function getFilePaths(vault: Vault): string[] {
 
   const includedPatterns = getIncludedPatterns();
 
-  const { configFileName } = getPreferenceValues<GlobalPreferences>();
+  const configFileName = getPreferenceValues<GlobalPreferences>().configFileName ?? ".obsidian";
 
   const files = walkFilesHelper(
     vault.path,
@@ -218,8 +218,8 @@ function getFilePaths(vault: Vault): string[] {
 
 /** Gets a list of patterns that are ignored by the user inside of Obsidian */
 export function getUserIgnoreFilters(vault: Vault): string[] {
-  const { configFileName } = getPreferenceValues<GlobalPreferences>();
-  const appJSONPath = `${vault.path}/${configFileName || ".obsidian"}/app.json`;
+  const configFileName = getPreferenceValues<GlobalPreferences>().configFileName ?? ".obsidian";
+  const appJSONPath = `${vault.path}/${configFileName}/app.json`;
   if (!fs.existsSync(appJSONPath)) {
     return [];
   } else {
@@ -335,7 +335,7 @@ function getMediaFilePaths(vault: Vault) {
   excludedPatterns.push(...userIgnoredPatterns);
   const includedPatterns = getIncludedPatterns();
 
-  const { configFileName } = getPreferenceValues<GlobalPreferences>();
+  const configFileName = getPreferenceValues<GlobalPreferences>().configFileName ?? ".obsidian";
 
   const files = walkFilesHelper(
     vault.path,
