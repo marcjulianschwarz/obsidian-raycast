@@ -6,7 +6,7 @@ import { useNotes, useObsidianVaults } from "./utils/hooks";
 import { getObsidianTarget, ObsidianTargetType } from "./utils/utils";
 
 function BookmarkedNotesList(props: { vault: Vault }) {
-  const [notes] = useNotes(props.vault, true);
+  const [notes] = useNotes(props.vault);
   return (
     <MenuBarExtra.Submenu title={props.vault.name} key={props.vault.path + "Bookmarked Notes"}>
       {notes.map((note) => (
