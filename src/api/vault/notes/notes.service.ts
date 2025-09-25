@@ -74,17 +74,21 @@ function incrementJDex(pref: NoteFormPreferences, params: CreateNoteParams): { s
 
 function addMatchingJDexCategoryTag(pref: NoteFormPreferences, params: CreateNoteParams) {
   const availableTags = params.availableTags;
-  const category = params.fullName.match(/^\d{2}/);
+  const categoryMatch = params.fullName.match(/^\d{2}/);
+  const category = categoryMatch?.[0];
   dbgNS("Category:", category); // Debug
 
-  // Try to find a matching tag
-  const matchingTag = availableTags?.find(
-    tag => tag.startsWith(pref.jdexRootTag) && tag.includes(`/${category}_`)
+  if (!category || !Array.isArray(availableTags)) {
+    return;
+  }
+
+  const matchingTag = availableTags.find(
+    (tag) => tag.startsWith(pref.jdexRootTag) && tag.includes(`/${category}_`)
   );
 
   dbgNS("Matching tag:", matchingTag);
 
-  if (matchingTag) {
+  if (matchingTag && !params.tags.includes(matchingTag)) {
     dbgNS("→ Found matching tag:", matchingTag);
     dbgNS("→ Before pushing:", [...params.tags]);
     params.tags.unshift(matchingTag);
@@ -114,6 +118,19 @@ export async function createNote(vault: Vault, params: CreateNoteParams) {
   }
   params.fullName = params.jdex ? `${params.jdex}_${params.name}` : params.name;
 
+  if (!params.tags) {
+    params.tags = [];
+  }
+  if (!params.locations) {
+    params.locations = [];
+  }
+  if (!params.availableTags) {
+    params.availableTags = [];
+  }
+  if (!params.allNotes) {
+    params.allNotes = [];
+  }
+
   // === JDex Handling Start ===
   // Handle special case: exact match with "AC" (e.g., "12")
   const { stop, newName } = incrementJDex(pref, params);
@@ -125,7 +142,7 @@ export async function createNote(vault: Vault, params: CreateNoteParams) {
 
   dbgNS(params.content);
 
-  params.content = createObsidianProperties(params, pref) + (params.content ?? "");
+  params.content = createObsidianProperties(params) + (params.content ?? "");
   params.content = await applyTemplates(params.content);
   params.fullName = await applyTemplates(params.fullName);
 
@@ -143,8 +160,7 @@ export async function createNote(vault: Vault, params: CreateNoteParams) {
 }
 
 /** Gets the Obsidian Properties YAML frontmatter for a list of tags */
-/** Gets the Obsidian Properties YAML frontmatter for a list of tags */
-function createObsidianProperties(params: CreateNoteParams, pref: NoteFormPreferences): string {
+function createObsidianProperties(params: CreateNoteParams): string {
   const entries: [string, string[]][] = [
     ["tags", params.tags],
     ["locations", params.locations],
