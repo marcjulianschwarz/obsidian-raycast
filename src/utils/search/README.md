@@ -140,6 +140,10 @@ If flags include anything outside **gimsyu**, `/regex/flags` yields zero hits.
   - `field:` matches notes where the field exists, regardless of whether the value is empty.
   - `field:""` matches notes where the field exists and is empty (after trimming whitespace).
   - `field:any` matches notes where the field exists and contains a non-empty value.
+- `aliases` and `locations` behave the same way as above even though they are normalised to arrays during load. When their array is empty, the evaluator falls back to the raw frontmatter to determine presence, so:
+  - `aliases:` / `locations:` match notes where the respective key is defined in YAML (including empty arrays or strings).
+  - `aliases:""` / `locations:""` match notes where the key exists and is explicitly empty.
+  - `aliases:any` / `locations:any` require at least one non-empty value.
 - `tag:#foo` is normalized to `tag:foo` (hash stripped for compatibility with Obsidian) and matches tags exactly.
 - `tags:foo` performs a partial match across tag values (case-insensitive substring). Use this when you want to match nested tags without writing regex.
 - `field:( ... )` scopes the nested query to that field. The clauses inside the parentheses are evaluated against each individual value for the field, and a note matches only if a single value satisfies the entire inner expression. For example:
@@ -147,7 +151,7 @@ If flags include anything outside **gimsyu**, `/regex/flags` yields zero hits.
   - `locations:(Main Raindrop)` matches notes where one `locations` value contains both `Main` and `Raindrop` together (different entries cannot satisfy the terms independently).
   - `locations:(Main -Raindrop)` keeps entries that include `Main` while excluding those that also contain `Raindrop`.
     Fuzzy terms (e.g. `term~`) and regexes inside the group operate on that same single value.
-- Virtual fields (see the list below) treat `field:` the same as `field:any`, ignore `field:""`, and honour `field:any`.
+- Virtual fields (see the list below) treat `field:` the same as `field:any`, ignore `field:""`, and honour `field:any`. The only exceptions are `aliases` and `locations`, which use the frontmatter fallback described above so that presence queries can distinguish between “missing” and “defined but empty”.
 - `bookmarked:` and `bookmarked:any` return bookmarked notes; `bookmarked:""` and `bookmarked:false` yield no matches. `bookmarked:true` is supported for explicit checks.
 
 **Hint:** Whitespace-only field values are trimmed and treated as undefined.
@@ -165,12 +169,12 @@ The fields listed below are always present in every note (though their values ma
 - `tags`
 - `content`
 - `bookmarked`
-- `aliases`
 - `anyname`
-- `locations`
 - `full`
+- `aliases`
+- `locations`
 
-For these virtual fields, `field:` behaves like `field:any`, and `field:""` yields no results.
+For these virtual fields except for `locations` and `aliases`, `field:` behaves like `field:any`, and `field:""` yields no results.
 
 #### Virtual Fields Not Implemented
 

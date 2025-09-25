@@ -2,6 +2,7 @@ import Fuse from 'fuse.js';
 import { ASTNode, TermNode, FieldGroupNode } from './parser';
 import { dbgEval, j } from '../../api/logger/debugger';
 import { dumpTargetNoteDebug } from '../../api/logger/targetNoteDebugger';
+import { parsedYAMLFrontmatter } from '../yaml';
 
 /**
  * Document shape used by the evaluator. Extend to your needs.
@@ -42,20 +43,52 @@ export type SearchResult = {
 };
 
 const VIRTUAL_FIELDS = new Set([
-  'title',
-  'file',
-  'path',
-  'created',
-  'modified',
-  'tag',
-  'tags',
-  'content',
-  'bookmarked',
-  'aliases',
-  'anyname',
-  'locations',
-  'full',
+  'title', // never empty
+  'file', // alias for title
+  'path', // never empty
+  'created', // never empty
+  'modified', // never empty
+  'tag', // inline + YAML tags, exact match only
+  'tags', // shorthand for 'tag:/.../i'
+  'content', // can be empty
+  'bookmarked', // special boolean handling
+  'anyname', // title + aliases
+  'full', // content + path
+  'aliases', // frontmatter, preserve empty-but-present distinction
+  'locations', // frontmatter, preserve empty-but-present distinction
 ]);
+
+// ————————————————————————————————————————————————————————————
+// Virtual fields and empty-but-present distinction
+// ————————————————————————————————————————————————————————————
+//
+// Certain virtual arrays (FRONTMATTER_PRESENCE_FIELDS) normalised during load still need to honour frontmatter-defined-but-empty values.
+
+const FRONTMATTER_PRESENCE_FIELDS = new Set(['aliases', 'locations']);
+
+function fieldAllowsEmptyPresence(field: string | undefined): boolean {
+  return field ? FRONTMATTER_PRESENCE_FIELDS.has(field) : false;
+}
+
+function frontmatterPresenceFallback(field: string | undefined, doc: Doc, values: string[]): boolean {
+  if (!fieldAllowsEmptyPresence(field)) {
+    return values.length > 0;
+  }
+  if (values.length > 0) {
+    return true;
+  }
+  const frontmatter = parsedYAMLFrontmatter(String((doc as any).content ?? ''));
+  return Boolean(frontmatter && field && Object.prototype.hasOwnProperty.call(frontmatter, field));
+}
+
+function isFieldPresent(field: string | undefined, doc: Doc, values: string[]): boolean {
+  if (!field) return false;
+  if (fieldAllowsEmptyPresence(field)) {
+    return frontmatterPresenceFallback(field, doc, values);
+  }
+  const docAny = doc as any;
+  return values.length > 0 || Object.prototype.hasOwnProperty.call(docAny, field) || field in docAny;
+}
 
 // ————————————————————————————————————————————————————————————
 // Utilities
@@ -175,9 +208,9 @@ function evalExactLeaf(
     const values = collectFields(d, fields, opts, entryOverride);
     const targetField = primaryField;
     const docAny = d as any;
-    const propertyPresent = targetField
-      ? Object.prototype.hasOwnProperty.call(docAny, targetField) || (targetField in docAny)
-      : false;
+
+    const propertyPresent = isFieldPresent(targetField, d, values);
+
     const hasValues = values.length > 0 || propertyPresent;
     const hasNonEmpty = hasNonEmptyValue(values);
     // Bare key:   ⇒ present AND non-empty (handled via forcePresenceNonEmpty for virtual fields)
@@ -360,7 +393,13 @@ export function evaluateQueryAST(ast: ASTNode, docs: Doc[], opts: EvaluateOption
         const effectiveField = (node.field ?? overrideField)?.toLowerCase();
         const isVirtualField = effectiveField ? VIRTUAL_FIELDS.has(effectiveField) : false;
 
-        if (isVirtualField && effectiveField !== 'bookmarked' && node.phrase && node.value === '') {
+        if (
+          isVirtualField &&
+          effectiveField !== 'bookmarked' &&
+          !fieldAllowsEmptyPresence(effectiveField) &&
+          node.phrase &&
+          node.value === ''
+        ) {
           return { ids: new Set(), scores: new Map() };
         }
 
@@ -376,7 +415,7 @@ export function evaluateQueryAST(ast: ASTNode, docs: Doc[], opts: EvaluateOption
             for (const d of docsForEval) {
               const values = collectFields(d, fields, opts, entryOverride);
               const docAny = d as any;
-              const propertyPresent = (node.field in docAny) || Object.prototype.hasOwnProperty.call(docAny, node.field);
+              const propertyPresent = isFieldPresent(node.field, d, values);
               const present = values.length > 0 || propertyPresent;
               const isEmptyOrUndefined = values.length === 0 || values.every(isEmptyStringValue);
               const matched = present && isEmptyOrUndefined;
@@ -454,13 +493,18 @@ export function evaluateQueryAST(ast: ASTNode, docs: Doc[], opts: EvaluateOption
         }
 
         const primaryField = node.field ?? overrideField;
+        const forcePresenceNonEmpty = Boolean(
+          primaryField &&
+          isVirtualField &&
+          !fieldAllowsEmptyPresence(effectiveField)
+        );
         return evalExactLeaf(
           docsForEval,
           node,
           fields,
           opts,
           primaryField,
-          Boolean(primaryField && isVirtualField),
+          forcePresenceNonEmpty,
           entryOverride
         );
       }

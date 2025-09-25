@@ -59,6 +59,36 @@ export const DOC_TESTME21 = variant(21, { locations: ['Main Raindrop', 'Secondar
 export const DOC_TESTME22 = variant(22, { locations: ['Main Garden', 'Raindrop Alley'] });
 export const DOC_TESTME23 = variant(23, { locations: ['Main Street', 'Gallery'] });
 export const DOC_TESTME24 = variant(24, { locations: ['Garden Walk'] });
+export const DOC_TESTME25 = variant(25, {
+    content:
+        '---\n' +
+        'aliases: []\n' +
+        '---\n',
+    aliases: [],
+});
+export const DOC_TESTME26 = variant(26, {
+    content:
+        '---\n' +
+        'aliases:\n' +
+        '  - Alt Name\n' +
+        '---\n',
+    aliases: ['Alt Name'],
+});
+export const DOC_TESTME27 = variant(27, {
+    content:
+        '---\n' +
+        'locations: []\n' +
+        '---\n',
+    locations: [],
+});
+export const DOC_TESTME28 = variant(28, {
+    content:
+        '---\n' +
+        'locations:\n' +
+        '  - Plaza\n' +
+        '---\n',
+    locations: ['Plaza'],
+});
 
 const mkDoc = (base: Doc, overrides: Partial<Doc> = {}): Doc => ({
     ...base,
@@ -303,6 +333,48 @@ describe('evaluate', () => {
         const ids = res.hits.map(h => h.id);
         expect(ids).toContain(docs[0].id);
         expect(ids).not.toContain(docs[1].id);
+    });
+
+    describe('aliases and locations presence fallback', () => {
+        it('aliases: matches notes with aliases key even when empty', () => {
+            const docs = [mkDoc(DOC_TESTME25), mkDoc(DOC_TESTME1)];
+            const res = evaluateQueryAST(parseQuery('aliases:'), docs, TEST_OPTS);
+            const ids = res.hits.map(h => h.id);
+            expect(ids).toContain(docs[0].id);
+            expect(ids).not.toContain(docs[1].id);
+        });
+
+        it('aliases:"" filters to explicit empty aliases', () => {
+            const docs = [mkDoc(DOC_TESTME25), mkDoc(DOC_TESTME26)];
+            const res = evaluateQueryAST(parseQuery('aliases:""'), docs, TEST_OPTS);
+            const ids = res.hits.map(h => h.id);
+            expect(ids).toContain(docs[0].id);
+            expect(ids).not.toContain(docs[1].id);
+        });
+
+        it('aliases:any still requires non-empty aliases', () => {
+            const docs = [mkDoc(DOC_TESTME25), mkDoc(DOC_TESTME26)];
+            const res = evaluateQueryAST(parseQuery('aliases:any'), docs, TEST_OPTS);
+            const ids = res.hits.map(h => h.id);
+            expect(ids).toContain(docs[1].id);
+            expect(ids).not.toContain(docs[0].id);
+        });
+
+        it('locations: respects frontmatter presence when empty', () => {
+            const docs = [mkDoc(DOC_TESTME27), mkDoc(DOC_TESTME1)];
+            const res = evaluateQueryAST(parseQuery('locations:'), docs, TEST_OPTS);
+            const ids = res.hits.map(h => h.id);
+            expect(ids).toContain(docs[0].id);
+            expect(ids).not.toContain(docs[1].id);
+        });
+
+        it('locations:any requires at least one location', () => {
+            const docs = [mkDoc(DOC_TESTME27), mkDoc(DOC_TESTME28)];
+            const res = evaluateQueryAST(parseQuery('locations:any'), docs, TEST_OPTS);
+            const ids = res.hits.map(h => h.id);
+            expect(ids).toContain(docs[1].id);
+            expect(ids).not.toContain(docs[0].id);
+        });
     });
 
 });
