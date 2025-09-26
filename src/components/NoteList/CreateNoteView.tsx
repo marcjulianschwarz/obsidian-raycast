@@ -23,6 +23,7 @@ export function CreateNoteView(props: CreateNoteViewProps) {
       onSearchTextChange={(value) => {
         props.onSearchChange(value);
       }}
+      searchText={props.searchText}
     >
       <List.Item
         title={`🗒️ Create Note "${props.searchText}"`}
