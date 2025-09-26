@@ -1,14 +1,18 @@
 import YAML from "yaml";
 import { Note } from "../api/vault/notes/notes.types";
 
-import { CODE_BLOCK_REGEX, INLINE_TAGS_REGEX, YAML_FRONTMATTER_REGEX } from "./constants";
+import { CODE_BLOCK_REGEX, INLINE_TAGS_REGEX } from "./constants";
 import { sortByAlphabet } from "./utils";
+import { dbgYaml, j } from "../api/logger/debugger";
 
 export function parsedYAMLFrontmatter(str: string) {
-  const frontmatter = str.match(YAML_FRONTMATTER_REGEX);
-  if (frontmatter) {
+  // Non-greedy, start-anchored: match only the first frontmatter block
+  const FM_RE = /^---\r?\n([\s\S]*?)\r?\n---/m;
+  const m = str.match(FM_RE);
+  if (m) {
     try {
-      return YAML.parse(frontmatter[0].replaceAll("---", ""), { logLevel: "error" });
+      // m[1] contains the YAML content without the fences
+      return YAML.parse(m[1], { logLevel: "error" });
     } catch {
       //
     }
@@ -17,12 +21,7 @@ export function parsedYAMLFrontmatter(str: string) {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function yamlHas(yaml: any, property: string) {
-  if (Object.prototype.hasOwnProperty.call(yaml, property)) {
-    if (yaml[property]) {
-      return true;
-    }
-  }
-  return false;
+  return Object.prototype.hasOwnProperty.call(yaml, property);
 }
 
 //--------------------------------------------------------------------------------
@@ -43,42 +42,33 @@ export function yamlPropertyForString(str: string, property: string): string | u
 //--------------------------------------------------------------------------------
 
 function inlineTagsForNotes(notes: Note[]) {
-  const foundTags: string[] = [];
+  const foundTags = new Set<string>();
   for (const note of notes) {
     // Ignoring codeblocks to avoid matching hex color codes
     const cleanedContent = note.content.replaceAll(CODE_BLOCK_REGEX, "");
     const tags = [...cleanedContent.matchAll(INLINE_TAGS_REGEX)];
     for (const tag of tags) {
-      if (!foundTags.includes(tag[1])) {
-        foundTags.push(tag[1]);
-      }
+      foundTags.add(tag[1]);
     }
   }
-  return foundTags;
+  return Array.from(foundTags);
 }
 
 function yamlTagsForNotes(notes: Note[]) {
-  const foundTags: string[] = [];
+  const foundTags = new Set<string>();
   for (const note of notes) {
     const tags = yamlTagsForString(note.content);
     for (const tag of tags) {
-      if (!foundTags.includes(tag)) {
-        foundTags.push(tag);
-      }
+      foundTags.add(tag);
     }
   }
-  return foundTags;
+  return Array.from(foundTags);
 }
 
 export function tagsForNotes(notes: Note[]) {
-  const foundTags = inlineTagsForNotes(notes);
-  const foundYAMLTags = yamlTagsForNotes(notes);
-  for (const tag of foundYAMLTags) {
-    if (!foundTags.includes(tag)) {
-      foundTags.push(tag);
-    }
-  }
-  return foundTags.sort(sortByAlphabet);
+  const inline = inlineTagsForNotes(notes);
+  const yaml = yamlTagsForNotes(notes);
+  return normalizeDedupeSortTags([...inline, ...yaml]);
 }
 
 //--------------------------------------------------------------------------------
@@ -86,45 +76,64 @@ export function tagsForNotes(notes: Note[]) {
 //--------------------------------------------------------------------------------
 
 export function inlineTagsForString(str: string) {
-  const foundTags: string[] = [];
+  const foundTags = new Set<string>();
   const tags = [...str.matchAll(INLINE_TAGS_REGEX)];
   for (const tag of tags) {
-    if (!foundTags.includes(tag[1])) {
-      foundTags.push(tag[1]);
-    }
+    foundTags.add(tag[1]);
   }
-  return foundTags;
+  const tagList = Array.from(foundTags);
+  dbgYaml("inlineTagsForString foundTags:", j(tagList));
+  return tagList;
 }
 
 export function yamlTagsForString(str: string) {
   let foundTags: string[] = [];
   const parsedYAML = parsedYAMLFrontmatter(str);
   if (parsedYAML) {
-    if (yamlHas(parsedYAML, "tag")) {
-      if (Array.isArray(parsedYAML.tag)) {
-        foundTags = [...parsedYAML.tag];
-      } else if (typeof parsedYAML.tag === "string") {
-        foundTags = [...parsedYAML.tag.split(",").map((tag: string) => tag.trim())];
-      }
-    } else if (yamlHas(parsedYAML, "tags")) {
-      if (Array.isArray(parsedYAML.tags)) {
-        foundTags = [...parsedYAML.tags];
-      } else if (typeof parsedYAML.tags === "string") {
-        foundTags = [...parsedYAML.tags.split(",").map((tag: string) => tag.trim())];
-      }
+    const extracted = extractYamlTagValues(parsedYAML, "tags");
+    if (extracted) {
+      foundTags = extracted;
     }
   }
   foundTags = foundTags.filter((tag: string) => tag != "");
-  return foundTags.map((tag) => "#" + tag);
+  dbgYaml("yamlTagsForString foundTags:", j(foundTags));
+  return foundTags;
 }
 
 export function tagsForString(str: string) {
-  const foundTags = inlineTagsForString(str);
-  const foundYAMLTags = yamlTagsForString(str);
-  for (const tag of foundYAMLTags) {
-    if (!foundTags.includes(tag)) {
-      foundTags.push(tag);
-    }
+  const inline = inlineTagsForString(str);
+  const yaml = yamlTagsForString(str);
+
+  const sortedTags = normalizeDedupeSortTags([...inline, ...yaml]);
+
+  dbgYaml("tagsForString merged and sorted tags:", j(sortedTags));
+  return sortedTags;
+}
+
+//-----------------------------------------------------------------------------------
+
+function normalizeDedupeSortTags(tags: string[]): string[] {
+  return Array.from(
+    new Set(
+      tags
+        .map((tag) => (typeof tag === "string" ? tag.replace(/^#/, "") : tag))
+        // Remove empty strings or strings containing only whitespace
+        .filter((tag): tag is string => typeof tag === "string" && tag.trim() !== "")
+    )
+  ).sort(sortByAlphabet);
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function extractYamlTagValues(yaml: any, property: string): string[] | undefined {
+  const value = yaml[property];
+  if (!value) {
+    return undefined;
   }
-  return foundTags.sort(sortByAlphabet);
+  if (Array.isArray(value)) {
+    return value.map((tag) => (typeof tag === "string" ? tag.trim() : "")).filter(Boolean);
+  }
+  if (typeof value === "string") {
+    return value.split(",").map((tag) => tag.trim()).filter(Boolean);
+  }
+  return undefined;
 }

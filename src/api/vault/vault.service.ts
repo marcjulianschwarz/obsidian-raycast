@@ -12,8 +12,73 @@ import { Logger } from "../logger/logger.service";
 import { Note } from "./notes/notes.types";
 import { getBookmarkedNotePaths } from "./notes/bookmarks/bookmarks.service";
 import { parseExcludedFoldersPreferences } from "../preferences/preferences.service";
+import matter from "gray-matter";
+import { minimatch } from "minimatch";
+import { tagsForString } from "../../utils/yaml";
 
 const logger: Logger = new Logger("Vaults");
+
+// Ensure cross-platform glob matching by converting paths to POSIX style
+function toPosix(p: string): string {
+  return p.replace(/\\/g, "/");
+}
+
+function sanitizePattern(pattern: string): string | null {
+  const trimmed = pattern.trim();
+  if (!trimmed) return null;
+  const withoutLeading = trimmed.replace(/^\/+/, "").replace(/^\.\/*/, "");
+  return withoutLeading === "" ? "/" : withoutLeading;
+}
+
+function splitPatterns(raw: string | undefined): string[] {
+  if (!raw) return [];
+  return raw
+    .split(",")
+    .map((part) => sanitizePattern(part))
+    .filter((value): value is string => Boolean(value));
+}
+
+function matchesPattern(relPath: string, pattern: string): boolean {
+  if (pattern === "/" || pattern === "**" || pattern === "*") return true;
+  return minimatch(relPath, pattern, { dot: true });
+}
+
+function shouldIncludeFile(relPath: string, includedPatterns: string[], excludedPatterns: string[]): boolean {
+  if (excludedPatterns.some((pattern) => matchesPattern(relPath, pattern))) {
+    return false;
+  }
+
+  if (includedPatterns.length === 0) {
+    return true;
+  }
+  return includedPatterns.some((pattern) => matchesPattern(relPath, pattern));
+}
+
+function filterPathsByPatterns(files: string[], vault: Vault, pref: SearchNotePreferences): string[] {
+  const excludedPatterns = splitPatterns(pref.excludedPatterns).filter(
+    (pattern) => pattern !== "/" && pattern !== "**" && pattern !== "*"
+  );
+  const includedPatternsRaw = pref.includedPatterns?.split(",") ?? [];
+  const includesNormalized = includedPatternsRaw
+    .map((pattern) => sanitizePattern(pattern) ?? undefined)
+    .filter((pattern): pattern is string => typeof pattern === "string");
+  const includedPatterns = includesNormalized.length > 0 ? includesNormalized : [];
+
+  return files.filter((file) => {
+    const relPath = toPosix(path.relative(vault.path, file));
+    return shouldIncludeFile(relPath, includedPatterns, excludedPatterns);
+  });
+}
+
+function toStringArray(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.filter((entry): entry is string => typeof entry === "string" && entry.trim().length > 0);
+  }
+  if (typeof value === "string" && value.trim().length > 0) {
+    return [value];
+  }
+  return [];
+}
 
 export function getVaultNameFromPath(vaultPath: string): string | undefined {
   if (vaultPath === "") {
@@ -57,17 +122,16 @@ function getExcludedFoldersFromObsidian(vault: Vault): string[] {
   const appJSONPath = `${vault.path}/${configFileName || ".obsidian"}/app.json`;
   if (!fs.existsSync(appJSONPath)) {
     return [];
-  } else {
-    const appJSON = JSON.parse(fs.readFileSync(appJSONPath, "utf-8"));
-    return appJSON["userIgnoreFilters"] || [];
   }
+  const appJSON = JSON.parse(fs.readFileSync(appJSONPath, "utf-8"));
+  return appJSON["userIgnoreFilters"] || [];
 }
 
 /** Returns a list of file paths for all notes inside of the given vault, filtered by Raycast and Obsidian exclusions. */
 export async function getMarkdownFilePathsFromVault(vault: Vault): Promise<string[]> {
   const { configFileName } = getPreferenceValues();
   const pref = getPreferenceValues<SearchNotePreferences>();
-  const excludedFolders = parseExcludedFoldersPreferences(pref.excludedFolders);
+  const excludedFolders = parseExcludedFoldersPreferences(pref.excludedPatterns);
   const userIgnoredFolders = getExcludedFoldersFromObsidian(vault);
   excludedFolders.push(...userIgnoredFolders, configFileName);
   const files = await getFilePaths({
@@ -75,15 +139,16 @@ export async function getMarkdownFilePathsFromVault(vault: Vault): Promise<strin
     excludedFolders,
     includedFileExtensions: [".md"],
   });
-  logger.info(`${files.length} markdown files in ${vault.name}.`);
-  return files;
+  const filtered = filterPathsByPatterns(files, vault, pref);
+  logger.info(`${filtered.length} markdown files in ${vault.name}.`);
+  return filtered;
 }
 
 /** Returns a list of file paths for all canvases inside of the given vault, filtered by Raycast and Obsidian exclusions. */
 export async function getCanvasFilePathsFromVault(vault: Vault): Promise<string[]> {
   const { configFileName } = getPreferenceValues();
   const pref = getPreferenceValues<SearchNotePreferences>();
-  const excludedFolders = parseExcludedFoldersPreferences(pref.excludedFolders);
+  const excludedFolders = parseExcludedFoldersPreferences(pref.excludedPatterns);
   const userIgnoredFolders = getExcludedFoldersFromObsidian(vault);
   excludedFolders.push(...userIgnoredFolders, configFileName);
   const files = await getFilePaths({
@@ -91,8 +156,9 @@ export async function getCanvasFilePathsFromVault(vault: Vault): Promise<string[
     excludedFolders,
     includedFileExtensions: [".canvas"],
   });
-  logger.info(`${files.length} canvas files in ${vault.name}.`);
-  return files;
+  const filtered = filterPathsByPatterns(files, vault, pref);
+  logger.info(`${filtered.length} canvas files in ${vault.name}.`);
+  return filtered;
 }
 
 export function filterContent(content: string) {
@@ -132,7 +198,7 @@ export async function getNoteFileContent(path: string, filter = false) {
 async function getMediaFilePaths(vault: Vault) {
   const { configFileName } = getPreferenceValues();
   const pref = getPreferenceValues<SearchNotePreferences>();
-  const excludedFolders = parseExcludedFoldersPreferences(pref.excludedFolders);
+  const excludedFolders = parseExcludedFoldersPreferences(pref.excludedPatterns);
   const userIgnoredFolders = getExcludedFoldersFromObsidian(vault);
   excludedFolders.push(...userIgnoredFolders, configFileName);
 
@@ -149,7 +215,7 @@ async function getMediaFilePaths(vault: Vault) {
       ".pdf",
     ],
   });
-  return files;
+  return filterPathsByPatterns(files, vault, pref);
 }
 
 /** Gets media (images, pdfs, video, audio, etc.) for a given vault from disk. utils.useMedia() is the preferred way of loading media. */
@@ -185,34 +251,64 @@ function getIconFor(filePath: string) {
 
 export async function getNotes(vault: Vault): Promise<Note[]> {
   const filePaths = await getMarkdownFilePathsFromVault(vault);
-  const bookmarkedFilePaths = getBookmarkedNotePaths(vault);
+  const bookmarkedFilePaths = new Set(getBookmarkedNotePaths(vault));
   const notes: Note[] = [];
 
   for (const filePath of filePaths) {
-    const title = path.basename(filePath, path.extname(filePath));
+    const fileName = path.basename(filePath);
+    const title = fileName.replace(/\.md$/i, "") || "default";
     const relativePath = path.relative(vault.path, filePath);
+    const content = await getNoteFileContent(filePath, false);
+    const stat = await fsAsync.stat(filePath);
 
-    notes.push({
-      title: title,
+    const { data } = matter(content);
+    const aliases = toStringArray((data as any)?.aliases);
+    const locations = toStringArray((data as any)?.locations);
+    const tagsFromYaml = toStringArray((data as any)?.tags);
+    const tagsFromParser = tagsForString(content);
+    const tags = Array.from(new Set([...tagsFromYaml, ...tagsFromParser]));
+
+    const note: Note = {
+      ...(data as Record<string, unknown>),
+      title,
       path: filePath,
-      lastModified: fs.statSync(filePath).mtime,
-      bookmarked: bookmarkedFilePaths.includes(relativePath),
-    });
+      content,
+      created: stat.birthtime,
+      modified: stat.mtime,
+      lastModified: stat.mtime,
+      tags,
+      bookmarked: bookmarkedFilePaths.has(relativePath),
+      aliases,
+      locations,
+    };
+
+    notes.push(note);
   }
 
-  // Add canvas files in a second pass. Canvas specific changes can be made here
   const canvasFilePaths = await getCanvasFilePathsFromVault(vault);
-  for (const canvasFilePath of canvasFilePaths) {
-    const title = path.basename(canvasFilePath, path.extname(canvasFilePath));
-    const relativePath = path.relative(vault.path, canvasFilePath);
+  for (const canvasPath of canvasFilePaths) {
+    const title = path.basename(canvasPath, path.extname(canvasPath));
+    const relativePath = path.relative(vault.path, canvasPath);
+    const stat = await fsAsync.stat(canvasPath);
 
     notes.push({
-      title: title,
-      path: canvasFilePath,
-      lastModified: fs.statSync(canvasFilePath).mtime,
-      bookmarked: bookmarkedFilePaths.includes(relativePath),
-    });
+      title,
+      path: canvasPath,
+      content: "",
+      created: stat.birthtime,
+      modified: stat.mtime,
+      lastModified: stat.mtime,
+      tags: [],
+      bookmarked: bookmarkedFilePaths.has(relativePath),
+      aliases: [],
+      locations: [],
+    } as Note);
   }
 
   return notes;
+}
+
+// Backwards compatibility for existing modules/tests expecting loadNotes
+export async function loadNotes(vault: Vault): Promise<Note[]> {
+  return getNotes(vault);
 }

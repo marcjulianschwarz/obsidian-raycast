@@ -48,6 +48,12 @@ export function useNotes(vault: Vault, bookmarked = false) {
   return { notes: filtered, loading } as const;
 }
 
+export const NotesContext = createContext([] as Note[]);
+
+export function useNotesContext() {
+  return useContext(NotesContext);
+}
+
 export function useNotesDispatchContext() {
   return useContext(NotesDispatchContext);
 }

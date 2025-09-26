@@ -21,6 +21,7 @@
     "theherk"
   ],
   "license": "MIT",
+  "type": "module",
   "preferences": [
     {
       "name": "vaultPath",
@@ -40,12 +41,20 @@
       "description": "Override the vault config filename (default: .obsidian)"
     },
     {
-      "name": "excludedFolders",
+      "name": "includedPatterns",
       "type": "textfield",
-      "placeholder": "folder1, folder2, ...",
-      "title": "Exclude following folders",
+      "title": "Include following files",
+      "placeholder": "**/folder/**, *.pdf, ...",
       "required": false,
-      "description": "Specify which folders to exclude (comma separated)"
+      "description": "Files to include (vault-relative). Vault root is default."
+    },
+    {
+      "name": "excludedPatterns",
+      "type": "textfield",
+      "placeholder": "**/folder/**, *.pdf, ...",
+      "title": "Exclude following files",
+      "required": false,
+      "description": "Files to exclude (vault-relative1). Exclusions take precedence."
     },
     {
       "name": "removeYAML",
@@ -80,13 +89,7 @@
       "arguments": [
         {
           "name": "searchArgument",
-          "placeholder": "Note",
-          "type": "text",
-          "required": false
-        },
-        {
-          "name": "tagArgument",
-          "placeholder": "Tag",
+          "placeholder": "Search Query",
           "type": "text",
           "required": false
         }
@@ -125,22 +128,79 @@
           "default": false
         },
         {
-          "name": "searchContent",
-          "type": "checkbox",
-          "label": "Search Content",
-          "title": "Search Content",
+          "name": "initialSearchText",
+          "type": "textfield",
+          "title": "Pre-fill Search Query",
           "required": false,
-          "description": "Use the content of notes for searching",
-          "default": false
+          "description": "Pre-fill the search bar with a default query"
         },
         {
-          "name": "fuzzySearch",
-          "type": "checkbox",
-          "label": "Use Fuzzy Search",
-          "title": "Use Fuzzy Search",
+          "name": "prefSearchScope",
+          "type": "dropdown",
+          "label": "Select Default Search Scope",
+          "title": "Select Default Search Scope",
           "required": false,
-          "description": "If fuzzy search should be used",
-          "default": false
+          "description": "Used when the query has no field (e.g., vacation plan)",
+          "default": "title",
+          "data": [
+            {
+              "title": "file:",
+              "value": "title"
+            },
+            {
+              "title": "anyname: (Title & aliases)",
+              "value": "anyname"
+            },
+            {
+              "title": "full: (Content & path)",
+              "value": "full"
+            }
+          ]
+        },
+        {
+          "name": "userDefinedSearchScope",
+          "type": "textfield",
+          "label": "Define Default Search Scope",
+          "title": "Define Default Search Scope",
+          "required": false,
+          "description": "Enter note property to override selected search scope",
+          "default": "",
+          "placeholder": "e.g., path, tags, locations, bookmarked..."
+        },
+        {
+          "name": "prefSortOrder",
+          "type": "dropdown",
+          "label": "Select Default Sort Order",
+          "title": "Select Default Sort Order",
+          "required": false,
+          "description": "Selct a default sort order for the search results",
+          "default": "az",
+          "data": [
+            {
+              "title": "A to Z",
+              "value": "az"
+            },
+            {
+              "title": "Z to A",
+              "value": "za"
+            },
+            {
+              "title": "Modified: newest first",
+              "value": "mn"
+            },
+            {
+              "title": "Modified: oldest first",
+              "value": "mo"
+            },
+            {
+              "title": "Created: newest first",
+              "value": "cn"
+            },
+            {
+              "title": "Created: oldest first",
+              "value": "co"
+            }
+          ]
         },
         {
           "name": "primaryAction",
@@ -171,26 +231,29 @@
       ]
     },
     {
-      "name": "starredNotesCommand",
-      "title": "Bookmarked Notes",
+      "name": "importantNotesCommand",
+      "title": "Important Notes",
       "subtitle": "Obsidian",
-      "description": "Search, open, view, copy, paste and edit bookmarked notes in Obsidian.",
+      "description": "Search, open, view, copy, paste and edit important notes in Obsidian. By default all bookmarked",
       "mode": "view",
       "arguments": [
         {
           "name": "searchArgument",
-          "placeholder": "Note",
-          "type": "text",
-          "required": false
-        },
-        {
-          "name": "tagArgument",
-          "placeholder": "Tag",
+          "placeholder": "Search Query",
           "type": "text",
           "required": false
         }
       ],
       "preferences": [
+        {
+          "name": "prefilterSearchQuery",
+          "type": "textfield",
+          "title": "Pre-filter Search Query",
+          "required": false,
+          "description": "Pre-fill the search bar with a default query",
+          "placeholder": "Type search query...",
+          "default": "bookmarked:"
+        },
         {
           "name": "appendTemplate",
           "type": "textfield",
@@ -221,15 +284,6 @@
           "title": "Show Metadata",
           "required": false,
           "description": "Show the notes metadata in a detail view (only works when Show Detail is enabled)",
-          "default": false
-        },
-        {
-          "name": "searchContent",
-          "type": "checkbox",
-          "label": "Search Content",
-          "title": "Search Content",
-          "required": false,
-          "description": "Use the content of notes for searching",
           "default": false
         },
         {
@@ -399,6 +453,23 @@
           "default": ""
         },
         {
+          "name": "defaultTags",
+          "type": "textfield",
+          "placeholder": "tag1, tag2, ...",
+          "title": "Default Tags",
+          "required": false,
+          "description": "The default selected tags"
+        },
+        {
+          "name": "defaultKeys",
+          "type": "textfield",
+          "label": "Default YAML Keys",
+          "title": "Default YAML Keys",
+          "required": false,
+          "description": "Adds YAML keys automatically",
+          "placeholder": "e.g, {key1,a b c} {key2,{x,y,z}} {key3,uvw}"
+        },
+        {
           "name": "fillFormWithDefaults",
           "type": "checkbox",
           "label": "Fill form with defaults",
@@ -408,24 +479,6 @@
           "description": "Fill form with default values"
         },
         {
-          "name": "prefTag",
-          "type": "textfield",
-          "placeholder": "untagged",
-          "title": "Default Tag",
-          "required": false,
-          "description": "The default selected tag",
-          "default": ""
-        },
-        {
-          "name": "tags",
-          "type": "textfield",
-          "placeholder": "tag1, tag2, tag3, ...",
-          "title": "Tags",
-          "required": false,
-          "description": "The tags which will be suggested on note creation",
-          "default": ""
-        },
-        {
           "name": "folderActions",
           "type": "textfield",
           "placeholder": "folder1, folder2, folder3, ...",
@@ -433,6 +486,35 @@
           "required": false,
           "description": "Add actions to folders (comma separated)",
           "default": ""
+        },
+        {
+          "name": "prefEnableJDex",
+          "type": "checkbox",
+          "label": "Yes",
+          "title": "Show Johnny.Decimal fields",
+          "required": false,
+          "description": "Show JDex-specific fields in Create Note",
+          "default": false
+        },
+        {
+          "name": "jdexTitleSeparator",
+          "type": "textfield",
+          "label": "JDex Title Separator",
+          "title": "JDex Title Separator",
+          "required": false,
+          "description": "AC.ID + Title = 'AC.ID<sep>Title'",
+          "default": " ",
+          "placeholder": "<sep>"
+        },
+        {
+          "name": "jdexRootTag",
+          "type": "textfield",
+          "label": "JDex Root Tag",
+          "title": "JDex Root Tag",
+          "required": false,
+          "description": "Adds existing tags like '<root>/A0-A9_<area>/AC_<category>'",
+          "default": "JDex",
+          "placeholder": "<root>"
         }
       ]
     },
@@ -509,10 +591,10 @@
         {
           "name": "excludedFolders",
           "type": "textfield",
-          "placeholder": "folder1, folder2, ...",
+          "placeholder": "folder1/folder2, folder3, ...",
           "title": "Exclude following folders",
           "required": false,
-          "description": "Specify which folders to exclude (comma separated)"
+          "description": "Folders to exclude (vault-relative)"
         },
         {
           "name": "imageSize",
@@ -620,21 +702,22 @@
     "@raycast/api": "^1.94.0",
     "@types/uuid": "^8.3.4",
     "fuse.js": "^7.0.0",
+    "gray-matter": "^4.0.3",
+    "lunr": "^2.3.9",
     "luxon": "^3.4.4",
-    "minisearch": "^7.1.2",
-    "pako": "^2.1.0",
+    "minimatch": "^10.0.3",
     "uuid": "^8.3.2",
     "yaml": "^2.1.1"
   },
   "devDependencies": {
     "@raycast/eslint-config": "^1.0.6",
+    "@types/lunr": "^2.3.7",
     "@types/luxon": "^3.4.2",
     "@types/node": "^22.14.1",
-    "@types/pako": "^2.0.3",
-    "@types/react": "^17.0.52",
+    "@types/react": "^19.0.3",
     "eslint": "^8.42.0",
     "prettier": "^2.8.8",
-    "typescript": "^4.5.4",
+    "typescript": "^5.6.3",
     "vitest": "^3.1.1"
   },
   "scripts": {
@@ -643,6 +726,8 @@
     "fix-lint": "ray lint --fix",
     "lint": "ray lint",
     "publish": "ray publish",
-    "test": "vitest"
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui"
   }
 }

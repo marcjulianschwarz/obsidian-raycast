@@ -3,8 +3,9 @@ import { Note } from "../api/vault/notes/notes.types";
 import { Vault } from "../api/vault/vault.types";
 
 export interface SearchArguments {
-  searchArgument?: string;
-  tagArgument?: string;
+  searchArgument: string;
+  prefilterSearchQuery?: string;
+  initialSearchText?: string;
 }
 
 export interface Media {
@@ -29,7 +30,7 @@ export interface NoteListProps {
   notes: Note[];
   isLoading?: boolean;
   searchArguments: SearchArguments;
-  action?: (note: Note, vault: Vault) => React.ReactFragment;
+  action?: (note: Note, vault: Vault) => React.ReactNode;
   onDelete?: (note: Note, vault: Vault) => void;
   onSearchChange?: (search: string) => void;
 }

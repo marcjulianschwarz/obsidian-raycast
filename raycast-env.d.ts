@@ -12,8 +12,10 @@ type ExtensionPreferences = {
   "vaultPath"?: string,
   /** Config filename - Override the vault config filename (default: .obsidian) */
   "configFileName": string,
-  /** Exclude following folders - Specify which folders to exclude (comma separated) */
-  "excludedFolders"?: string,
+  /** Include following files - Files to include (vault-relative). Vault root is default. */
+  "includedPatterns"?: string,
+  /** Exclude following files - Files to exclude (vault-relative1). Exclusions take precedence. */
+  "excludedPatterns"?: string,
   /** Remove content - Hide YAML frontmatter for copying and viewing notes */
   "removeYAML"?: boolean,
   /** undefined - Hide LaTeX (surrounded by $$ or $) for copying and viewing notes */
@@ -36,15 +38,21 @@ declare namespace Preferences {
   "showDetail": boolean,
   /** Show Metadata - Show the notes metadata in a detail view (only works when Show Detail is enabled) */
   "showMetadata": boolean,
-  /** Search Content - Use the content of notes for searching */
-  "searchContent": boolean,
-  /** Use Fuzzy Search - If fuzzy search should be used */
-  "fuzzySearch": boolean,
+  /** Pre-fill Search Query - Pre-fill the search bar with a default query */
+  "initialSearchText"?: string,
+  /** Select Default Search Scope - Used when the query has no field (e.g., vacation plan) */
+  "prefSearchScope": "title" | "anyname" | "full",
+  /** Define Default Search Scope - Enter note property to override selected search scope */
+  "userDefinedSearchScope": string,
+  /** Select Default Sort Order - Selct a default sort order for the search results */
+  "prefSortOrder": "az" | "za" | "mn" | "mo" | "cn" | "co",
   /** Primary Action - Select a primary action to be executed on enter */
   "primaryAction"?: "quicklook" | "obsidian" | "newpane" | "defaultapp"
 }
-  /** Preferences accessible in the `starredNotesCommand` command */
-  export type StarredNotesCommand = ExtensionPreferences & {
+  /** Preferences accessible in the `importantNotesCommand` command */
+  export type ImportantNotesCommand = ExtensionPreferences & {
+  /** Pre-filter Search Query - Pre-fill the search bar with a default query */
+  "prefilterSearchQuery": string,
   /** Template for Append action - Specify a template for Append action (e.g. '- {content}') */
   "appendTemplate"?: string,
   /** Template for Append Selected Text action - Specify a template for Append Selected Text action (e.g. '- {content}') */
@@ -53,8 +61,6 @@ declare namespace Preferences {
   "showDetail": boolean,
   /** Show Metadata - Show the notes metadata in a detail view (only works when Show Detail is enabled) */
   "showMetadata": boolean,
-  /** Search Content - Use the content of notes for searching */
-  "searchContent": boolean,
   /** Primary Action - Select a primary action to be executed on enter */
   "primaryAction"?: "quicklook" | "obsidian" | "newpane" | "defaultapp"
 }
@@ -92,14 +98,20 @@ declare namespace Preferences {
   "prefNoteName": string,
   /** Default Note Content - The default note content (supports templates) */
   "prefNoteContent": string,
+  /** Default Tags - The default selected tags */
+  "defaultTags"?: string,
+  /** Default YAML Keys - Adds YAML keys automatically */
+  "defaultKeys"?: string,
   /** Fill form with defaults - Fill form with default values */
   "fillFormWithDefaults": boolean,
-  /** Default Tag - The default selected tag */
-  "prefTag": string,
-  /** Tags - The tags which will be suggested on note creation */
-  "tags": string,
   /** Folder Actions - Add actions to folders (comma separated) */
-  "folderActions": string
+  "folderActions": string,
+  /** Show Johnny.Decimal fields - Show JDex-specific fields in Create Note */
+  "prefEnableJDex": boolean,
+  /** JDex Title Separator - AC.ID + Title = 'AC.ID<sep>Title' */
+  "jdexTitleSeparator": string,
+  /** JDex Root Tag - Adds existing tags like '<root>/A0-A9_<area>/AC_<category>' */
+  "jdexRootTag": string
 }
   /** Preferences accessible in the `randomNoteCommand` command */
   export type RandomNoteCommand = ExtensionPreferences & {
@@ -112,7 +124,7 @@ declare namespace Preferences {
 }
   /** Preferences accessible in the `searchMedia` command */
   export type SearchMedia = ExtensionPreferences & {
-  /** Exclude following folders - Specify which folders to exclude (comma separated) */
+  /** Exclude following folders - Folders to exclude (vault-relative) */
   "excludedFolders"?: string,
   /** Image Size - Select the image size to display */
   "imageSize"?: "small" | "medium" | "large"
@@ -139,17 +151,13 @@ declare namespace Preferences {
 declare namespace Arguments {
   /** Arguments passed to the `searchNoteCommand` command */
   export type SearchNoteCommand = {
-  /** Note */
-  "searchArgument": string,
-  /** Tag */
-  "tagArgument": string
+  /** Search Query */
+  "searchArgument": string
 }
-  /** Arguments passed to the `starredNotesCommand` command */
-  export type StarredNotesCommand = {
-  /** Note */
-  "searchArgument": string,
-  /** Tag */
-  "tagArgument": string
+  /** Arguments passed to the `importantNotesCommand` command */
+  export type ImportantNotesCommand = {
+  /** Search Query */
+  "searchArgument": string
 }
   /** Arguments passed to the `openVaultCommand` command */
   export type OpenVaultCommand = {}

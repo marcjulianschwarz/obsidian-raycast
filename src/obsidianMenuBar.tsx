@@ -8,6 +8,7 @@ import { getObsidianTarget, ObsidianTargetType } from "./utils/utils";
 
 function BookmarkedNotesList(props: { vault: Vault }) {
   const notes: Note[] = [];
+  // const [notes] = useNotes(props.vault); # TODO: My incoming change. Test the difference.
   return (
     <MenuBarExtra.Submenu title={props.vault.name} key={props.vault.path + "Bookmarked Notes"}>
       {notes.map((note) => (

@@ -1,9 +1,15 @@
 export interface Note {
   title: string;
   path: string;
-  lastModified: Date;
+  created: Date;
+  modified: Date;
+  tags: string[];
+  content: string;
   bookmarked: boolean;
-}
+  aliases: string[];
+  locations: string[];
+  [key:string]: any; // Additional properties from YAML frontmatter
+};
 
 export interface NoteWithContent extends Note {
   content: string;
@@ -12,9 +18,15 @@ export interface NoteWithContent extends Note {
 export interface CreateNoteParams {
   path: string;
   name: string;
+  jdex: string;
+  fullName: string;
   content: string;
   tags: string[];
-}
+  locations: string[];
+  availableTags: string[];
+  allNotes: Note[];
+  yamlKeys: string;
+};
 
 export interface CodeBlock {
   language: string;

@@ -7,6 +7,7 @@ import path from "path";
 import { directoryCreationErrorToast, fileWriteErrorToast } from "../../../components/Toasts";
 import { CODE_BLOCK_REGEX } from "../../../utils/constants";
 import { applyTemplates } from "../../templating/templating.service";
+import { dbgNS } from "../../logger/debugger";
 
 export async function appendSelectedTextTo(note: Note) {
   let { appendSelectedTemplate } = getPreferenceValues<SearchNotePreferences>();
@@ -43,6 +44,58 @@ export function getCodeBlocks(content: string): CodeBlock[] {
   return codeBlocks;
 }
 
+function incrementJDex(pref: NoteFormPreferences, params: CreateNoteParams): { stop: boolean; newName?: string } {
+  const name = params.name;
+  const jdex = params.jdex;
+  if (!/^\d\d$/.test(jdex)) return { stop: false };
+
+  const maxId = (params.allNotes ?? [])
+    .map((note) => path.basename(note.path, ".md"))
+    .filter((base) => base.startsWith(`${jdex}.`))
+    .reduce((max, base) => {
+      const parsed = parseInt(base.substring(3, 5), 10);
+      return Math.max(max, isNaN(parsed) ? 0 : parsed);
+    }, 9); // <-- start from 9 so first becomes 10
+
+  // Stop at 99 to avoid creating 100
+  if (maxId >= 99) {
+    showToast({
+      title: "ID limit reached",
+      message: "Cannot create more than 99 notes in this category.",
+      style: Toast.Style.Failure,
+    });
+    return { stop: true };
+  }
+
+  const newId = String(maxId + 1).padStart(2, "0"); // Defensive: always padStart
+  const separator = pref.jdexTitleSeparator || ""; // default to empty if not set
+  return { stop: false, newName: `${jdex}.${newId}${separator}${name}` };
+}
+
+function addMatchingJDexCategoryTag(pref: NoteFormPreferences, params: CreateNoteParams) {
+  const availableTags = params.availableTags;
+  const categoryMatch = params.fullName.match(/^\d{2}/);
+  const category = categoryMatch?.[0];
+  dbgNS("Category:", category); // Debug
+
+  if (!category || !Array.isArray(availableTags)) {
+    return;
+  }
+
+  const matchingTag = availableTags.find(
+    (tag) => tag.startsWith(pref.jdexRootTag) && tag.includes(`/${category}_`)
+  );
+
+  dbgNS("Matching tag:", matchingTag);
+
+  if (matchingTag && !params.tags.includes(matchingTag)) {
+    dbgNS("→ Found matching tag:", matchingTag);
+    dbgNS("→ Before pushing:", [...params.tags]);
+    params.tags.unshift(matchingTag);
+    dbgNS("→ After pushing:", [...params.tags]);
+  }
+}
+
 /**
  * Creates a note in the vault.
  * - Adds a YAML frontmatter
@@ -56,42 +109,114 @@ export function getCodeBlocks(content: string): CodeBlock[] {
 
 export async function createNote(vault: Vault, params: CreateNoteParams) {
   const pref = getPreferenceValues<NoteFormPreferences>();
-  const fillDefaults = !pref.fillFormWithDefaults && params.content.length == 0;
 
-  let name = params.name == "" ? pref.prefNoteName : params.name;
-  let content = fillDefaults ? pref.prefNoteContent : params.content;
+  if (params.name === undefined) {
+    params.name = pref.prefNoteName;
+  }
+  if (params.content === undefined) {
+    params.content = pref.fillFormWithDefaults ? pref.prefNoteContent : "";
+  }
+  params.fullName = params.jdex ? `${params.jdex}_${params.name}` : params.name;
 
-  console.log(params.content);
+  if (!params.tags) {
+    params.tags = [];
+  }
+  if (!params.locations) {
+    params.locations = [];
+  }
+  if (!params.availableTags) {
+    params.availableTags = [];
+  }
+  if (!params.allNotes) {
+    params.allNotes = [];
+  }
 
-  content = createObsidianProperties(params.tags) + content;
-  content = await applyTemplates(content);
-  name = await applyTemplates(name);
+  // === JDex Handling Start ===
+  // Handle special case: exact match with "AC" (e.g., "12")
+  const { stop, newName } = incrementJDex(pref, params);
+  if (stop) return false;
+  if (newName) params.fullName = newName;
 
-  const saved = await saveStringToDisk(vault.path, content, name, params.path);
+  addMatchingJDexCategoryTag(pref, params);
+  // === JDex Handling End ===
+
+  dbgNS(params.content);
+
+  params.content = createObsidianProperties(params) + (params.content ?? "");
+  params.content = await applyTemplates(params.content);
+  params.fullName = await applyTemplates(params.fullName);
+
+  const saved = await saveStringToDisk(vault.path, params.content, params.fullName, params.path);
 
   if (pref.openOnCreate) {
-    const target = "obsidian://open?path=" + encodeURIComponent(path.join(vault.path, params.path, name + ".md"));
+    const target = "obsidian://open?path=" + encodeURIComponent(path.join(vault.path, params.path, params.fullName + ".md"));
     if (saved) {
       setTimeout(() => {
         open(target);
-      }, 200);
+      }, 2000);
     }
   }
   return saved;
 }
 
 /** Gets the Obsidian Properties YAML frontmatter for a list of tags */
-function createObsidianProperties(tags: string[]): string {
-  let obsidianProperties = "";
-  if (tags.length > 0) {
-    obsidianProperties = "---\ntags: [";
-    for (let i = 0; i < tags.length - 1; i++) {
-      obsidianProperties += '"' + tags[i] + '",';
+function createObsidianProperties(params: CreateNoteParams): string {
+  const entries: [string, string[]][] = [
+    ["tags", params.tags],
+    ["locations", params.locations],
+  ];
+
+  let obsidianProperties = '---\n';
+  obsidianProperties += parseYAMLKeys(params.yamlKeys || "");
+
+  for (const [key, values] of entries) {
+    if (values.length > 0) {
+      const quoted = values.map(value => `"${value}"`).join(",");
+      obsidianProperties += `${key}: [${quoted}]\n`;
     }
-    obsidianProperties += '"' + tags[tags.length - 1] + '"]\n---\n';
   }
 
+  obsidianProperties += '---\n\n';
   return obsidianProperties;
+}
+
+function parseYAMLKeys(input: string): string {
+  // Replace escaped braces with placeholders
+  const ESC_LBRACE = '__ESC_LBRACE__';
+  const ESC_RBRACE = '__ESC_RBRACE__';
+  const escapedInput = input
+    .replace(/\\{/g, ESC_LBRACE)
+    .replace(/\\}/g, ESC_RBRACE);
+
+  const regex = /\{([^,]+),(\{[^}]*\}|[^}]+)\}/g;
+  const lines: string[] = [];
+  let match;
+
+  while ((match = regex.exec(escapedInput)) !== null) {
+    const key = match[1].trim();
+    const valueRaw = match[2].trim();
+
+    if (valueRaw.startsWith('{') && valueRaw.endsWith('}')) {
+      const inner = valueRaw.slice(1, -1).split(',').map(v => `"${v.trim()}"`);
+      lines.push(`${key}: [${inner.join(', ')}]`);
+    } else {
+      lines.push(`${key}: ${valueRaw}`);
+    }
+  }
+
+  const escapedResult = lines.join('\n') + '\n';
+
+  // Restore escaped braces
+  const result = escapedResult
+    .replace(new RegExp(ESC_LBRACE, 'g'), '{')
+    .replace(new RegExp(ESC_RBRACE, 'g'), '}');
+
+  // dbgNS("Parsed YAML keys input:", input);
+  // dbgNS("Parsed YAML keys input escaped:", input);
+  // dbgNS("Parsed YAML keys result escaped:", escapedResult);
+  // dbgNS("Parsed YAML keys result:", result);
+
+  return result;
 }
 
 /**
