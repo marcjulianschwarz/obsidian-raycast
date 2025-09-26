@@ -18,6 +18,8 @@ import { tagsForString } from "../../utils/yaml";
 
 const logger: Logger = new Logger("Vaults");
 
+export const DEFAULT_EXCLUDED_PATHS = [".git", ".obsidian", ".trash", ".excalidraw", ".mobile"];
+
 // Ensure cross-platform glob matching by converting paths to POSIX style
 function toPosix(p: string): string {
   return p.replace(/\\/g, "/");
@@ -41,6 +43,11 @@ function splitPatterns(raw: string | undefined): string[] {
 function matchesPattern(relPath: string, pattern: string): boolean {
   if (pattern === "/" || pattern === "**" || pattern === "*") return true;
   return minimatch(relPath, pattern, { dot: true });
+}
+
+export function isPathExcluded(pathToCheck: string, excludedPatterns: string[], vaultRoot: string): boolean {
+  const relPath = toPosix(path.relative(vaultRoot, path.normalize(pathToCheck)));
+  return excludedPatterns.some((pattern) => matchesPattern(relPath, pattern));
 }
 
 function shouldIncludeFile(relPath: string, includedPatterns: string[], excludedPatterns: string[]): boolean {
@@ -125,6 +132,10 @@ function getExcludedFoldersFromObsidian(vault: Vault): string[] {
   }
   const appJSON = JSON.parse(fs.readFileSync(appJSONPath, "utf-8"));
   return appJSON["userIgnoreFilters"] || [];
+}
+
+export function getUserIgnoreFilters(vault: Vault): string[] {
+  return getExcludedFoldersFromObsidian(vault);
 }
 
 /** Returns a list of file paths for all notes inside of the given vault, filtered by Raycast and Obsidian exclusions. */
