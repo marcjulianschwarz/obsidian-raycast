@@ -706,6 +706,8 @@
     "lunr": "^2.3.9",
     "luxon": "^3.4.4",
     "minimatch": "^10.0.3",
+    "minisearch": "^7.2.0",
+    "pako": "^2.1.0",
     "uuid": "^8.3.2",
     "yaml": "^2.1.1"
   },
@@ -714,6 +716,7 @@
     "@types/lunr": "^2.3.7",
     "@types/luxon": "^3.4.2",
     "@types/node": "^22.14.1",
+    "@types/pako": "^2.0.4",
     "@types/react": "^19.0.3",
     "eslint": "^8.42.0",
     "prettier": "^2.8.8",
