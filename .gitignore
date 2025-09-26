@@ -107,3 +107,6 @@ dist
 
 # JetBrains
 .idea
+
+# Custom
+playground/
