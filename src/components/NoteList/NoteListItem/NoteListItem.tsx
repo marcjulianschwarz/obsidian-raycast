@@ -108,9 +108,9 @@ export function NoteListItem(props: {
       }
       actions={
         <ActionPanel>
-          <OpenNoteActions note={{ content: noteContent ?? "", ...updatedNote }} vault={vault} />
+          <OpenNoteActions note={{ ...updatedNote, content: noteContent ?? "" }} vault={vault} />
           <NoteActions
-            note={{ content: noteContent ?? "", ...updatedNote }}
+            note={{ ...updatedNote, content: noteContent ?? "" }}
             vault={vault}
             onNoteAction={(actionType) => {
               switch (actionType) {
