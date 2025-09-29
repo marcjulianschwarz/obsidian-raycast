@@ -84,7 +84,7 @@ afterEach(() => {
 // --- Tests -----------------------------------------------------------------
 
 describe("vault.service - include/exclude during loadNotes()", () => {
-  it("excludes files matching a glob pattern anywhere (e.g., **/*_--Demo*)", () => {
+  it("excludes files matching a glob pattern anywhere (e.g., **/*_--Demo*)", async () => {
     const { dir, vault, cleanup } = makeTmpVault();
     try {
       // Arrange: create files
@@ -100,7 +100,7 @@ describe("vault.service - include/exclude during loadNotes()", () => {
       });
 
       // Act
-      const notes = loadNotes(vault);
+      const notes = await loadNotes(vault);
       const paths = notes.map((n) => path.relative(dir, n.path)).sort();
 
       // Assert: demo files are missing; the others are present
@@ -110,7 +110,7 @@ describe("vault.service - include/exclude during loadNotes()", () => {
     }
   });
 
-  it("includes only files matching include globs (e.g., notes/**) when include is set", () => {
+  it("includes only files matching include globs (e.g., notes/**) when include is set", async () => {
     const { dir, vault, cleanup } = makeTmpVault();
     try {
       // Arrange
@@ -125,7 +125,7 @@ describe("vault.service - include/exclude during loadNotes()", () => {
       });
 
       // Act
-      const notes = loadNotes(vault);
+      const notes = await loadNotes(vault);
       const rel = notes.map((n) => path.relative(dir, n.path)).sort();
 
       // Assert: only the notes/** files are present
@@ -135,7 +135,7 @@ describe("vault.service - include/exclude during loadNotes()", () => {
     }
   });
 
-  it("supports combined include + exclude where exclude wins", () => {
+  it("supports combined include + exclude where exclude wins", async () => {
     const { dir, vault, cleanup } = makeTmpVault();
     try {
       // Arrange
@@ -149,7 +149,7 @@ describe("vault.service - include/exclude during loadNotes()", () => {
       });
 
       // Act
-      const notes = loadNotes(vault);
+      const notes = await loadNotes(vault);
       const rel = notes.map((n) => path.relative(dir, n.path)).sort();
 
       // Assert: exclude removes the _--Demo file even though it’s under an included dir
@@ -159,7 +159,7 @@ describe("vault.service - include/exclude during loadNotes()", () => {
     }
   });
 
-  it("traverses ancestors due to partial matching and still finds deep matches from include patterns", () => {
+  it("traverses ancestors due to partial matching and still finds deep matches from include patterns", async () => {
     const { dir, vault, cleanup } = makeTmpVault();
     try {
       // Arrange
@@ -174,7 +174,7 @@ describe("vault.service - include/exclude during loadNotes()", () => {
       });
 
       // Act
-      const notes = loadNotes(vault);
+      const notes = await loadNotes(vault);
       const rel = notes.map((n) => path.relative(dir, n.path)).sort();
 
       // Assert: only projects/**/README.md is included
@@ -184,7 +184,7 @@ describe("vault.service - include/exclude during loadNotes()", () => {
     }
   });
 
-  it("respects DEFAULT_EXCLUDED_PATHS like .obsidian and ignores files inside", () => {
+  it("respects DEFAULT_EXCLUDED_PATHS like .obsidian and ignores files inside", async () => {
     const { dir, vault, cleanup } = makeTmpVault();
     try {
       // Arrange
@@ -200,7 +200,7 @@ describe("vault.service - include/exclude during loadNotes()", () => {
       });
 
       // Act
-      const notes = loadNotes(vault);
+      const notes = await loadNotes(vault);
       const rel = notes.map((n) => path.relative(dir, n.path));
 
       // Assert
