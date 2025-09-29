@@ -124,8 +124,8 @@ declare namespace Preferences {
 }
   /** Preferences accessible in the `searchMedia` command */
   export type SearchMedia = ExtensionPreferences & {
-  /** Exclude following folders - Folders to exclude (vault-relative) */
-  "excludedFolders"?: string,
+  /** Exclude following media files - Files to exclude (vault-relative) */
+  "excludedMedia"?: string,
   /** Image Size - Select the image size to display */
   "imageSize"?: "small" | "medium" | "large"
 }

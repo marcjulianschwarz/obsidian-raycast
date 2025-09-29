@@ -72,5 +72,31 @@ describe("file", () => {
       expect(resultFiles.map((f) => path.basename(f))).not.toContain("file5.txt");
       expect(resultFiles.map((f) => path.basename(f))).not.toContain("file6.js");
     });
+
+    it("should respect excluded patterns", async () => {
+      const resultFiles = await getFilePaths({
+        path: testDir,
+        excludedPatterns: ["**/*.js"],
+      });
+
+      const basenames = resultFiles.map((f) => path.basename(f));
+      expect(basenames).toContain("file1.txt");
+      expect(basenames).not.toContain("file2.js");
+      expect(basenames).not.toContain("file4.js");
+      expect(basenames).not.toContain("file6.js");
+    });
+
+    it("should respect included patterns", async () => {
+      const resultFiles = await getFilePaths({
+        path: testDir,
+        includedPatterns: ["**/*.md"],
+      });
+
+      const basenames = resultFiles.map((f) => path.basename(f));
+      expect(basenames).toContain("file.md");
+      expect(basenames).not.toContain("file1.txt");
+      expect(basenames).not.toContain("file2.js");
+      expect(basenames).not.toContain("file3.txt");
+    });
   });
 });

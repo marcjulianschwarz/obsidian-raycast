@@ -589,12 +589,12 @@
       ],
       "preferences": [
         {
-          "name": "excludedFolders",
+          "name": "excludedMedia",
           "type": "textfield",
-          "placeholder": "folder1/folder2, folder3, ...",
-          "title": "Exclude following folders",
+          "title": "Exclude following media files",
+          "placeholder": "**/folder/**, *.png, ...",
           "required": false,
-          "description": "Folders to exclude (vault-relative)"
+          "description": "Files to exclude (vault-relative)"
         },
         {
           "name": "imageSize",

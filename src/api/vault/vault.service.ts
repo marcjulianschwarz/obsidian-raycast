@@ -5,77 +5,17 @@ import * as path from "path";
 import { homedir } from "os";
 import { AUDIO_FILE_EXTENSIONS, LATEX_INLINE_REGEX, LATEX_REGEX, VIDEO_FILE_EXTENSIONS } from "../../utils/constants";
 import { Media } from "../../utils/interfaces";
-import { GlobalPreferences, SearchNotePreferences } from "../../utils/preferences";
+import { GlobalPreferences, SearchNotePreferences, SearchMediaPreferences } from "../../utils/preferences";
 import { ObsidianJSON, Vault } from "./vault.types";
 import { getFilePaths } from "../file/file.service";
 import { Logger } from "../logger/logger.service";
 import { Note } from "./notes/notes.types";
 import { getBookmarkedNotePaths } from "./notes/bookmarks/bookmarks.service";
-import { parseExcludedFoldersPreferences } from "../preferences/preferences.service";
 import matter from "gray-matter";
-import { minimatch } from "minimatch";
+import { buildFileFilters, isPathExcluded, splitPatterns } from "../file/patterns.service";
 import { tagsForString } from "../../utils/yaml";
 
 const logger: Logger = new Logger("Vaults");
-
-export const DEFAULT_EXCLUDED_PATHS = [".git", ".obsidian", ".trash", ".excalidraw", ".mobile"];
-
-// Ensure cross-platform glob matching by converting paths to POSIX style
-function toPosix(p: string): string {
-  return p.replace(/\\/g, "/");
-}
-
-function sanitizePattern(pattern: string): string | null {
-  const trimmed = pattern.trim();
-  if (!trimmed) return null;
-  const withoutLeading = trimmed.replace(/^\/+/, "").replace(/^\.\/*/, "");
-  return withoutLeading === "" ? "/" : withoutLeading;
-}
-
-function splitPatterns(raw: string | undefined): string[] {
-  if (!raw) return [];
-  return raw
-    .split(",")
-    .map((part) => sanitizePattern(part))
-    .filter((value): value is string => Boolean(value));
-}
-
-function matchesPattern(relPath: string, pattern: string): boolean {
-  if (pattern === "/" || pattern === "**" || pattern === "*") return true;
-  return minimatch(relPath, pattern, { dot: true });
-}
-
-export function isPathExcluded(pathToCheck: string, excludedPatterns: string[], vaultRoot: string): boolean {
-  const relPath = toPosix(path.relative(vaultRoot, path.normalize(pathToCheck)));
-  return excludedPatterns.some((pattern) => matchesPattern(relPath, pattern));
-}
-
-function shouldIncludeFile(relPath: string, includedPatterns: string[], excludedPatterns: string[]): boolean {
-  if (excludedPatterns.some((pattern) => matchesPattern(relPath, pattern))) {
-    return false;
-  }
-
-  if (includedPatterns.length === 0) {
-    return true;
-  }
-  return includedPatterns.some((pattern) => matchesPattern(relPath, pattern));
-}
-
-function filterPathsByPatterns(files: string[], vault: Vault, pref: SearchNotePreferences): string[] {
-  const excludedPatterns = splitPatterns(pref.excludedPatterns).filter(
-    (pattern) => pattern !== "/" && pattern !== "**" && pattern !== "*"
-  );
-  const includedPatternsRaw = pref.includedPatterns?.split(",") ?? [];
-  const includesNormalized = includedPatternsRaw
-    .map((pattern) => sanitizePattern(pattern) ?? undefined)
-    .filter((pattern): pattern is string => typeof pattern === "string");
-  const includedPatterns = includesNormalized.length > 0 ? includesNormalized : [];
-
-  return files.filter((file) => {
-    const relPath = toPosix(path.relative(vault.path, file));
-    return shouldIncludeFile(relPath, includedPatterns, excludedPatterns);
-  });
-}
 
 function toStringArray(value: unknown): string[] {
   if (Array.isArray(value)) {
@@ -142,34 +82,38 @@ export function getUserIgnoreFilters(vault: Vault): string[] {
 export async function getMarkdownFilePathsFromVault(vault: Vault): Promise<string[]> {
   const { configFileName } = getPreferenceValues();
   const pref = getPreferenceValues<SearchNotePreferences>();
-  const excludedFolders = parseExcludedFoldersPreferences(pref.excludedPatterns);
   const userIgnoredFolders = getExcludedFoldersFromObsidian(vault);
-  excludedFolders.push(...userIgnoredFolders, configFileName);
+  const filters = buildFileFilters(pref, {
+    additionalExcludedFolders: [...userIgnoredFolders, configFileName],
+  });
   const files = await getFilePaths({
     path: vault.path,
-    excludedFolders,
+    excludedFolders: filters.excludedFolders,
     includedFileExtensions: [".md"],
+    includedPatterns: filters.includedPatterns,
+    excludedPatterns: filters.excludedPatterns,
   });
-  const filtered = filterPathsByPatterns(files, vault, pref);
-  logger.info(`${filtered.length} markdown files in ${vault.name}.`);
-  return filtered;
+  logger.info(`${files.length} markdown files in ${vault.name}.`);
+  return files;
 }
 
 /** Returns a list of file paths for all canvases inside of the given vault, filtered by Raycast and Obsidian exclusions. */
 export async function getCanvasFilePathsFromVault(vault: Vault): Promise<string[]> {
   const { configFileName } = getPreferenceValues();
   const pref = getPreferenceValues<SearchNotePreferences>();
-  const excludedFolders = parseExcludedFoldersPreferences(pref.excludedPatterns);
   const userIgnoredFolders = getExcludedFoldersFromObsidian(vault);
-  excludedFolders.push(...userIgnoredFolders, configFileName);
+  const filters = buildFileFilters(pref, {
+    additionalExcludedFolders: [...userIgnoredFolders, configFileName],
+  });
   const files = await getFilePaths({
     path: vault.path,
-    excludedFolders,
+    excludedFolders: filters.excludedFolders,
     includedFileExtensions: [".canvas"],
+    includedPatterns: filters.includedPatterns,
+    excludedPatterns: filters.excludedPatterns,
   });
-  const filtered = filterPathsByPatterns(files, vault, pref);
-  logger.info(`${filtered.length} canvas files in ${vault.name}.`);
-  return filtered;
+  logger.info(`${files.length} canvas files in ${vault.name}.`);
+  return files;
 }
 
 export function filterContent(content: string) {
@@ -208,14 +152,18 @@ export async function getNoteFileContent(path: string, filter = false) {
 /** Gets a list of file paths for all media. */
 async function getMediaFilePaths(vault: Vault) {
   const { configFileName } = getPreferenceValues();
-  const pref = getPreferenceValues<SearchNotePreferences>();
-  const excludedFolders = parseExcludedFoldersPreferences(pref.excludedPatterns);
+  const mediaPref = getPreferenceValues<SearchMediaPreferences>();
   const userIgnoredFolders = getExcludedFoldersFromObsidian(vault);
-  excludedFolders.push(...userIgnoredFolders, configFileName);
-
-  const files = await getFilePaths({
+  const mediaExcludedPatterns = splitPatterns(mediaPref.excludedMedia);
+  const filters = buildFileFilters(mediaPref, {
+    additionalExcludedFolders: [...userIgnoredFolders, configFileName],
+    additionalExcludedPatterns: mediaExcludedPatterns,
+  });
+  return getFilePaths({
     path: vault.path,
-    excludedFolders,
+    excludedFolders: filters.excludedFolders,
+    includedPatterns: filters.includedPatterns,
+    excludedPatterns: filters.excludedPatterns,
     includedFileExtensions: [
       ...AUDIO_FILE_EXTENSIONS,
       ...VIDEO_FILE_EXTENSIONS,
@@ -226,8 +174,8 @@ async function getMediaFilePaths(vault: Vault) {
       ".pdf",
     ],
   });
-  return filterPathsByPatterns(files, vault, pref);
 }
+
 
 /** Gets media (images, pdfs, video, audio, etc.) for a given vault from disk. utils.useMedia() is the preferred way of loading media. */
 export async function getMedia(vault: Vault): Promise<Media[]> {

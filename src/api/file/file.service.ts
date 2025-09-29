@@ -1,17 +1,31 @@
 import glob from "fast-glob";
 import * as path from "path";
 import { Logger } from "../logger/logger.service";
+import { DEFAULT_EXCLUDED_PATHS, filterPathsByPatterns } from "./patterns.service";
 import { GetFilePathsHelper } from "./file.types";
 
 const logger = new Logger("File");
 
+function normalizeFolderName(folder: string): string {
+  return folder.replace(/^\/+/, "").replace(/\/+$/, "").trim();
+}
+
 export async function getFilePaths(params: GetFilePathsHelper): Promise<string[]> {
-  const { path, excludedFolders = [], includedFileExtensions } = params;
-  const defaultExcludedDirs = [".git", ".obsidian", ".trash", ".excalidraw", ".mobile"];
+  const {
+    path: vaultRoot,
+    excludedFolders = [],
+    includedFileExtensions,
+    includedPatterns = [],
+    excludedPatterns = [],
+  } = params;
+  const defaultExcludedDirs = DEFAULT_EXCLUDED_PATHS;
 
-  const cleanedExcludes = [...defaultExcludedDirs, ...excludedFolders].filter((dir) => !!dir && dir.trim() !== "");
+  const cleanedExcludes = [...defaultExcludedDirs, ...excludedFolders]
+    .map(normalizeFolderName)
+    .filter(Boolean);
 
-  const ignorePatterns = cleanedExcludes.map((dir) => `**/${dir}/**`).concat("**/*.excalidraw.md");
+  const folderIgnorePatterns = cleanedExcludes.map((dir) => `**/${dir}/**`);
+  const allIgnorePatterns = Array.from(new Set([...folderIgnorePatterns, "**/*.excalidraw.md"]));
 
   // file extension matcher
   const extensionPattern = includedFileExtensions?.length
@@ -21,14 +35,15 @@ export async function getFilePaths(params: GetFilePathsHelper): Promise<string[]
     : "**/*";
 
   const options = {
-    cwd: path,
-    ignore: ignorePatterns,
+    cwd: vaultRoot,
+    ignore: allIgnorePatterns,
     onlyFiles: true,
     absolute: true,
     dot: false,
   };
 
-  const files = await glob(extensionPattern, options);
+  const globbed = await glob(extensionPattern, options);
+  const files = filterPathsByPatterns(globbed, vaultRoot, includedPatterns, excludedPatterns);
   logger.success(`Globbed ${files.length} file paths.`);
   return files;
 }

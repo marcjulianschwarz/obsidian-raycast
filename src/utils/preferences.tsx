@@ -36,9 +36,7 @@ export interface SearchNotePreferences extends GlobalPreferences, AppendNotePref
   prefSearchMode: string;
   prefSearchScope: string;
   userDefinedSearchScope: string;
-  prefLunrSearchOrder: boolean;
   prefSortOrder: string;
-  prefLogicMode: string;
   yamlProperties: string;
   initialSearchText: string;
   prefilterSearchQuery: string;
@@ -48,6 +46,7 @@ export interface SearchNotePreferences extends GlobalPreferences, AppendNotePref
 export interface RandomNotePreferences extends GlobalPreferences, AppendNotePreferences {}
 
 export interface SearchMediaPreferences extends GlobalPreferences {
+  excludedMedia: string;
   imageSize: string;
 }
 
