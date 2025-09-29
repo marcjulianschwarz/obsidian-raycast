@@ -12,7 +12,7 @@ import { Logger } from "../logger/logger.service";
 import { Note } from "./notes/notes.types";
 import { getBookmarkedNotePaths } from "./notes/bookmarks/bookmarks.service";
 import matter from "gray-matter";
-import { buildFileFilters, isPathExcluded, splitPatterns } from "../file/patterns.service";
+import { buildFileFilters, splitPatterns } from "../file/patterns";
 import { tagsForString } from "../../utils/yaml";
 
 const logger: Logger = new Logger("Vaults");

@@ -1,7 +1,7 @@
 import glob from "fast-glob";
 import * as path from "path";
 import { Logger } from "../logger/logger.service";
-import { DEFAULT_EXCLUDED_PATHS, filterPathsByPatterns } from "./patterns.service";
+import { DEFAULT_EXCLUDED_PATHS, filterPathsByPatterns } from "./patterns";
 import { GetFilePathsHelper } from "./file.types";
 
 const logger = new Logger("File");
@@ -46,20 +46,4 @@ export async function getFilePaths(params: GetFilePathsHelper): Promise<string[]
   const files = filterPathsByPatterns(globbed, vaultRoot, includedPatterns, excludedPatterns);
   logger.success(`Globbed ${files.length} file paths.`);
   return files;
-}
-
-/**
- * Checks if a path should be excluded based on a list of exluded paths
- */
-export function isPathExcluded(pathToCheck: string, excludedPaths: string[]) {
-  const normalizedPath = path.normalize(pathToCheck);
-
-  return excludedPaths.some((excluded) => {
-    if (!excluded) return false;
-
-    const normalizedExcluded = path.normalize(excluded);
-
-    // Check if the path is exactly the excluded path or is a subfolder
-    return normalizedPath === normalizedExcluded || normalizedPath.startsWith(normalizedExcluded + path.sep);
-  });
 }

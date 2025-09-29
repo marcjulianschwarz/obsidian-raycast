@@ -120,23 +120,28 @@ export function buildFileFilters(
 ) {
   const includedPatterns = splitPatterns(pref.includedPatterns);
 
-  const rawExcluded = splitPatterns(pref.excludedPatterns);
-  const { folderLike, globLike } = partitionFolderPatterns(rawExcluded);
+  // Split global excluded patterns
+  const globalExcluded = splitPatterns(pref.excludedPatterns);
+  const { folderLike: globalFolderLike, globLike: globalGlobLike } = partitionFolderPatterns(globalExcluded);
 
+  // Split additional excluded patterns (treat array entries like the main string list)
+  const rawAdditionalPatterns = (options.additionalExcludedPatterns ?? []).flatMap((p) => splitPatterns(p));
+  const { folderLike: additionalFolderLike, globLike: additionalGlobLike } = partitionFolderPatterns(rawAdditionalPatterns);
+
+  // Merge folder-like from both sources with explicitly provided excluded folders
   const additionalFolders = options.additionalExcludedFolders ?? [];
-  const normalizedFolders = unique(
-    [...folderLike, ...additionalFolders]
+  const excludedFolders = unique(
+    [...globalFolderLike, ...additionalFolderLike, ...additionalFolders]
       .map((folder) => normalizeFolderName(folder))
       .filter((folder): folder is string => Boolean(folder))
   );
 
-  const folderPatterns = buildFolderGlobPatterns(normalizedFolders);
-  const additionalPatterns = options.additionalExcludedPatterns ?? [];
-
-  const excludedPatterns = unique([...globLike, ...folderPatterns, ...additionalPatterns]);
+  // Compose final excluded pattern list: glob-like plus folder/** mirrors
+  const folderMirrors = excludedFolders.map((f) => `${f}/**`);
+  const excludedPatterns = unique([...globalGlobLike, ...additionalGlobLike, ...folderMirrors]);
 
   return {
-    excludedFolders: normalizedFolders,
+    excludedFolders,
     includedPatterns,
     excludedPatterns,
   };

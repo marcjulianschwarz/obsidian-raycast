@@ -3,7 +3,7 @@ import path from "path";
 import { getPreferenceValues } from "@raycast/api";
 import { Vault } from "../api/vault/vault.types";
 import { getUserIgnoreFilters } from "../api/vault/vault.service";
-import { DEFAULT_EXCLUDED_PATHS, isPathExcluded } from "../api/file/patterns.service";
+import { DEFAULT_EXCLUDED_PATHS, isPathExcluded } from "../api/file/patterns";
 
 function walkDirsHelper(pathToWalk: string, excludedFolders: string[], vaultRoot: string, collected: Set<string>): Set<string> {
   const files = fs.readdirSync(pathToWalk);
