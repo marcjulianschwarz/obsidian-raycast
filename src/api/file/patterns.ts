@@ -87,30 +87,20 @@ export function shouldIncludeFile(relPath: string, includedPatterns: string[], e
   return includedPatterns.some((pattern) => matchesPattern(relPath, pattern));
 }
 
-export function filterPathsByPatterns(
-  files: string[],
-  vaultRoot: string,
-  includedPatterns: string[] = [],
-  excludedPatterns: string[] = []
-): string[] {
-  const includes = includedPatterns.filter((pattern) => Boolean(pattern));
-  const excludes = excludedPatterns
-    .filter((pattern) => Boolean(pattern))
-    .filter((pattern) => pattern !== "/" && pattern !== "**" && pattern !== "*");
-
-  return files.filter((file) => {
-    const relPath = toPosix(path.relative(vaultRoot, file));
-    return shouldIncludeFile(relPath, includes, excludes);
-  });
-}
-
-type PatternPreferences = Pick<GlobalPreferences, "includedPatterns" | "excludedPatterns">;
-
+// Retrieves the folder paths used to populate the target folder picker for new notes in utils/folderPaths.tsx
 export function isPathExcluded(pathToCheck: string, excludedPatterns: string[], vaultRoot: string): boolean {
   const relPath = toPosix(path.relative(vaultRoot, path.normalize(pathToCheck)));
   return excludedPatterns.some((pattern) => matchesPattern(relPath, pattern));
 }
 
+type PatternPreferences = Pick<GlobalPreferences, "includedPatterns" | "excludedPatterns">;
+
+// Build unified filters from multiple sources:
+// - Start with global include/exclude globs from preferences
+// - Split excludes into folder-like vs. glob-like patterns
+// - Add Obsidian-ignored folders and any explicit extra folders
+// - Normalize and dedupe folders; mirror them as <folder>/** globs
+// - Return glob-like includes/excludes plus the folder list for fast-glob pruning
 export function buildFileFilters(
   pref: PatternPreferences,
   options: {
@@ -145,4 +135,23 @@ export function buildFileFilters(
     includedPatterns,
     excludedPatterns,
   };
+}
+
+// Filter a list of absolute file paths by inclusion and exclusion patterns
+// and return a filtered list of paths relative to the vault root
+export function filterPathsByPatterns(
+  files: string[],
+  vaultRoot: string,
+  includedPatterns: string[] = [],
+  excludedPatterns: string[] = []
+): string[] {
+  const includes = includedPatterns.filter((pattern) => Boolean(pattern));
+  const excludes = excludedPatterns
+    .filter((pattern) => Boolean(pattern))
+    .filter((pattern) => pattern !== "/" && pattern !== "**" && pattern !== "*");
+
+  return files.filter((file) => {
+    const relPath = toPosix(path.relative(vaultRoot, file));
+    return shouldIncludeFile(relPath, includes, excludes);
+  });
 }
