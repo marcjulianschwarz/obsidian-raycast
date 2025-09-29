@@ -26,10 +26,8 @@ function walkDirsHelper(pathToWalk: string, excludedFolders: string[], vaultRoot
 }
 
 export function getAllFolderPaths(vault: Vault): string[] {
-  const preferences = getPreferenceValues<{ excludedFolders?: string }>();
-  const excludedFolders = preferences.excludedFolders ? preferences.excludedFolders.split(",") : [];
   const userIgnoredFolders = getUserIgnoreFilters(vault);
-  excludedFolders.push(...userIgnoredFolders);
+  const excludedFolders = [...userIgnoredFolders];
 
   const collected = walkDirsHelper(vault.path, excludedFolders, vault.path, new Set<string>());
 
