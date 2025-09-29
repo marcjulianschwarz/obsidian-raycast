@@ -7,7 +7,7 @@ import { NoteListItem } from "./NoteListItem/NoteListItem";
 import { NoteListDropdown } from "./NoteListDropdown";
 import { searchFunction } from "../../utils/search/search";
 import { SearchNotePreferences } from "../../utils/preferences";
-import { SortOrder, sortNotesByOrder } from "../../utils/noteSorter";
+import { SORT_ORDERS, SortOrder, sortNotesByOrder } from "../../utils/noteSorter";
 import { CreateNoteView } from "./CreateNoteView";
 
 const MemoizedNoteListItem = memo(NoteListItem);
@@ -16,13 +16,12 @@ export function NoteList(props: NoteListProps) {
   const { notes, vault, title, searchArguments, isLoading } = props;
 
   const pref = getPreferenceValues<SearchNotePreferences>();
-  const validSortOrders: SortOrder[] = ["az", "za", "mn", "mo", "cn", "co"];
   const argumentSort = searchArguments?.sortArgument;
   const prefSort = pref.prefSortOrder as SortOrder;
   const initialSortOrder: SortOrder =
-    argumentSort && validSortOrders.includes(argumentSort)
+    argumentSort && SORT_ORDERS.includes(argumentSort)
       ? argumentSort
-      : validSortOrders.includes(prefSort)
+      : SORT_ORDERS.includes(prefSort)
         ? prefSort
         : "az";
 

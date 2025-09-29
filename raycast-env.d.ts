@@ -61,6 +61,8 @@ declare namespace Preferences {
   "showDetail": boolean,
   /** Show Metadata - Show the notes metadata in a detail view (only works when Show Detail is enabled) */
   "showMetadata": boolean,
+  /** Select Default Sort Order - Select a default sort order for important notes */
+  "prefSortOrder": "az" | "za" | "mn" | "mo" | "cn" | "co",
   /** Primary Action - Select a primary action to be executed on enter */
   "primaryAction"?: "quicklook" | "obsidian" | "newpane" | "defaultapp"
 }
@@ -159,7 +161,9 @@ declare namespace Arguments {
   /** Arguments passed to the `importantNotesCommand` command */
   export type ImportantNotesCommand = {
   /** Search Query */
-  "searchArgument": string
+  "searchArgument": string,
+  /** sort */
+  "sortArgument": "az" | "za" | "mn" | "mo" | "cn" | "co"
 }
   /** Arguments passed to the `openVaultCommand` command */
   export type OpenVaultCommand = {}

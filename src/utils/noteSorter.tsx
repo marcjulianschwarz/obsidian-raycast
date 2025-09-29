@@ -1,4 +1,5 @@
-export type SortOrder = "az" | "za" | "mn" | "mo" | "cn" | "co";
+export const SORT_ORDERS = ["az", "za", "mn", "mo", "cn", "co"] as const;
+export type SortOrder = (typeof SORT_ORDERS)[number];
 
 // This function handles file dates as both Date objects and strings representing dates.
 // This ensures robustness against possible changes to the created and modified attributes in notes,
