@@ -1,11 +1,13 @@
 import { Image } from "@raycast/api";
 import { Note } from "../api/vault/notes/notes.types";
 import { Vault } from "../api/vault/vault.types";
+import { SortOrder } from "./noteSorter";
 
 export interface SearchArguments {
   searchArgument: string;
   prefilterSearchQuery?: string;
   initialSearchText?: string;
+  sortArgument?: SortOrder;
 }
 
 export interface Media {

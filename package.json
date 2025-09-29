@@ -92,6 +92,38 @@
           "placeholder": "Search Query",
           "type": "text",
           "required": false
+        },
+        {
+          "name": "sortArgument",
+          "placeholder": "sort",
+          "type": "dropdown",
+          "required": false,
+          "data": [
+            {
+              "title": "A → Z",
+              "value": "az"
+            },
+            {
+              "title": "Z → A",
+              "value": "za"
+            },
+            {
+              "title": "🕓 New → Old",
+              "value": "mn"
+            },
+            {
+              "title": "🕓 Old → New",
+              "value": "mo"
+            },
+            {
+              "title": "📅 New → Old",
+              "value": "cn"
+            },
+            {
+              "title": "📅 Old → New",
+              "value": "co"
+            }
+          ]
         }
       ],
       "preferences": [
@@ -177,27 +209,27 @@
           "default": "az",
           "data": [
             {
-              "title": "A to Z",
+              "title": "A → Z",
               "value": "az"
             },
             {
-              "title": "Z to A",
+              "title": "Z → A",
               "value": "za"
             },
             {
-              "title": "Modified: newest first",
+              "title": "Modified: New → Old",
               "value": "mn"
             },
             {
-              "title": "Modified: oldest first",
+              "title": "Modified: Old → New",
               "value": "mo"
             },
             {
-              "title": "Created: newest first",
+              "title": "Created: New → Old",
               "value": "cn"
             },
             {
-              "title": "Created: oldest first",
+              "title": "Created: Old → New",
               "value": "co"
             }
           ]

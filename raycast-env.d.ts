@@ -152,7 +152,9 @@ declare namespace Arguments {
   /** Arguments passed to the `searchNoteCommand` command */
   export type SearchNoteCommand = {
   /** Search Query */
-  "searchArgument": string
+  "searchArgument": string,
+  /** sort */
+  "sortArgument": "az" | "za" | "mn" | "mo" | "cn" | "co"
 }
   /** Arguments passed to the `importantNotesCommand` command */
   export type ImportantNotesCommand = {

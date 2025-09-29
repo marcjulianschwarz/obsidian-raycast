@@ -17,9 +17,14 @@ export function NoteList(props: NoteListProps) {
 
   const pref = getPreferenceValues<SearchNotePreferences>();
   const validSortOrders: SortOrder[] = ["az", "za", "mn", "mo", "cn", "co"];
-  const initialSortOrder: SortOrder = validSortOrders.includes(pref.prefSortOrder as SortOrder)
-    ? (pref.prefSortOrder as SortOrder)
-    : "az";
+  const argumentSort = searchArguments?.sortArgument;
+  const prefSort = pref.prefSortOrder as SortOrder;
+  const initialSortOrder: SortOrder =
+    argumentSort && validSortOrders.includes(argumentSort)
+      ? argumentSort
+      : validSortOrders.includes(prefSort)
+        ? prefSort
+        : "az";
 
   const [sortOrder, setSortOrder] = useState<SortOrder>(initialSortOrder);
   const [searchText, setSearchText] = useState(
