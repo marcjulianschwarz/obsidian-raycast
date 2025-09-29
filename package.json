@@ -44,17 +44,17 @@
       "name": "includedPatterns",
       "type": "textfield",
       "title": "Include following files",
-      "placeholder": "**/folder/**, *.pdf, ...",
+      "placeholder": "**/folder/**, **/*.pdf, ...",
       "required": false,
-      "description": "Files to include (vault-relative). Vault root is default."
+      "description": "Use vault-relative glob patterns. Vault root is default."
     },
     {
       "name": "excludedPatterns",
       "type": "textfield",
-      "placeholder": "**/folder/**, *.pdf, ...",
+      "placeholder": "**/folder/**, **/*.pdf, ...",
       "title": "Exclude following files",
       "required": false,
-      "description": "Files to exclude (vault-relative1). Exclusions take precedence."
+      "description": "Use vault-relative glob patterns. Exclusions take precedence."
     },
     {
       "name": "removeYAML",
@@ -591,10 +591,10 @@
         {
           "name": "excludedMedia",
           "type": "textfield",
-          "title": "Exclude following media files",
-          "placeholder": "**/folder/**, *.png, ...",
+          "title": "Exclude following files",
+          "placeholder": "**/folder/**, **/*.png, ...",
           "required": false,
-          "description": "Files to exclude (vault-relative)"
+          "description": "Use vault-relative glob patterns"
         },
         {
           "name": "imageSize",
