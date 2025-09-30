@@ -154,16 +154,12 @@ declare namespace Arguments {
   /** Arguments passed to the `searchNoteCommand` command */
   export type SearchNoteCommand = {
   /** Search Query */
-  "searchArgument": string,
-  /** sort */
-  "sortArgument": "az" | "za" | "mn" | "mo" | "cn" | "co"
+  "searchArgument": string
 }
   /** Arguments passed to the `importantNotesCommand` command */
   export type ImportantNotesCommand = {
   /** Search Query */
-  "searchArgument": string,
-  /** sort */
-  "sortArgument": "az" | "za" | "mn" | "mo" | "cn" | "co"
+  "searchArgument": string
 }
   /** Arguments passed to the `openVaultCommand` command */
   export type OpenVaultCommand = {}

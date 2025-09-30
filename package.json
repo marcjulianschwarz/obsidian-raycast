@@ -92,38 +92,6 @@
           "placeholder": "Search Query",
           "type": "text",
           "required": false
-        },
-        {
-          "name": "sortArgument",
-          "placeholder": "sort",
-          "type": "dropdown",
-          "required": false,
-          "data": [
-            {
-              "title": "A → Z",
-              "value": "az"
-            },
-            {
-              "title": "Z → A",
-              "value": "za"
-            },
-            {
-              "title": "🕓 New → Old",
-              "value": "mn"
-            },
-            {
-              "title": "🕓 Old → New",
-              "value": "mo"
-            },
-            {
-              "title": "📅 New → Old",
-              "value": "cn"
-            },
-            {
-              "title": "📅 Old → New",
-              "value": "co"
-            }
-          ]
         }
       ],
       "preferences": [
@@ -274,38 +242,6 @@
           "placeholder": "Search Query",
           "type": "text",
           "required": false
-        },
-        {
-          "name": "sortArgument",
-          "placeholder": "sort",
-          "type": "dropdown",
-          "required": false,
-          "data": [
-            {
-              "title": "A → Z",
-              "value": "az"
-            },
-            {
-              "title": "Z → A",
-              "value": "za"
-            },
-            {
-              "title": "🕓 New → Old",
-              "value": "mn"
-            },
-            {
-              "title": "🕓 Old → New",
-              "value": "mo"
-            },
-            {
-              "title": "📅 New → Old",
-              "value": "cn"
-            },
-            {
-              "title": "📅 Old → New",
-              "value": "co"
-            }
-          ]
         }
       ],
       "preferences": [

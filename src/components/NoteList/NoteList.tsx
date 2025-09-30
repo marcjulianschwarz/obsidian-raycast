@@ -16,14 +16,8 @@ export function NoteList(props: NoteListProps) {
   const { notes, vault, title, searchArguments, isLoading } = props;
 
   const pref = getPreferenceValues<SearchNotePreferences>();
-  const argumentSort = searchArguments?.sortArgument;
   const prefSort = pref.prefSortOrder as SortOrder;
-  const initialSortOrder: SortOrder =
-    argumentSort && SORT_ORDERS.includes(argumentSort)
-      ? argumentSort
-      : SORT_ORDERS.includes(prefSort)
-        ? prefSort
-        : "az";
+  const initialSortOrder: SortOrder = SORT_ORDERS.includes(prefSort) ? prefSort : "az";
 
   const [sortOrder, setSortOrder] = useState<SortOrder>(initialSortOrder);
   const [searchText, setSearchText] = useState(

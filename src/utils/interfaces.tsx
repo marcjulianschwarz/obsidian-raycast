@@ -7,7 +7,6 @@ export interface SearchArguments {
   searchArgument: string;
   prefilterSearchQuery?: string;
   initialSearchText?: string;
-  sortArgument?: SortOrder;
 }
 
 export interface Media {

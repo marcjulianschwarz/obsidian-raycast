@@ -8,7 +8,6 @@ import { noVaultPathsToast } from "./components/Toasts";
 import { useObsidianVaults } from "./utils/hooks";
 import { Vault } from "./api/vault/vault.types";
 import { SearchNotePreferences } from "./utils/preferences";
-import { SORT_ORDERS, SortOrder } from "./utils/noteSorter";
 
 export default function Command(props: { arguments: SearchArguments }) {
   const { ready, vaults } = useObsidianVaults();
@@ -17,12 +16,6 @@ export default function Command(props: { arguments: SearchArguments }) {
   const prefilter = prefilterSearchQuery?.trim() ? prefilterSearchQuery.trim() : "";
   props.arguments.prefilterSearchQuery = prefilter || undefined;
 
-  const preferenceSort = pref.prefSortOrder as SortOrder;
-  if (!props.arguments.sortArgument || !SORT_ORDERS.includes(props.arguments.sortArgument)) {
-    if (SORT_ORDERS.includes(preferenceSort)) {
-      props.arguments.sortArgument = preferenceSort;
-    }
-  }
 
   if (!ready) {
     return <List isLoading={true} />;
