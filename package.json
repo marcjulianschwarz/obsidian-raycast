@@ -18,7 +18,8 @@
     "psychomane",
     "denis_ufimtsev",
     "sapoepsilon",
-    "theherk"
+    "theherk",
+    "chris_van_es"
   ],
   "license": "MIT",
   "preferences": [
@@ -614,6 +615,47 @@
           "type": "checkbox"
         }
       ]
+    }
+  ],
+  "ai": {
+    "instructions": "You are an assistant for managing notes in Obsidian, a powerful knowledge base that works on top of a local folder of plain text Markdown files. You can help users search for notes, create new notes, open existing notes and append content to notes. Always ensure that you follow the user's instructions carefully and confirm any actions that will modify or create notes. If the user wants to open a note, make sure to use the appropriate command to open it in the Obsidian application. Default to the root of the vault when creating notes and only add tags when explicitly instructed by the user. When appending content, always confirm the exact content and location with the user before making changes."
+  },
+  "tools": [
+    {
+      "name": "searchNote",
+      "title": "Search Note",
+      "description": "Search for notes in Obsidian vaults by name or content and return a list of matching notes with their locations",
+      "instructions": "Use this tool to find notes. Returns a list of matching notes with vault name and path. Does not open Obsidian."
+    },
+    {
+      "name": "createNote",
+      "title": "Create Note",
+      "description": "Create a new note in an Obsidian vault with optional tags and path",
+      "instructions": "Use this tool to create new notes. Supports tags, custom paths within vaults, and templates. Does not open Obsidian unless specified."
+    },
+    {
+      "name": "openNote",
+      "title": "Open Note",
+      "description": "Open a note in Obsidian application",
+      "instructions": "Use this tool when the user explicitly wants to open a note in Obsidian. Supports fuzzy search to find notes."
+    },
+    {
+      "name": "appendNote",
+      "title": "Append to Note",
+      "description": "Append or prepend content to an existing note",
+      "instructions": "Use this tool to add content to existing notes. Supports prepending and template expansion. Does not open Obsidian."
+    },
+    {
+      "name": "createDailyNote",
+      "title": "Create Daily Note",
+      "description": "Create or open today's daily note in Obsidian",
+      "instructions": "Use this tool to create or open today's daily note. Requires Advanced URI plugin in Obsidian."
+    },
+    {
+      "name": "appendDailyNote",
+      "title": "Append to Daily Note",
+      "description": "Append content to today's daily note",
+      "instructions": "Use this tool to add content to today's daily note. Supports headings, prepending, and silent mode. Requires Advanced URI plugin."
     }
   ],
   "dependencies": {
