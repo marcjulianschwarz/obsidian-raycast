@@ -8,7 +8,7 @@ import { ObsidianVaultsState, Vault } from "../api/vault/vault.types";
 import { Note } from "../api/vault/notes/notes.types";
 import {
   getMedia,
-  getVaultsFromObsidianJSON,
+  loadObsidianJson,
   getExistingVaultsFromPreferences,
   getNotes,
   getNoteFileContent,
@@ -97,7 +97,7 @@ export function useObsidianVaults(): ObsidianVaultsState {
 
   useEffect(() => {
     if (!state.ready) {
-      getVaultsFromObsidianJSON()
+      loadObsidianJson()
         .then((vaults) => {
           setState({ vaults, ready: true });
         })
