@@ -631,7 +631,7 @@
     "@types/luxon": "^3.4.2",
     "@types/node": "^22.14.1",
     "@types/pako": "^2.0.3",
-    "@types/react": "^17.0.52",
+    "@types/react": "19.0.10",
     "eslint": "^8.42.0",
     "prettier": "^2.8.8",
     "typescript": "^4.5.4",
@@ -642,7 +642,10 @@
     "dev": "ray develop",
     "fix-lint": "ray lint --fix",
     "lint": "ray lint",
-    "publish": "ray publish",
-    "test": "vitest"
-  }
+    "publish": "ray publish"
+  },
+  "platforms": [
+    "macOS",
+    "Windows"
+  ]
 }
