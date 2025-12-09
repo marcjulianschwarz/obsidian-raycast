@@ -2,7 +2,8 @@ import { Cache } from "@raycast/api";
 import { BYTES_PER_MEGABYTE } from "../../utils/constants";
 import { Logger } from "../logger/logger.service";
 import { Note } from "../vault/notes/notes.types";
-import { loadNotes } from "../vault/vault.service";
+import { getNotes } from "../vault/vault.service";
+// import { loadNotes } from "../vault/vault.service";
 import { Vault } from "../vault/vault.types";
 
 //--------------------------------------------------------------------------------
@@ -19,7 +20,7 @@ const cache = new Cache({ capacity: BYTES_PER_MEGABYTE * 500 });
  * @returns The cached notes for the vault
  */
 export function cacheNotesFor(vault: Vault) {
-  const notes = loadNotes(vault);
+  const notes = getNotes(vault);
   cache.set(vault.name, JSON.stringify({ lastCached: Date.now(), notes: notes }));
   return notes;
 }

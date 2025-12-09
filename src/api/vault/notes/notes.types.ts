@@ -1,18 +1,20 @@
-export type Note = {
+export interface Note {
   title: string;
   path: string;
   lastModified: Date;
-  tags: string[];
-  content: string;
   bookmarked: boolean;
-};
+}
 
-export type CreateNoteParams = {
+export interface NoteWithContent extends Note {
+  content: string;
+}
+
+export interface CreateNoteParams {
   path: string;
   name: string;
   content: string;
   tags: string[];
-};
+}
 
 export interface CodeBlock {
   language: string;

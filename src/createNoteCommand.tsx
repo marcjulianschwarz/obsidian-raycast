@@ -26,7 +26,7 @@ export default function Command() {
       const target = getObsidianTarget({
         type: ObsidianTargetType.NewNote,
         vault: vaults[0],
-        name: "Blank Note",
+        name: pref.prefNoteName || "Blank Note",
         content: "",
       });
       open(target);
