@@ -3,7 +3,6 @@ import { BYTES_PER_MEGABYTE } from "../../utils/constants";
 import { Logger } from "../logger/logger.service";
 import { Note } from "../vault/notes/notes.types";
 import { getNotes } from "../vault/vault.service";
-// import { loadNotes } from "../vault/vault.service";
 import { Vault } from "../vault/vault.types";
 
 //--------------------------------------------------------------------------------
