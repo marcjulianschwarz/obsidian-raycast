@@ -3,6 +3,8 @@ import * as fs from "fs";
 import * as fsAsync from "fs/promises";
 import * as path from "path";
 import { homedir } from "os";
+import path from "path";
+import { performance } from "perf_hooks";
 import { AUDIO_FILE_EXTENSIONS, LATEX_INLINE_REGEX, LATEX_REGEX, VIDEO_FILE_EXTENSIONS } from "../../utils/constants";
 import { Media } from "../../utils/interfaces";
 import { GlobalPreferences, SearchNotePreferences, SearchMediaPreferences } from "../../utils/preferences";
@@ -17,21 +19,13 @@ import { tagsForString } from "../../utils/yaml";
 
 const logger: Logger = new Logger("Vaults");
 
-function toStringArray(value: unknown): string[] {
-  if (Array.isArray(value)) {
-    return value.filter((entry): entry is string => typeof entry === "string" && entry.trim().length > 0);
+function getVaultNameFromPath(vaultPath: string): string {
+  const name = path.basename(vaultPath);
+  if (name) {
+    return name;
+  } else {
+    return "Default Vault Name (check your path preferences)";
   }
-  if (typeof value === "string" && value.trim().length > 0) {
-    return [value];
-  }
-  return [];
-}
-
-export function getVaultNameFromPath(vaultPath: string): string | undefined {
-  if (vaultPath === "") {
-    return undefined;
-  }
-  return path.basename(vaultPath);
 }
 
 export function getExistingVaultsFromPreferences(): Vault[] {
@@ -49,8 +43,10 @@ export function getExistingVaultsFromPreferences(): Vault[] {
     }));
 }
 
-export async function getVaultsFromObsidianJSON(): Promise<Vault[]> {
-  const obsidianJsonPath = path.resolve(`${homedir()}/Library/Application Support/obsidian/obsidian.json`);
+export async function loadObsidianJson(): Promise<Vault[]> {
+  const obsidianJsonPath = path.resolve(
+    path.join(homedir(), "Library", "Application Support", "obsidian", "obsidian.json")
+  );
   try {
     const obsidianJson = JSON.parse(await fsAsync.readFile(obsidianJsonPath, "utf8")) as ObsidianJSON;
     return Object.values(obsidianJson.vaults).map(({ path }) => ({
@@ -66,7 +62,7 @@ export async function getVaultsFromObsidianJSON(): Promise<Vault[]> {
 /** Gets a list of folders that are ignored by the user inside of Obsidian */
 function getExcludedFoldersFromObsidian(vault: Vault): string[] {
   const { configFileName } = getPreferenceValues<GlobalPreferences>();
-  const appJSONPath = `${vault.path}/${configFileName || ".obsidian"}/app.json`;
+  const appJSONPath = path.join(vault.path, configFileName || ".obsidian", "app.json");
   if (!fs.existsSync(appJSONPath)) {
     return [];
   }

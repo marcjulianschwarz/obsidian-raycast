@@ -750,9 +750,9 @@
     "@raycast/eslint-config": "^1.0.6",
     "@types/lunr": "^2.3.7",
     "@types/luxon": "^3.4.2",
+    "@types/react": "19.0.10",
     "@types/node": "^22.14.1",
     "@types/pako": "^2.0.4",
-    "@types/react": "^19.0.3",
     "eslint": "^8.42.0",
     "prettier": "^2.8.8",
     "typescript": "^5.6.3",
@@ -767,5 +767,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui"
-  }
+  },
+  "platforms": [
+    "macOS",
+    "Windows"
+  ]
 }
