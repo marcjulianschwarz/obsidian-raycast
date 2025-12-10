@@ -84,19 +84,19 @@ export function useMedia(vault: Vault) {
 
 export function useObsidianVaults(): ObsidianVaultsState {
   const pref = useMemo(() => getPreferenceValues(), []);
-  const [state, setState] = useState<ObsidianVaultsState>(
-    pref.vaultPath
-      ? {
-          ready: true,
-          vaults: getExistingVaultsFromPreferences(),
-        }
-      : { ready: false, vaults: [] }
-  );
-
-  logger.info("useObsidianVaults hook called");
+  const [state, setState] = useState<ObsidianVaultsState>(() => {
+    // Lazy initializer - only runs once
+    if (pref.vaultPath) {
+      return {
+        ready: true,
+        vaults: getExistingVaultsFromPreferences(),
+      };
+    }
+    return { ready: false, vaults: [] };
+  });
 
   useEffect(() => {
-    if (!state.ready) {
+    if (!pref.vaultPath) {
       loadObsidianJson()
         .then((vaults) => {
           setState({ vaults, ready: true });
