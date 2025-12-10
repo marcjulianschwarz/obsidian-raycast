@@ -9,6 +9,7 @@ import {
   List,
 } from "@raycast/api";
 import React, { useEffect, useState } from "react";
+import fs from "fs";
 import { bookmarkNote, unbookmarkNote } from "../api/vault/notes/bookmarks/bookmarks.service";
 import { appendSelectedTextTo, getCodeBlocks } from "../api/vault/notes/notes.service";
 import { Note, NoteWithContent } from "../api/vault/notes/notes.types";
@@ -18,10 +19,9 @@ import { AppendNoteForm } from "../components/AppendNoteForm";
 import { EditNote } from "../components/EditNote";
 import { NoteQuickLook } from "../components/NoteQuickLook";
 import { ObsidianIcon, PrimaryAction } from "./constants";
-import { useNotesDispatchContext } from "./hooks";
 import { SearchNotePreferences } from "./preferences";
-import { NoteReducerActionType } from "./reducers";
 import { getObsidianTarget, ObsidianTargetType } from "./utils";
+import { updateNoteInCache, deleteNoteFromCache } from "../api/cache/cache.service";
 
 //--------------------------------------------------------------------------------
 // All actions for all commands should be defined here.
@@ -39,37 +39,46 @@ export function ShowPathInFinderAction(props: { path: string }) {
   );
 }
 
-export function EditNoteAction(props: { note: NoteWithContent; vault: Vault }) {
-  const { note, vault } = props;
-  const dispatch = useNotesDispatchContext();
+export function EditNoteAction(props: {
+  note: NoteWithContent;
+  vault: Vault;
+  onNoteUpdated?: (notePath: string, updates: Partial<Note>) => void;
+}) {
+  const { note, vault, onNoteUpdated } = props;
 
   return (
     <Action.Push
       title="Edit Note"
-      target={<EditNote note={note} vault={vault} dispatch={dispatch} />}
+      target={<EditNote note={note} vault={vault} onNoteUpdated={onNoteUpdated} />}
       shortcut={{ modifiers: ["opt"], key: "e" }}
       icon={Icon.Pencil}
     />
   );
 }
 
-export function AppendToNoteAction(props: { note: Note; vault: Vault }) {
-  const { note, vault } = props;
-  const dispatch = useNotesDispatchContext();
+export function AppendToNoteAction(props: {
+  note: Note;
+  vault: Vault;
+  onNoteUpdated?: (notePath: string, updates: Partial<Note>) => void;
+}) {
+  const { note, vault, onNoteUpdated } = props;
 
   return (
     <Action.Push
       title="Append to Note"
-      target={<AppendNoteForm note={note} vault={vault} dispatch={dispatch} />}
+      target={<AppendNoteForm note={note} vault={vault} onNoteUpdated={onNoteUpdated} />}
       shortcut={{ modifiers: ["opt"], key: "a" }}
       icon={Icon.Pencil}
     />
   );
 }
 
-export function AppendSelectedTextToNoteAction(props: { note: Note; vault: Vault }) {
-  const { note, vault } = props;
-  const dispatch = useNotesDispatchContext();
+export function AppendSelectedTextToNoteAction(props: {
+  note: Note;
+  vault: Vault;
+  onNoteUpdated?: (notePath: string, updates: Partial<Note>) => void;
+}) {
+  const { note, vault, onNoteUpdated } = props;
   return (
     <Action
       title="Append Selected Text to Note"
@@ -77,7 +86,11 @@ export function AppendSelectedTextToNoteAction(props: { note: Note; vault: Vault
       onAction={async () => {
         const done = await appendSelectedTextTo(note);
         if (done) {
-          dispatch({ type: NoteReducerActionType.Update, payload: { note: note, vault: vault } });
+          // Update cache with new metadata
+          const stats = fs.statSync(note.path);
+          const updates = { lastModified: stats.mtime };
+          updateNoteInCache(vault, note.path, updates);
+          onNoteUpdated?.(note.path, updates);
         }
       }}
       icon={Icon.Pencil}
@@ -138,7 +151,6 @@ export function CopyObsidianURIAction(props: { note: Note }) {
 
 export function DeleteNoteAction(props: { note: Note; vault: Vault }) {
   const { note, vault } = props;
-  const dispatch = useNotesDispatchContext();
   return (
     <Action
       title="Delete Note"
@@ -150,7 +162,11 @@ export function DeleteNoteAction(props: { note: Note; vault: Vault }) {
           icon: Icon.ExclamationMark,
         };
         if (await confirmAlert(options)) {
-          dispatch({ type: NoteReducerActionType.Delete, payload: { note: note, vault: vault } });
+          // Delete the file
+          fs.unlinkSync(note.path);
+
+          // Update cache
+          deleteNoteFromCache(vault, note.path);
         }
       }}
       icon={{ source: Icon.Trash, tintColor: Color.Red }}
@@ -320,8 +336,9 @@ export function NoteActions(props: {
   note: NoteWithContent;
   vault: Vault;
   onNoteAction?: (actionType: NoteActionType) => void;
+  onNoteUpdated?: (notePath: string, updates: Partial<Note>) => void;
 }) {
-  const { note, vault, onNoteAction } = props;
+  const { note, vault, onNoteAction, onNoteUpdated } = props;
 
   return (
     <>
@@ -333,16 +350,16 @@ export function NoteActions(props: {
         <BookmarkNoteAction note={note} vault={vault} onBookmark={() => onNoteAction?.("bookmark")} />
       )}
       <CopyCodeAction note={note} />
-      <EditNoteAction note={note} vault={vault} />
-      <AppendToNoteAction note={note} vault={vault} />
-      <AppendSelectedTextToNoteAction note={note} vault={vault} />
+      <EditNoteAction note={note} vault={vault} onNoteUpdated={onNoteUpdated} />
+      <AppendToNoteAction note={note} vault={vault} onNoteUpdated={onNoteUpdated} />
+      <AppendSelectedTextToNoteAction note={note} vault={vault} onNoteUpdated={onNoteUpdated} />
       <CopyNoteAction note={note} />
       <CopyNoteTitleAction note={note} />
       <PasteNoteAction note={note} />
       <CopyMarkdownLinkAction note={note} />
       <CopyObsidianURIAction note={note} />
       <DeleteNoteAction note={note} vault={vault} />
-      <AppendTaskAction note={note} vault={vault} />
+      <AppendTaskAction note={note} vault={vault} onNoteUpdated={onNoteUpdated} />
     </>
   );
 }
@@ -408,14 +425,17 @@ export function OpenNoteActions(props: { note: NoteWithContent; vault: Vault; sh
   }
 }
 
-export function AppendTaskAction(props: { note: Note; vault: Vault }) {
-  const { note, vault } = props;
-  const dispatch = useNotesDispatchContext();
+export function AppendTaskAction(props: {
+  note: Note;
+  vault: Vault;
+  onNoteUpdated?: (notePath: string, updates: Partial<Note>) => void;
+}) {
+  const { note, vault, onNoteUpdated } = props;
 
   return (
     <Action.Push
       title="Append Task"
-      target={<AppendNoteForm note={note} vault={vault} dispatch={dispatch} />}
+      target={<AppendNoteForm note={note} vault={vault} onNoteUpdated={onNoteUpdated} />}
       shortcut={{ modifiers: ["opt"], key: "a" }}
       icon={Icon.Pencil}
     />

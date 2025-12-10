@@ -1,11 +1,8 @@
 import { List } from "@raycast/api";
-import { useEffect, useState } from "react";
-import { useNotesDispatchContext } from "../../utils/hooks";
+import { useState } from "react";
 import { SearchArguments } from "../../utils/interfaces";
-import { NoteReducerActionType } from "../../utils/reducers";
 
 export function NoteListDropdown(props: { tags: string[]; searchArguments: SearchArguments }) {
-  const dispatch = useNotesDispatchContext();
   const { tags, searchArguments } = props;
 
   const [selectedTag, setSelectedTag] = useState<string>(() => {

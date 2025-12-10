@@ -1,17 +1,31 @@
 import { List, getPreferenceValues } from "@raycast/api";
 import { memo, useMemo, useState } from "react";
-import { NoteListProps } from "../../utils/interfaces";
 import { MAX_RENDERED_NOTES } from "../../utils/constants";
 import { NoteListItem } from "./NoteListItem/NoteListItem";
 import { NoteListDropdown } from "./NoteListDropdown";
 import { SearchNotePreferences } from "../../utils/preferences";
 import { CreateNoteView } from "./CreateNoteView";
 import { filterNotesFuzzy } from "../../api/search/search.service";
+import { Vault } from "../../api/vault/vault.types";
+import { Note } from "../../api/vault/notes/notes.types";
+import { SearchArguments } from "../../utils/interfaces";
+
+export interface NoteListProps {
+  title?: string;
+  vault: Vault;
+  notes: Note[];
+  isLoading?: boolean;
+  searchArguments: SearchArguments;
+  action?: (note: Note, vault: Vault) => React.ReactNode;
+  onDelete?: (note: Note, vault: Vault) => void;
+  onSearchChange?: (search: string) => void;
+  onNoteUpdated?: (notePath: string, updates: Partial<Note>) => void;
+}
 
 const MemoizedNoteListItem = memo(NoteListItem);
 
 export function NoteList(props: NoteListProps) {
-  const { notes, vault, title, searchArguments, isLoading } = props;
+  const { notes, vault, title, searchArguments, isLoading, onNoteUpdated } = props;
 
   const pref = getPreferenceValues<SearchNotePreferences>();
   const [inputText, setInputText] = useState(searchArguments.searchArgument || "");
@@ -46,6 +60,7 @@ export function NoteList(props: NoteListProps) {
           key={note.path}
           pref={pref}
           selectedItemId={!selectedItemId ? (idx === 0 ? note.path : null) : selectedItemId}
+          onNoteUpdated={onNoteUpdated}
         />
       ))}
     </List>

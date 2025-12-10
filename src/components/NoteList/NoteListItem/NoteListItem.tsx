@@ -6,7 +6,7 @@ import { SearchNotePreferences } from "../../../utils/preferences";
 import { Note } from "../../../api/vault/notes/notes.types";
 import { Vault } from "../../../api/vault/vault.types";
 import { filterContent } from "../../../api/vault/vault.service";
-import { renewCache } from "../../../api/cache/cache.service";
+import { invalidateNotesCache } from "../../../api/cache/cache.service";
 import { NoteActions, OpenNoteActions } from "../../../utils/actions";
 import { useNoteContent } from "../../../utils/hooks";
 import { useState } from "react";
@@ -17,8 +17,9 @@ export function NoteListItem(props: {
   key: string;
   pref: SearchNotePreferences;
   selectedItemId: string | null;
+  onNoteUpdated?: (notePath: string, updates: Partial<Note>) => void;
 }) {
-  const { note, vault, pref } = props;
+  const { note, vault, pref, onNoteUpdated } = props;
 
   const [isBookmarked, setIsBookmarked] = useState(note.bookmarked);
   const isSelected = props.selectedItemId === note.path;
@@ -26,7 +27,7 @@ export function NoteListItem(props: {
 
   const noteHasBeenMoved = !fs.existsSync(note.path);
   if (noteHasBeenMoved) {
-    renewCache(vault);
+    invalidateNotesCache(vault);
   }
 
   // Create a modified note object with the current bookmark state
@@ -122,6 +123,7 @@ export function NoteListItem(props: {
                   break;
               }
             }}
+            onNoteUpdated={onNoteUpdated}
           />
         </ActionPanel>
       }

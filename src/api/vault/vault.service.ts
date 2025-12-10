@@ -12,6 +12,7 @@ import { Logger } from "../logger/logger.service";
 import { Note } from "./notes/notes.types";
 import { getBookmarkedNotePaths } from "./notes/bookmarks/bookmarks.service";
 import { parseExcludedFoldersPreferences } from "../preferences/preferences.service";
+import { getNotesFromCache, setNotesInCache } from "../cache/cache.service";
 
 const logger: Logger = new Logger("Vaults");
 
@@ -215,6 +216,26 @@ export async function getNotes(vault: Vault): Promise<Note[]> {
       bookmarked: bookmarkedFilePaths.includes(relativePath),
     });
   }
+
+  return notes;
+}
+
+/**
+ * Gets notes with caching. Checks cache first, falls back to disk scan.
+ */
+export async function getNotesWithCache(vault: Vault): Promise<Note[]> {
+  // Try cached
+  const cached = getNotesFromCache(vault);
+  if (cached) {
+    return cached;
+  }
+
+  // Cache miss, load from disk
+  logger.info(`Cache miss for ${vault.name}, loading from disk`);
+  const notes = await getNotes(vault);
+
+  // Store in cache for next time
+  setNotesInCache(vault, notes);
 
   return notes;
 }

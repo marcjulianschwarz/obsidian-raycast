@@ -1,6 +1,5 @@
 import { getPreferenceValues, showToast, Toast } from "@raycast/api";
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { NoteReducerAction } from "./reducers";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { MediaState } from "./interfaces";
 import { sortByAlphabet } from "./utils";
 import fs from "fs";
@@ -10,30 +9,30 @@ import {
   getMedia,
   loadObsidianJson,
   getExistingVaultsFromPreferences,
-  getNotes,
+  getNotesWithCache,
   getNoteFileContent,
 } from "../api/vault/vault.service";
 import { Logger } from "../api/logger/logger.service";
+import { invalidateNotesCache } from "../api/cache/cache.service";
 
 const logger = new Logger("Hooks");
-
-export const NotesDispatchContext = createContext((() => {}) as (action: NoteReducerAction) => void);
 
 export function useNotes(vault: Vault, bookmarked = false) {
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  // only load notes when vault path is different
+  // Load notes with caching
   useEffect(() => {
     let cancelled = false;
     async function load() {
       try {
         setLoading(true);
-        const loadedNotes = await getNotes(vault);
-        // await new Promise((resolve) => setTimeout(resolve, 5000));
+        const loadedNotes = await getNotesWithCache(vault);
         if (!cancelled) setNotes(loadedNotes);
-      } catch {
-        console.log("error in useNotes");
+      } catch (error) {
+        logger.error(`Error loading notes. ${error}`);
+        if (!cancelled) setNotes([]);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -42,14 +41,24 @@ export function useNotes(vault: Vault, bookmarked = false) {
     return () => {
       cancelled = true;
     };
-  }, [vault.path]);
+  }, [vault.path, refreshKey]);
+
+  // Refresh function to force reload
+  const refresh = useCallback(() => {
+    logger.info(`Refreshing notes for vault ${vault.name}`);
+    invalidateNotesCache(vault);
+    setRefreshKey((k) => k + 1);
+  }, [vault]);
+
+  // Update a single note in the list
+  const updateNote = useCallback((notePath: string, updates: Partial<Note>) => {
+    logger.info(`Updating note in list: ${notePath}`);
+    setNotes((prev) => prev.map((note) => (note.path === notePath ? { ...note, ...updates } : note)));
+  }, []);
 
   const filtered = useMemo(() => (bookmarked ? notes.filter((n) => n.bookmarked) : notes), [notes, bookmarked]);
-  return { notes: filtered, loading } as const;
-}
 
-export function useNotesDispatchContext() {
-  return useContext(NotesDispatchContext);
+  return { notes: filtered, loading, refresh, updateNote } as const;
 }
 
 export function useMedia(vault: Vault) {

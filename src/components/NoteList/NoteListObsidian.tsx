@@ -11,7 +11,7 @@ export const NoteListObsidian = function NoteListObsidian(props: {
 }) {
   const { showTitle, vault, searchArguments, bookmarked } = props;
 
-  const { notes, loading } = useNotes(vault, bookmarked);
+  const { notes, loading, updateNote } = useNotes(vault, bookmarked);
 
   return (
     <NoteList
@@ -20,6 +20,7 @@ export const NoteListObsidian = function NoteListObsidian(props: {
       vault={vault}
       searchArguments={searchArguments}
       isLoading={loading}
+      onNoteUpdated={updateNote}
     />
   );
 };
