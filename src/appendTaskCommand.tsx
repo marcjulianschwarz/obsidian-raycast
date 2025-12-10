@@ -112,6 +112,7 @@ export default function AppendTask(props: { arguments: appendTaskArgs }) {
 
   // en-CA uses the same format as the iso string without the time ex: 2025-09-25
   const creationDateString = creationDate ? " ➕ " + new Date().toLocaleDateString("en-CA") : "";
+  const tag = noteTag ? noteTag + " " : "";
 
   const selectedVault = vaultName && vaults.find((vault) => vault.name === vaultName);
   // If there's a configured vault or only one vault, use that
@@ -144,7 +145,7 @@ export default function AppendTask(props: { arguments: appendTaskArgs }) {
                   type: ObsidianTargetType.AppendTask,
                   path: notePath,
                   vault: vault,
-                  text: "- [ ] #task " + content + dateContent + creationDateString,
+                  text: "- [ ] " + tag + content + dateContent + creationDateString,
                   heading: heading,
                 })}
               />
