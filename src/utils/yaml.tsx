@@ -1,5 +1,5 @@
 import YAML from "yaml";
-import { Note } from "../api/vault/notes/notes.types";
+import { NoteWithContent } from "../api/vault/notes/notes.types";
 
 import { CODE_BLOCK_REGEX, INLINE_TAGS_REGEX, YAML_FRONTMATTER_REGEX } from "./constants";
 import { sortByAlphabet } from "./utils";
@@ -42,7 +42,7 @@ export function yamlPropertyForString(str: string, property: string): string | u
 // Get Tags for a list of notes from both inline tags and YAML frontmatter
 //--------------------------------------------------------------------------------
 
-function inlineTagsForNotes(notes: Note[]) {
+function inlineTagsForNotes(notes: NoteWithContent[]) {
   const foundTags: string[] = [];
   for (const note of notes) {
     // Ignoring codeblocks to avoid matching hex color codes
@@ -57,7 +57,7 @@ function inlineTagsForNotes(notes: Note[]) {
   return foundTags;
 }
 
-function yamlTagsForNotes(notes: Note[]) {
+function yamlTagsForNotes(notes: NoteWithContent[]) {
   const foundTags: string[] = [];
   for (const note of notes) {
     const tags = yamlTagsForString(note.content);
@@ -70,7 +70,7 @@ function yamlTagsForNotes(notes: Note[]) {
   return foundTags;
 }
 
-export function tagsForNotes(notes: Note[]) {
+export function tagsForNotes(notes: NoteWithContent[]) {
   const foundTags = inlineTagsForNotes(notes);
   const foundYAMLTags = yamlTagsForNotes(notes);
   for (const tag of foundYAMLTags) {

@@ -1,10 +1,8 @@
 import { getPreferenceValues, Icon } from "@raycast/api";
 import * as fs from "fs";
 import * as fsAsync from "fs/promises";
-import * as path from "path";
 import { homedir } from "os";
 import path from "path";
-import { performance } from "perf_hooks";
 import { AUDIO_FILE_EXTENSIONS, LATEX_INLINE_REGEX, LATEX_REGEX, VIDEO_FILE_EXTENSIONS } from "../../utils/constants";
 import { Media } from "../../utils/interfaces";
 import { GlobalPreferences, SearchNotePreferences } from "../../utils/preferences";
