@@ -28,6 +28,8 @@ export async function getFilePaths(params: GetFilePathsHelper): Promise<string[]
     dot: false,
   };
 
+  logger.info(`Globbing files with option ${JSON.stringify(options)}`);
+
   const files = await glob(extensionPattern, options);
   logger.success(`Globbed ${files.length} file paths.`);
   return files;
