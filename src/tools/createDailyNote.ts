@@ -1,5 +1,5 @@
 import { Tool, open } from "@raycast/api";
-import { parseVaults } from "../api/vault/vault.service";
+import { getVaultsFromPreferencesOrObsidianJson } from "../api/vault/vault.service";
 import { getObsidianTarget, ObsidianTargetType } from "../utils/utils";
 
 type Input = {
@@ -10,7 +10,7 @@ type Input = {
 };
 
 export const confirmation: Tool.Confirmation<Input> = async (input) => {
-  const vaults = parseVaults();
+  const vaults = await getVaultsFromPreferencesOrObsidianJson();
 
   if (vaults.length === 0) {
     return {
@@ -35,7 +35,7 @@ export const confirmation: Tool.Confirmation<Input> = async (input) => {
  * Create or open today's daily note in Obsidian (requires Advanced URI plugin)
  */
 export default async function tool(input: Input) {
-  const vaults = parseVaults();
+  const vaults = await getVaultsFromPreferencesOrObsidianJson();
 
   if (vaults.length === 0) {
     return "No vaults found. Please configure vault paths in Raycast preferences.";

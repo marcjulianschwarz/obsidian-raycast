@@ -625,7 +625,7 @@
       "name": "searchNote",
       "title": "Search Note",
       "description": "Search for notes in Obsidian vaults by name or content and return a list of matching notes with their locations",
-      "instructions": "Use this tool to find notes. Returns a list of matching notes with vault name and path. Does not open Obsidian."
+      "instructions": "Use this tool to find notes. Returns a list of matching notes with vault name and path. Does not open Obsidian. Alway provide a vault name if the user specified or hinted at some vault name the note could be located in. Specifying a name is very important. Only keep it empty when the user did not mention anything in that direction."
     },
     {
       "name": "createNote",
@@ -637,13 +637,19 @@
       "name": "openNote",
       "title": "Open Note",
       "description": "Open a note in Obsidian application",
-      "instructions": "Use this tool when the user explicitly wants to open a note in Obsidian. Supports fuzzy search to find notes."
+      "instructions": "Use this tool ONLY when the user EXPLICITELY wants you to open a note in Obsidian. Do NOT use it in any other case."
     },
     {
       "name": "appendNote",
       "title": "Append to Note",
       "description": "Append or prepend content to an existing note",
       "instructions": "Use this tool to add content to existing notes. Supports prepending and template expansion. Does not open Obsidian."
+    },
+    {
+      "name": "readNote",
+      "title": "Read Note",
+      "description": "Read the full content of a specific note by its path and vault",
+      "instructions": "Use this tool to read the complete content of a note when you have the exact path and vault name. Use this after searchNote to get the full content of a specific note."
     },
     {
       "name": "createDailyNote",
@@ -682,6 +688,7 @@
   "scripts": {
     "build": "ray build -e dist",
     "dev": "ray develop",
+    "help": "ray --help",
     "fix-lint": "ray lint --fix",
     "lint": "ray lint",
     "test": "vitest run",

@@ -1,7 +1,7 @@
 import { Tool } from "@raycast/api";
-import { parseVaults } from "../api/vault/vault.service";
+import { getVaultsFromPreferencesOrObsidianJson } from "../api/vault/vault.service";
 import { createNote } from "../api/vault/notes/notes.service";
-import { renewCache } from "../api/cache/cache.service";
+import { invalidateNotesCache } from "../api/cache/cache.service";
 
 type Input = {
   /**
@@ -27,7 +27,7 @@ type Input = {
 };
 
 export const confirmation: Tool.Confirmation<Input> = async (input) => {
-  const vaults = parseVaults();
+  const vaults = await getVaultsFromPreferencesOrObsidianJson();
 
   if (vaults.length === 0) {
     return {
@@ -44,7 +44,9 @@ export const confirmation: Tool.Confirmation<Input> = async (input) => {
   }
 
   return {
-    message: `Create note "${input.name}" in vault "${targetVault.name}"${input.path ? ` at path "${input.path}"` : ""}?`,
+    message: `Create note "${input.name}" in vault "${targetVault.name}"${
+      input.path ? ` at path "${input.path}"` : ""
+    }?`,
   };
 };
 
@@ -52,7 +54,7 @@ export const confirmation: Tool.Confirmation<Input> = async (input) => {
  * Create a new note in an Obsidian vault
  */
 export default async function tool(input: Input) {
-  const vaults = parseVaults();
+  const vaults = await getVaultsFromPreferencesOrObsidianJson();
 
   if (vaults.length === 0) {
     return "No vaults found. Please configure vault paths in Raycast preferences.";
@@ -79,8 +81,10 @@ export default async function tool(input: Input) {
   });
 
   if (saved) {
-    renewCache(targetVault);
-    return `Successfully created note "${input.name}" in vault "${targetVault.name}"${notePath ? ` at path "${notePath}"` : " at vault root"}`;
+    invalidateNotesCache(targetVault);
+    return `Successfully created note "${input.name}" in vault "${targetVault.name}"${
+      notePath ? ` at path "${notePath}"` : " at vault root"
+    }`;
   } else {
     return `Failed to create note "${input.name}" in vault "${targetVault.name}"`;
   }

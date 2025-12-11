@@ -1,5 +1,5 @@
 import { Tool, open } from "@raycast/api";
-import { parseVaults } from "../api/vault/vault.service";
+import { getVaultsFromPreferencesOrObsidianJson } from "../api/vault/vault.service";
 import { getObsidianTarget, ObsidianTargetType } from "../utils/utils";
 import { applyTemplates } from "../api/templating/templating.service";
 
@@ -27,7 +27,7 @@ type Input = {
 };
 
 export const confirmation: Tool.Confirmation<Input> = async (input) => {
-  const vaults = parseVaults();
+  const vaults = await getVaultsFromPreferencesOrObsidianJson();
 
   if (vaults.length === 0) {
     return {
@@ -44,7 +44,9 @@ export const confirmation: Tool.Confirmation<Input> = async (input) => {
   }
 
   return {
-    message: `${input.prepend ? "Prepend" : "Append"} content to daily note in vault "${targetVault.name}"${input.heading ? ` under heading "${input.heading}"` : ""}?`,
+    message: `${input.prepend ? "Prepend" : "Append"} content to daily note in vault "${targetVault.name}"${
+      input.heading ? ` under heading "${input.heading}"` : ""
+    }?`,
   };
 };
 
@@ -52,7 +54,7 @@ export const confirmation: Tool.Confirmation<Input> = async (input) => {
  * Append content to today's daily note (requires Advanced URI plugin)
  */
 export default async function tool(input: Input) {
-  const vaults = parseVaults();
+  const vaults = await getVaultsFromPreferencesOrObsidianJson();
 
   if (vaults.length === 0) {
     return "No vaults found. Please configure vault paths in Raycast preferences.";
@@ -79,5 +81,7 @@ export default async function tool(input: Input) {
 
   await open(target);
 
-  return `Successfully ${input.prepend ? "prepended" : "appended"} content to daily note in vault "${targetVault.name}"${input.heading ? ` under heading "${input.heading}"` : ""} (Note: Requires Advanced URI plugin in Obsidian)`;
+  return `Successfully ${input.prepend ? "prepended" : "appended"} content to daily note in vault "${
+    targetVault.name
+  }"${input.heading ? ` under heading "${input.heading}"` : ""} (Note: Requires Advanced URI plugin in Obsidian)`;
 }

@@ -1,6 +1,7 @@
-import { parseVaults } from "../api/vault/vault.service";
-import { getNotesFromCache } from "../api/cache/cache.service";
-import { filterNotes, filterNotesFuzzy } from "../utils/search";
+import { filterNotesFuzzy } from "../api/search/search.service";
+import { Note } from "../api/vault/notes/notes.types";
+import { getNotesWithCache, getVaultsFromPreferencesOrObsidianJson } from "../api/vault/vault.service";
+import { Vault } from "../api/vault/vault.types";
 
 type Input = {
   /**
@@ -8,45 +9,32 @@ type Input = {
    */
   noteName: string;
   /**
-   * Optional vault name to search in (if not provided, searches all vaults)
+   * If the user provides a vault name or has hints towards one, ALWAYS use it here.
    */
   vaultName?: string;
-  /**
-   * Whether to use fuzzy search (default: false)
-   */
-  useFuzzySearch?: boolean;
-  /**
-   * Whether to search in note content as well as title (default: false)
-   */
-  searchContent?: boolean;
 };
 
 /**
- * Search for notes in Obsidian vaults and return a list of matching notes
+ * Search for notes in Obsidian vaults and return a list of matching notes with their title, vault, and path
  */
 export default async function tool(input: Input) {
-  const vaults = parseVaults();
+  const vaults = await getVaultsFromPreferencesOrObsidianJson();
 
   if (vaults.length === 0) {
     return "No vaults found. Please configure vault paths in Raycast preferences.";
   }
 
-  let targetVaults = input.vaultName ? vaults.filter((v) => v.name === input.vaultName) : vaults;
+  const targetVaults = input.vaultName ? vaults.filter((v) => v.name === input.vaultName) : vaults;
 
   if (targetVaults.length === 0) {
     return `Vault "${input.vaultName}" not found. Available vaults: ${vaults.map((v) => v.name).join(", ")}`;
   }
 
-  const useFuzzy = input.useFuzzySearch ?? false;
-  const searchContent = input.searchContent ?? false;
-
   // Search across all target vaults
-  let allFilteredNotes: Array<{ note: any; vault: any }> = [];
+  let allFilteredNotes: { note: Note; vault: Vault }[] = [];
   for (const vault of targetVaults) {
-    const notes = getNotesFromCache(vault);
-    const filtered = useFuzzy
-      ? filterNotesFuzzy(notes, input.noteName, searchContent)
-      : filterNotes(notes, input.noteName, searchContent);
+    const notes = await getNotesWithCache(vault);
+    const filtered = filterNotesFuzzy(notes, input.noteName);
 
     allFilteredNotes.push(...filtered.map((note) => ({ note, vault })));
   }
@@ -55,17 +43,17 @@ export default async function tool(input: Input) {
     return `No notes found matching "${input.noteName}".`;
   }
 
+  if (allFilteredNotes.length >= 10) {
+    allFilteredNotes = allFilteredNotes.slice(0, 10);
+  }
+
   // Return list of all matching notes
   let result = `Found ${allFilteredNotes.length} note(s) matching "${input.noteName}":\n\n`;
 
   allFilteredNotes.forEach(({ note, vault }, index) => {
     result += `${index + 1}. **${note.title}**\n`;
     result += `   - Vault: ${vault.name}\n`;
-    result += `   - Path: ${note.path}\n`;
-    if (note.tags && note.tags.length > 0) {
-      result += `   - Tags: ${note.tags.join(", ")}\n`;
-    }
-    result += `\n`;
+    result += `   - Path: ${note.path}\n\n`;
   });
 
   return result;

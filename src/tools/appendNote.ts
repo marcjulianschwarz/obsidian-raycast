@@ -1,7 +1,9 @@
 import { Tool } from "@raycast/api";
-import { parseVaults } from "../api/vault/vault.service";
-import { getNotesFromCache, updateNoteInCache } from "../api/cache/cache.service";
-import { filterNotes, filterNotesFuzzy } from "../utils/search";
+import { getVaultsFromPreferencesOrObsidianJson, getNotesWithCache } from "../api/vault/vault.service";
+import { updateNoteInCache } from "../api/cache/cache.service";
+import { filterNotesFuzzy } from "../api/search/search.service";
+import { Note } from "../api/vault/notes/notes.types";
+import { Vault } from "../api/vault/vault.types";
 import fs from "fs";
 import { applyTemplates } from "../api/templating/templating.service";
 
@@ -19,7 +21,7 @@ type Input = {
    */
   vaultName?: string;
   /**
-   * Whether to use fuzzy search (default: false)
+   * Whether to use fuzzy search (default: true)
    */
   useFuzzySearch?: boolean;
   /**
@@ -29,7 +31,7 @@ type Input = {
 };
 
 export const confirmation: Tool.Confirmation<Input> = async (input) => {
-  const vaults = parseVaults();
+  const vaults = await getVaultsFromPreferencesOrObsidianJson();
 
   if (vaults.length === 0) {
     return {
@@ -46,7 +48,7 @@ export const confirmation: Tool.Confirmation<Input> = async (input) => {
  * Append or prepend content to an existing note
  */
 export default async function tool(input: Input) {
-  const vaults = parseVaults();
+  const vaults = await getVaultsFromPreferencesOrObsidianJson();
 
   if (vaults.length === 0) {
     return "No vaults found. Please configure vault paths in Raycast preferences.";
@@ -58,13 +60,11 @@ export default async function tool(input: Input) {
     return `Vault "${input.vaultName}" not found. Available vaults: ${vaults.map((v) => v.name).join(", ")}`;
   }
 
-  const useFuzzy = input.useFuzzySearch ?? false;
-
   // Search across all target vaults
-  let allFilteredNotes: Array<{ note: any; vault: any }> = [];
+  let allFilteredNotes: Array<{ note: Note; vault: Vault }> = [];
   for (const vault of targetVaults) {
-    const notes = getNotesFromCache(vault);
-    const filtered = useFuzzy ? filterNotesFuzzy(notes, input.noteName, false) : filterNotes(notes, input.noteName, false);
+    const notes = await getNotesWithCache(vault);
+    const filtered = filterNotesFuzzy(notes, input.noteName);
 
     allFilteredNotes.push(...filtered.map((note) => ({ note, vault })));
   }
@@ -87,10 +87,11 @@ export default async function tool(input: Input) {
     fs.appendFileSync(matchingNote.path, "\n" + processedContent);
   }
 
-  // Update the note in cache
-  const updatedContent = fs.readFileSync(matchingNote.path, "utf8");
-  const updatedNote = { ...matchingNote, content: updatedContent };
-  updateNoteInCache(matchingVault, updatedNote);
+  // Update the note in cache with new lastModified time
+  const stats = fs.statSync(matchingNote.path);
+  updateNoteInCache(matchingVault, matchingNote.path, { lastModified: stats.mtime });
 
-  return `Successfully ${input.prepend ? "prepended" : "appended"} content to note "${matchingNote.title}" in vault "${matchingVault.name}"${allFilteredNotes.length > 1 ? ` (${allFilteredNotes.length} matches found, modified the first one)` : ""}`;
+  return `Successfully ${input.prepend ? "prepended" : "appended"} content to note "${matchingNote.title}" in vault "${
+    matchingVault.name
+  }"${allFilteredNotes.length > 1 ? ` (${allFilteredNotes.length} matches found, modified the first one)` : ""}`;
 }

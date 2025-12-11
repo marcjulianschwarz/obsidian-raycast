@@ -55,6 +55,14 @@ export async function loadObsidianJson(): Promise<Vault[]> {
   }
 }
 
+export async function getVaultsFromPreferencesOrObsidianJson(): Promise<Vault[]> {
+  let vaults = getExistingVaultsFromPreferences();
+  if (vaults.length === 0) {
+    vaults = await loadObsidianJson();
+  }
+  return vaults;
+}
+
 /** Gets a list of folders that are ignored by the user inside of Obsidian */
 function getExcludedFoldersFromObsidian(vault: Vault): string[] {
   const { configFileName } = getPreferenceValues<GlobalPreferences>();
