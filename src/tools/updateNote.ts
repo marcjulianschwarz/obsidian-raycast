@@ -38,7 +38,11 @@ export default async function tool(input: Input) {
 
     if (!pathContainsVault) {
       const vaultNames = allVaults.map((v) => v.name).join(", ");
-      return `Invalid path: The fullNotePath "${input.fullNotePath}" does not appear to contain a valid vault name. Please use the FULL ABSOLUTE path to the note file (e.g., /path/to/vault/${allVaults[0]?.name || "VaultName"}/folder/note.md). Available vaults: ${vaultNames}`;
+      return `Invalid path: The fullNotePath "${
+        input.fullNotePath
+      }" does not appear to contain a valid vault name. Please use the FULL ABSOLUTE path to the note file (e.g., /path/to/vault/${
+        allVaults[0]?.name || "VaultName"
+      }/folder/note.md). Available vaults: ${vaultNames}`;
     }
 
     // Read the current note content
