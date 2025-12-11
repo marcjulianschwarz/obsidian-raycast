@@ -22,6 +22,9 @@ import { ObsidianIcon, PrimaryAction } from "./constants";
 import { SearchNotePreferences } from "./preferences";
 import { getObsidianTarget, ObsidianTargetType } from "./utils";
 import { updateNoteInCache, deleteNoteFromCache } from "../api/cache/cache.service";
+import { Logger } from "../api/logger/logger.service";
+
+const logger = new Logger("Actions");
 
 //--------------------------------------------------------------------------------
 // All actions for all commands should be defined here.
@@ -192,7 +195,7 @@ export function OpenInDefaultAppAction(props: { note: Note; vault: Vault }) {
     getDefaultApplication(note.path)
       .then((app) => setDefaultApp(app.name))
       .catch((err) => {
-        console.error(err);
+        logger.warning(`No default app for ${note.path}: ${err}`);
         setDefaultApp("");
       });
   }, [note.path]);
