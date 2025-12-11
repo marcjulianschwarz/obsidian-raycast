@@ -42,6 +42,7 @@ export async function loadObsidianJson(): Promise<Vault[]> {
   const obsidianJsonPath = path.resolve(
     path.join(homedir(), "Library", "Application Support", "obsidian", "obsidian.json")
   );
+
   try {
     const obsidianJson = JSON.parse(await fsAsync.readFile(obsidianJsonPath, "utf8")) as ObsidianJSON;
     return Object.values(obsidianJson.vaults).map(({ path }) => ({
