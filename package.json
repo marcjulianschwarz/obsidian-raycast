@@ -622,43 +622,37 @@
       "name": "searchNote",
       "title": "Search Note",
       "description": "Search for notes in Obsidian vaults by name or content and return a list of matching notes with their locations",
-      "instructions": "Use this tool to find notes. Returns a list of matching notes with vault name and path. Does not open Obsidian. Alway provide a vault name if the user specified or hinted at some vault name the note could be located in. Specifying a vault name is very important. Only keep it empty when the user did not mention anything in that direction."
+      "instructions": "Use this tool to find notes. Returns a list of matching notes with vault name and path. Does not open Obsidian. Always provide a vault name if the user specified or hinted at some vault name the note could be located in. Specifying a vault name is very important. Only keep it empty when the user did not mention anything in that direction."
     },
     {
       "name": "createNote",
       "title": "Create Note",
-      "description": "Create a new note in an Obsidian vault with optional tags and path",
-      "instructions": "Use this tool to create new notes. Supports tags, custom paths within vaults, and templates. Does not open Obsidian unless specified."
+      "description": "Create a new note in an Obsidian vault or create/open today's daily note",
+      "instructions": "Use this tool to create new notes or work with daily notes. For regular notes: supports tags, custom paths within vaults, and templates. For daily notes: set useDailyNote to true (requires Advanced URI plugin in Obsidian). Does not open Obsidian for regular notes unless specified."
     },
     {
       "name": "openNote",
       "title": "Open Note",
       "description": "Open a note in Obsidian application",
-      "instructions": "Use this tool ONLY when the user EXPLICITELY wants you to open a note in Obsidian. Do NOT use it in any other case."
+      "instructions": "Use this tool ONLY when the user EXPLICITLY wants you to open a note in Obsidian. Do NOT use it in any other case."
     },
     {
       "name": "appendNote",
       "title": "Append to Note",
-      "description": "Append or prepend content to an existing note",
-      "instructions": "Use this tool to add content to existing notes. Supports prepending and template expansion. Does not open Obsidian."
+      "description": "Append or prepend content to an existing note or today's daily note",
+      "instructions": "Use this tool to add content to existing notes or daily notes. For regular notes: provide notePath. For daily notes: set useDailyNote to true (requires Advanced URI plugin). Supports prepending, headings, and template expansion. Silent mode available for daily notes."
     },
     {
       "name": "readNote",
       "title": "Read Note",
       "description": "Read the full content of a specific note by its full path",
-      "instructions": "Use this tool to read the complete content of a note when you have the exact path and vault name. Use this after searchNote to get the full content of a specific note."
+      "instructions": "Use this tool to read the complete content of a note when you have the exact path. Use this after searchNote to get the full content of a specific note."
     },
     {
-      "name": "createDailyNote",
-      "title": "Create Daily Note",
-      "description": "Create or open today's daily note in Obsidian",
-      "instructions": "Use this tool to create or open today's daily note. Requires Advanced URI plugin in Obsidian."
-    },
-    {
-      "name": "appendDailyNote",
-      "title": "Append to Daily Note",
-      "description": "Append content to today's daily note",
-      "instructions": "Use this tool to add content to today's daily note. Supports headings, prepending, and silent mode. Requires Advanced URI plugin."
+      "name": "updateNote",
+      "title": "Update Note",
+      "description": "Update a note by replacing specific content with new content",
+      "instructions": "Use this tool to edit existing note content by replacing specific sections. Provide the exact text to find (oldContent) and what to replace it with (newContent). The oldContent must exactly match the text in the note. Does not open Obsidian."
     }
   ],
   "dependencies": {

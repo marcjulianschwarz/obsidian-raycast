@@ -1,17 +1,22 @@
-import { Tool } from "@raycast/api";
+import { Tool, open } from "@raycast/api";
 import { getVaultsFromPreferencesOrObsidianJson } from "../api/vault/vault.service";
 import { createNote } from "../api/vault/notes/notes.service";
 import { invalidateNotesCache } from "../api/cache/cache.service";
+import { getObsidianTarget, ObsidianTargetType } from "../utils/utils";
 
 type Input = {
   /**
-   * The name of the note to create
+   * The name of the note to create (not used for daily notes)
    */
-  name: string;
+  name?: string;
   /**
    * The content of the note
    */
-  content: string;
+  content?: string;
+  /**
+   * Whether to create/open today's daily note instead of a regular note (default: false)
+   */
+  useDailyNote?: boolean;
   /**
    * Optional vault name (if not provided, uses first vault)
    */
@@ -43,6 +48,18 @@ export const confirmation: Tool.Confirmation<Input> = async (input) => {
     };
   }
 
+  if (input.useDailyNote) {
+    return {
+      message: `Create/open daily note in vault "${targetVault.name}"?`,
+    };
+  }
+
+  if (!input.name) {
+    return {
+      message: "Note name is required when not using daily note.",
+    };
+  }
+
   return {
     message: `Create note "${input.name}" in vault "${targetVault.name}"${
       input.path ? ` at path "${input.path}"` : ""
@@ -51,7 +68,7 @@ export const confirmation: Tool.Confirmation<Input> = async (input) => {
 };
 
 /**
- * Create a new note in an Obsidian vault
+ * Create a new note in an Obsidian vault or create/open today's daily note
  */
 export default async function tool(input: Input) {
   const vaults = await getVaultsFromPreferencesOrObsidianJson();
@@ -66,6 +83,23 @@ export default async function tool(input: Input) {
     return `Vault "${input.vaultName}" not found. Available vaults: ${vaults.map((v) => v.name).join(", ")}`;
   }
 
+  // Handle daily note creation (requires Advanced URI plugin)
+  if (input.useDailyNote) {
+    const target = getObsidianTarget({
+      type: ObsidianTargetType.DailyNote,
+      vault: targetVault,
+    });
+
+    await open(target);
+
+    return `Opened daily note in vault "${targetVault.name}" (Note: Requires Advanced URI plugin in Obsidian)`;
+  }
+
+  // Handle regular note creation
+  if (!input.name) {
+    return "Note name is required when not using daily note.";
+  }
+
   // Parse tags
   const tags = input.tags ? input.tags.split(",").map((tag) => tag.trim()) : [];
 
@@ -75,7 +109,7 @@ export default async function tool(input: Input) {
   // Create the note
   const saved = await createNote(targetVault, {
     name: input.name,
-    content: input.content,
+    content: input.content || "",
     path: notePath,
     tags: tags,
   });

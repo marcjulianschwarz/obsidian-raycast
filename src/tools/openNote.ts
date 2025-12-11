@@ -3,9 +3,10 @@ import { getObsidianTarget, ObsidianTargetType } from "../utils/utils";
 
 type Input = {
   /**
-   * The FULL path of the note to open in Obsidian
+   * The FULL absolute path of the note to open in Obsidian.
+   * IMPORTANT: Always specify the complete absolute path to the note file (e.g., /path/to/vault/folder/note.md).
    */
-  notePath: string;
+  fullNotePath: string;
 
   /**
    * Specify whether the note should be opened in a new pane in Obsidian
@@ -19,10 +20,10 @@ type Input = {
 export default async function tool(input: Input) {
   const target = getObsidianTarget({
     type: ObsidianTargetType.OpenPath,
-    path: input.notePath,
+    path: input.fullNotePath,
   });
 
   await open(target);
 
-  return `Opened note "${input.notePath}"  in Obsidian.`;
+  return `Opened note "${input.fullNotePath}" in Obsidian.`;
 }
