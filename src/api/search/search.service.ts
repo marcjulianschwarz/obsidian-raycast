@@ -2,7 +2,10 @@ import Fuse from "fuse.js";
 import { Media } from "../../utils/interfaces";
 import { Note } from "../vault/notes/notes.types";
 
-export function filterNotesFuzzy(notes: Note[], input: string, byContent: boolean) {
+/**
+ * Fuzzy search notes by title and path (metadata only, no content)
+ */
+export function filterNotesFuzzy(notes: Note[], input: string): Note[] {
   if (input.length === 0) {
     return notes;
   }
@@ -13,10 +16,6 @@ export function filterNotesFuzzy(notes: Note[], input: string, byContent: boolea
     ignoreLocation: true,
     threshold: 0.3,
   };
-
-  if (byContent) {
-    options.keys.push("content");
-  }
 
   // Filter by each word individually, this helps with file path search
   const words = input.trim().split(/\s+/);

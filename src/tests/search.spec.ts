@@ -48,38 +48,38 @@ describe("search", () => {
     });
 
     it("should return all notes when input is empty", () => {
-      const result = filterNotesFuzzy(testNotes, "", false);
+      const result = filterNotesFuzzy(testNotes, "");
       expect(result).toEqual(testNotes);
       expect(result.length).toBe(5);
     });
 
     it("should filter notes by title", () => {
-      const result = filterNotesFuzzy(testNotes, "project", false);
+      const result = filterNotesFuzzy(testNotes, "project");
       expect(result.length).toBeGreaterThan(0);
       expect(result.some((note) => note.title === "Project Ideas")).toBe(true);
     });
 
     it("should filter notes by path", () => {
-      const result = filterNotesFuzzy(testNotes, "personal", false);
+      const result = filterNotesFuzzy(testNotes, "personal");
       expect(result.length).toBeGreaterThan(0);
       expect(result.some((note) => note.path.includes("personal"))).toBe(true);
     });
 
     it("should not search content when byContent is false", () => {
       // Use a unique term that only appears in content
-      const result = filterNotesFuzzy(testNotes, "itinerary", false);
+      const result = filterNotesFuzzy(testNotes, "itinerary");
       expect(result.length).toBe(0);
     });
 
     it("should handle fuzzy matching", () => {
-      const result = filterNotesFuzzy(testNotes, "progrmi", false);
+      const result = filterNotesFuzzy(testNotes, "progrmi");
       // Just check if any results contain "Programming" in the title
       const hasMatchingNote = result.some((note) => note.title.includes("Programming"));
       expect(hasMatchingNote).toBe(true);
     });
 
     it("should handle multiple word search", () => {
-      const result = filterNotesFuzzy(testNotes, "personal list", false);
+      const result = filterNotesFuzzy(testNotes, "personal list");
       // Check if any results match both criteria
       expect(result.some((note) => note.path.includes("personal") && note.title.includes("List"))).toBe(true);
     });
@@ -94,7 +94,7 @@ describe("search", () => {
         bookmarked: false,
       });
 
-      const result = filterNotesFuzzy(testNotes, "notes", false);
+      const result = filterNotesFuzzy(testNotes, "notes");
 
       // Check if notes with "Notes" in the title are found
       expect(result.some((note) => note.title.includes("Notes"))).toBe(true);
@@ -103,12 +103,12 @@ describe("search", () => {
     });
 
     it("should handle case insensitive search", () => {
-      const result = filterNotesFuzzy(testNotes, "PROJECT", false);
+      const result = filterNotesFuzzy(testNotes, "PROJECT");
       expect(result.some((note) => note.title.toLowerCase().includes("project"))).toBe(true);
     });
 
     it("should handle partial word matches", () => {
-      const result = filterNotesFuzzy(testNotes, "prog", false);
+      const result = filterNotesFuzzy(testNotes, "prog");
       expect(result.some((note) => note.title.includes("Programming"))).toBe(true);
     });
   });

@@ -1,11 +1,12 @@
 import { List, getPreferenceValues } from "@raycast/api";
-import { memo, useMemo, useState } from "react";
+import { memo, useState, useEffect } from "react";
 import { MAX_RENDERED_NOTES } from "../../utils/constants";
 import { NoteListItem } from "./NoteListItem/NoteListItem";
 import { NoteListDropdown } from "./NoteListDropdown";
 import { SearchNotePreferences } from "../../utils/preferences";
 import { CreateNoteView } from "./CreateNoteView";
 import { filterNotesFuzzy } from "../../api/search/search.service";
+import { searchNotesWithContent } from "../../api/search/simple-content-search.service";
 import { Vault } from "../../api/vault/vault.types";
 import { Note } from "../../api/vault/notes/notes.types";
 import { SearchArguments } from "../../utils/interfaces";
@@ -30,14 +31,36 @@ export function NoteList(props: NoteListProps) {
   const pref = getPreferenceValues<SearchNotePreferences>();
   const [inputText, setInputText] = useState(searchArguments.searchArgument || "");
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+  const [filteredNotes, setFilteredNotes] = useState<Note[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
 
-  const filteredNotes = useMemo(() => {
+  // Search with or without content based on preference
+  useEffect(() => {
     if (!inputText.trim()) {
-      return notes.slice(0, MAX_RENDERED_NOTES);
+      setFilteredNotes(notes.slice(0, MAX_RENDERED_NOTES));
+      return;
     }
 
-    return filterNotesFuzzy(notes, inputText, false).slice(0, MAX_RENDERED_NOTES);
-  }, [notes, inputText]);
+    // Debounce search
+    const timeoutId = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        let results: Note[];
+        if (pref.searchContent) {
+          // Search title, path, AND content
+          results = await searchNotesWithContent(notes, inputText);
+        } else {
+          // Search only title and path (fast)
+          results = filterNotesFuzzy(notes, inputText);
+        }
+        setFilteredNotes(results.slice(0, MAX_RENDERED_NOTES));
+      } finally {
+        setIsSearching(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [notes, inputText, pref.searchContent]);
 
   if (filteredNotes.length === 0 && inputText.trim() !== "") {
     return <CreateNoteView title={title || ""} searchText={inputText} onSearchChange={setInputText} vault={vault} />;
@@ -45,7 +68,7 @@ export function NoteList(props: NoteListProps) {
 
   return (
     <List
-      isLoading={isLoading}
+      isLoading={isLoading || isSearching}
       throttle={true}
       isShowingDetail={pref.showDetail}
       onSearchTextChange={setInputText}
