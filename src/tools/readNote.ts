@@ -1,5 +1,5 @@
 import { Logger } from "../api/logger/logger.service";
-import { getNoteFileContent } from "../api/vault/vault.service";
+import { getNoteFileContent, getVaultsFromPreferencesOrObsidianJson } from "../api/vault/vault.service";
 
 type Input = {
   /**
@@ -16,6 +16,16 @@ const logger = new Logger("Tool ReadNote");
  */
 export default async function tool(input: Input) {
   try {
+    // Validate that the path contains a valid vault name
+    const allVaults = await getVaultsFromPreferencesOrObsidianJson();
+    const pathContainsVault = allVaults.some((vault) => input.fullNotePath.includes(vault.name));
+
+    if (!pathContainsVault) {
+      const vaultNames = allVaults.map((v) => v.name).join(", ");
+      logger.warning(`Invalid path provided: ${input.fullNotePath}`);
+      return `Invalid path: The fullNotePath "${input.fullNotePath}" does not appear to contain a valid vault name. Please use the FULL ABSOLUTE path to the note file (e.g., /path/to/vault/${allVaults[0]?.name || "VaultName"}/folder/note.md). Available vaults: ${vaultNames}`;
+    }
+
     const content = await getNoteFileContent(input.fullNotePath);
     let context = `The following is the content of the note ${input.fullNotePath}. Use this content to follow the users instructions.\n########START NOTE CONTENT ########\n\n`;
     context += `# ${input.fullNotePath
