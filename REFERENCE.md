@@ -192,3 +192,9 @@ Many commands use a note list.
     - [ ] small
     - [ ] medium
     - [ ] large
+
+## Obsidian Menubar
+
+- [ ] shows in menubar when enabled
+- [ ] opens daily note via vault selection of subset of vaults
+- [ ] shows bookmarked notes via vault selection of subset of vaults
