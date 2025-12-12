@@ -1,5 +1,5 @@
 import { bookmarkNote, unbookmarkNote } from "./bookmarks";
-import { createProperties, Note, writeMarkdown } from "./notes";
+import { createProperties, deleteNote, Note, writeMarkdown } from "./notes";
 import {
   getVaultsFromPreferences,
   getVaultsFromObsidianJson,
@@ -74,6 +74,10 @@ export const Vault = {
 
   unbookmarkNote(path: string, note: Note, configFileName: string) {
     unbookmarkNote(path, note, configFileName);
+  },
+
+  deleteNote(note: Note) {
+    return deleteNote(note);
   },
 };
 

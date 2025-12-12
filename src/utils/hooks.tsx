@@ -76,9 +76,14 @@ export function useNotes(vault: ObsidianVault, bookmarked = false) {
     setNotes((prev) => prev.map((note) => (note.path === notePath ? { ...note, ...updates } : note)));
   }, []);
 
+  // Delete a note from the list
+  const deleteNote = useCallback((notePath: string) => {
+    setNotes((prev) => prev.filter((note) => note.path !== notePath));
+  }, []);
+
   const filtered = useMemo(() => (bookmarked ? notes.filter((n) => n.bookmarked) : notes), [notes, bookmarked]);
 
-  return { notes: filtered, loading, refresh, updateNote } as const;
+  return { notes: filtered, loading, refresh, updateNote, deleteNote } as const;
 }
 
 export function useMedia(vault: ObsidianVault) {

@@ -51,8 +51,14 @@ export function getNotesFromCache(cacheKey: string): Note[] | null {
       return null;
     }
 
+    // Convert lastModified back to Date objects after JSON parsing
+    const notesWithDates = data.notes.map((note) => ({
+      ...note,
+      lastModified: new Date(note.lastModified),
+    }));
+
     logger.info(`Using cached notes for ${cacheKey}`);
-    return data.notes;
+    return notesWithDates;
   } catch (error) {
     logger.error(`Failed to parse cached notes. Error: ${error}`);
     return null;

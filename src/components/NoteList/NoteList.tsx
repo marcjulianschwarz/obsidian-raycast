@@ -10,6 +10,7 @@ import { searchNotesWithContent } from "../../api/search/simple-content-search.s
 import { SearchArguments } from "../../utils/interfaces";
 import { Note } from "../../obsidian/notes";
 import { ObsidianVault } from "../../obsidian/vault";
+import { sortNotes, SortOrder } from "../../utils/sorting";
 
 export interface NoteListProps {
   title?: string;
@@ -18,7 +19,7 @@ export interface NoteListProps {
   isLoading?: boolean;
   searchArguments: SearchArguments;
   action?: (note: Note, vault: ObsidianVault) => React.ReactNode;
-  onDelete?: (note: Note, vault: ObsidianVault) => void;
+  onDelete?: (note: Note) => void;
   onSearchChange?: (search: string) => void;
   onNoteUpdated?: (notePath: string, updates: Partial<Note>) => void;
 }
@@ -26,18 +27,20 @@ export interface NoteListProps {
 const MemoizedNoteListItem = memo(NoteListItem);
 
 export function NoteList(props: NoteListProps) {
-  const { notes, vault, title, searchArguments, isLoading, onNoteUpdated } = props;
+  const { notes, vault, title, searchArguments, isLoading, onNoteUpdated, onDelete } = props;
 
   const pref = getPreferenceValues<SearchNotePreferences>();
   const [inputText, setInputText] = useState(searchArguments.searchArgument || "");
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [filteredNotes, setFilteredNotes] = useState<Note[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [sortOrder, setSortOrder] = useState<SortOrder>("modified-desc");
 
   // Search with or without content based on preference
   useEffect(() => {
     if (!inputText.trim()) {
-      setFilteredNotes(notes.slice(0, MAX_RENDERED_NOTES));
+      const sorted = sortNotes(notes, sortOrder);
+      setFilteredNotes(sorted.slice(0, MAX_RENDERED_NOTES));
       return;
     }
 
@@ -53,14 +56,15 @@ export function NoteList(props: NoteListProps) {
           // Search only title and path (fast)
           results = filterNotesFuzzy(notes, inputText);
         }
-        setFilteredNotes(results.slice(0, MAX_RENDERED_NOTES));
+        const sorted = sortNotes(results, sortOrder);
+        setFilteredNotes(sorted.slice(0, MAX_RENDERED_NOTES));
       } finally {
         setIsSearching(false);
       }
     }, 300);
 
     return () => clearTimeout(timeoutId);
-  }, [notes, inputText, pref.searchContent]);
+  }, [notes, inputText, pref.searchContent, sortOrder]);
 
   if (filteredNotes.length === 0 && inputText.trim() !== "") {
     return <CreateNoteView title={title || ""} searchText={inputText} onSearchChange={setInputText} vault={vault} />;
@@ -74,7 +78,7 @@ export function NoteList(props: NoteListProps) {
       onSearchTextChange={setInputText}
       onSelectionChange={setSelectedItemId}
       navigationTitle={title}
-      searchBarAccessory={<NoteListDropdown tags={[]} searchArguments={searchArguments} />}
+      searchBarAccessory={<NoteListDropdown sortOrder={sortOrder} setSortOrder={setSortOrder} />}
     >
       {filteredNotes.map((note, idx) => (
         <MemoizedNoteListItem
@@ -84,6 +88,12 @@ export function NoteList(props: NoteListProps) {
           pref={pref}
           selectedItemId={!selectedItemId ? (idx === 0 ? note.path : null) : selectedItemId}
           onNoteUpdated={onNoteUpdated}
+          onDelete={(deletedNote) => {
+            // Remove from the original notes list via the hook
+            onDelete?.(deletedNote);
+            // Also remove from the filtered list for immediate UI update
+            setFilteredNotes((prev) => prev.filter((n) => n.path !== deletedNote.path));
+          }}
         />
       ))}
     </List>

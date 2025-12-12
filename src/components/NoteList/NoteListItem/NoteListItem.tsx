@@ -24,8 +24,9 @@ export function NoteListItem(props: {
   pref: SearchNotePreferences;
   selectedItemId: string | null;
   onNoteUpdated?: (notePath: string, updates: Partial<Note>) => void;
+  onDelete?: (note: Note, vault: ObsidianVault) => void;
 }) {
-  const { note, vault, pref, onNoteUpdated } = props;
+  const { note, vault, pref, onNoteUpdated, onDelete } = props;
 
   const [isBookmarked, setIsBookmarked] = useState(note.bookmarked);
   const isSelected = props.selectedItemId === note.path;
@@ -130,6 +131,7 @@ export function NoteListItem(props: {
               }
             }}
             onNoteUpdated={onNoteUpdated}
+            onDelete={onDelete}
           />
         </ActionPanel>
       }

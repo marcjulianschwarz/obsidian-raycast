@@ -152,8 +152,13 @@ export function CopyObsidianURIAction(props: { note: Note }) {
   );
 }
 
-export function DeleteNoteAction(props: { note: Note; vault: ObsidianVault }) {
-  const { note, vault } = props;
+export function DeleteNoteAction(props: {
+  note: Note;
+  vault: ObsidianVault;
+  onDelete?: (note: Note, vault: ObsidianVault) => void;
+}) {
+  const { note, vault, onDelete } = props;
+  const logger = new Logger("DeleteNoteAction");
   return (
     <Action
       title="Delete Note"
@@ -166,10 +171,15 @@ export function DeleteNoteAction(props: { note: Note; vault: ObsidianVault }) {
         };
         if (await confirmAlert(options)) {
           // Delete the file
-          fs.unlinkSync(note.path);
+          Vault.deleteNote(note);
 
           // Update cache
           deleteNoteFromCache(vault.path, note.path);
+
+          // Notify parent component
+          onDelete?.(note, vault);
+
+          logger.info(`Successfully deleted note: ${note.path}`);
         }
       }}
       icon={{ source: Icon.Trash, tintColor: Color.Red }}
@@ -344,8 +354,9 @@ export function NoteActions(props: {
   vault: ObsidianVault;
   onNoteAction?: (actionType: NoteActionType) => void;
   onNoteUpdated?: (notePath: string, updates: Partial<Note>) => void;
+  onDelete?: (note: Note, vault: ObsidianVault) => void;
 }) {
-  const { note, vault, onNoteAction, onNoteUpdated } = props;
+  const { note, vault, onNoteAction, onNoteUpdated, onDelete } = props;
 
   return (
     <>
@@ -365,7 +376,7 @@ export function NoteActions(props: {
       <PasteNoteAction note={note} />
       <CopyMarkdownLinkAction note={note} />
       <CopyObsidianURIAction note={note} />
-      <DeleteNoteAction note={note} vault={vault} />
+      <DeleteNoteAction note={note} vault={vault} onDelete={onDelete} />
       <AppendTaskAction note={note} vault={vault} onNoteUpdated={onNoteUpdated} />
     </>
   );
