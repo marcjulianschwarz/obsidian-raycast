@@ -117,8 +117,8 @@ async function searchNotesByTag(notes: Note[], tagQuery: string): Promise<Note[]
   const matches: Note[] = [];
   let filesChecked = 0;
 
-  // Normalize tag query (add # if not present)
-  const normalizedTag = tagQuery.startsWith("#") ? tagQuery.toLowerCase() : `#${tagQuery.toLowerCase()}`;
+  // Normalize tag query (remove # if present, for comparison)
+  const normalizedQuery = tagQuery.startsWith("#") ? tagQuery.slice(1).toLowerCase() : tagQuery.toLowerCase();
 
   for (const note of notes) {
     // Stop if we have enough results
@@ -140,8 +140,8 @@ async function searchNotesByTag(notes: Note[], tagQuery: string): Promise<Note[]
       // Extract tags from the file (both inline and YAML frontmatter)
       const tags = ObsidianUtils.getAllTags(content);
 
-      // Check if any tag matches the query
-      const hasMatchingTag = tags.some((tag) => tag.toLowerCase() === normalizedTag);
+      // Check if any tag matches the query (case-insensitive)
+      const hasMatchingTag = tags.some((tag) => tag.toLowerCase() === normalizedQuery);
 
       if (hasMatchingTag) {
         matches.push(note);

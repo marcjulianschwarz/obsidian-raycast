@@ -89,8 +89,10 @@ export function inlineTagsForString(str: string) {
   const foundTags: string[] = [];
   const tags = [...str.matchAll(INLINE_TAGS_REGEX)];
   for (const tag of tags) {
-    if (!foundTags.includes(tag[1])) {
-      foundTags.push(tag[1]);
+    // Remove the # prefix from inline tags
+    const tagWithoutHash = tag[1].startsWith("#") ? tag[1].slice(1) : tag[1];
+    if (!foundTags.includes(tagWithoutHash)) {
+      foundTags.push(tagWithoutHash);
     }
   }
   return foundTags;
@@ -99,23 +101,26 @@ export function inlineTagsForString(str: string) {
 export function yamlTagsForString(str: string) {
   let foundTags: string[] = [];
   const parsedYAML = parsedYAMLFrontmatter(str);
-  if (parsedYAML) {
-    if (yamlHas(parsedYAML, "tag")) {
-      if (Array.isArray(parsedYAML.tag)) {
-        foundTags = [...parsedYAML.tag];
-      } else if (typeof parsedYAML.tag === "string") {
-        foundTags = [...parsedYAML.tag.split(",").map((tag: string) => tag.trim())];
-      }
-    } else if (yamlHas(parsedYAML, "tags")) {
-      if (Array.isArray(parsedYAML.tags)) {
-        foundTags = [...parsedYAML.tags];
-      } else if (typeof parsedYAML.tags === "string") {
-        foundTags = [...parsedYAML.tags.split(",").map((tag: string) => tag.trim())];
-      }
+  if (!parsedYAML) {
+    return foundTags;
+  }
+
+  if (yamlHas(parsedYAML, "tag")) {
+    if (Array.isArray(parsedYAML.tag)) {
+      foundTags = [...parsedYAML.tag];
+    } else if (typeof parsedYAML.tag === "string") {
+      foundTags = [...parsedYAML.tag.split(",").map((tag: string) => tag.trim())];
+    }
+  } else if (yamlHas(parsedYAML, "tags")) {
+    if (Array.isArray(parsedYAML.tags)) {
+      foundTags = [...parsedYAML.tags];
+    } else if (typeof parsedYAML.tags === "string") {
+      foundTags = [...parsedYAML.tags.split(",").map((tag: string) => tag.trim())];
     }
   }
+
   foundTags = foundTags.filter((tag: string) => tag != "");
-  return foundTags.map((tag) => "#" + tag);
+  return foundTags;
 }
 
 export function tagsForString(str: string) {

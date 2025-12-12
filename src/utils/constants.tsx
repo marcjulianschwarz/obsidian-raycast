@@ -27,7 +27,7 @@ export enum PrimaryAction {
 export const APPLICATION_UUID = "49acc9ee-69a0-4419-9aad-5c2689ff0119";
 
 export const INLINE_TAGS_REGEX = /(#[a-zA-Z_0-9/-]+)/g;
-export const YAML_FRONTMATTER_REGEX = /---\s([\s\S]*)---/g;
+export const YAML_FRONTMATTER_REGEX = /^---\s*\n([\s\S]*?)\n---/m;
 export const LATEX_REGEX = /\$\$(.|\n)*?\$\$/gm;
 export const LATEX_INLINE_REGEX = /\$(.|\n)*?\$/gm;
 export const CODE_BLOCK_REGEX = /```(.*)\n([\s\S]*?)```/gm;
