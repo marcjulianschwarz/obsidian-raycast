@@ -33,7 +33,7 @@ export function NoteList(props: NoteListProps) {
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [filteredNotes, setFilteredNotes] = useState<Note[]>([]);
   const [isSearching, setIsSearching] = useState(false);
-  const [sortOrder, setSortOrder] = useState<SortOrder>("modified-desc");
+  const [sortOrder, setSortOrder] = useState<SortOrder>("relevance");
 
   // Search with or without content based on preference
   useEffect(() => {
@@ -74,6 +74,7 @@ export function NoteList(props: NoteListProps) {
       isLoading={isLoading || isSearching}
       throttle={true}
       isShowingDetail={pref.showDetail}
+      searchText={inputText}
       onSearchTextChange={setInputText}
       onSelectionChange={setSelectedItemId}
       navigationTitle={title}

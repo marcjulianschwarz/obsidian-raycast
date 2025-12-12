@@ -12,6 +12,7 @@ export function NoteListDropdown(props: { sortOrder: SortOrder; setSortOrder: (o
       storeValue={false}
     >
       <List.Dropdown.Section title="Sort Notes">
+        <List.Dropdown.Item value="relevance" title="Relevance" icon={Icon.Stars} />
         <List.Dropdown.Item value="alphabetical-asc" title="File name (A to Z)" icon={Icon.ArrowDown} />
         <List.Dropdown.Item value="alphabetical-desc" title="File name (Z to A)" icon={Icon.ArrowUp} />
         <List.Dropdown.Item value="modified-desc" title="Modified time (new to old)" icon={Icon.Clock} />

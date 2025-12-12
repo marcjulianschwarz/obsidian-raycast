@@ -2,6 +2,7 @@ import { Note } from "@/obsidian";
 import fs from "fs";
 
 export type SortOrder =
+  | "relevance"
   | "alphabetical-asc"
   | "alphabetical-desc"
   | "modified-desc"
@@ -13,6 +14,9 @@ export function sortNotes(notes: Note[], sortOrder: SortOrder): Note[] {
   const sorted = [...notes];
 
   switch (sortOrder) {
+    case "relevance": // Preserve original order (search relevance)
+      return sorted;
+
     case "alphabetical-asc": // A to Z by filename
       return sorted.sort((a, b) => a.title.localeCompare(b.title));
 

@@ -44,35 +44,40 @@ export async function searchNotesWithContent(notes: Note[], query: string): Prom
 
   logger.info(`Searching ${filteredNotes.length} notes with content for "${remainingQuery}"`);
 
+  const queryLower = remainingQuery.toLowerCase();
+
   // Step 1: Quick filter by title/path first (no file I/O)
-  const titlePathFuse = new Fuse(filteredNotes, {
-    keys: ["title", "path"],
-    threshold: 0.4,
+  const titleFuse = new Fuse(filteredNotes, {
+    keys: ["title"],
+    threshold: 0.3,
     ignoreLocation: true,
+    includeScore: true,
   });
 
-  const titlePathMatches = titlePathFuse.search(remainingQuery).map((r) => r.item);
-  logger.info(`Found ${titlePathMatches.length} title/path matches`);
+  const titleMatches = titleFuse
+    .search(remainingQuery)
+    .sort((a, b) => (a.score || 0) - (b.score || 0))
+    .map((r) => r.item);
+  logger.info(`Found ${titleMatches.length} title/path matches`);
 
   // Step 2: Search remaining notes by content (read files one at a time)
   const contentMatches: Note[] = [];
-  const queryLower = remainingQuery.toLowerCase();
   let filesChecked = 0;
 
   // Early exit if we already have enough matches from title/path
-  if (titlePathMatches.length >= MIN_RESULTS) {
-    logger.info(`Already have ${titlePathMatches.length} title/path matches, skipping content search`);
-    return titlePathMatches;
+  if (titleMatches.length >= MIN_RESULTS) {
+    logger.info(`Already have ${titleMatches.length} title/path matches, skipping content search`);
+    return titleMatches;
   }
 
   for (const note of filteredNotes) {
     // Skip if already matched by title/path
-    if (titlePathMatches.some((m) => m.path === note.path)) {
+    if (titleMatches.some((m) => m.path === note.path)) {
       continue;
     }
 
     // Stop if we have enough total results
-    if (titlePathMatches.length + contentMatches.length >= MIN_RESULTS) {
+    if (titleMatches.length + contentMatches.length >= MIN_RESULTS) {
       logger.info(`Reached ${MIN_RESULTS} results after checking ${filesChecked} files, stopping early`);
       break;
     }
@@ -99,12 +104,12 @@ export async function searchNotesWithContent(notes: Note[], query: string): Prom
 
   logger.info(
     `Found ${contentMatches.length} content matches in ${filesChecked} files (total: ${
-      titlePathMatches.length + contentMatches.length
+      titleMatches.length + contentMatches.length
     })`
   );
 
   // Combine results: title/path matches first (more relevant), then content matches
-  return [...titlePathMatches, ...contentMatches];
+  return [...titleMatches, ...contentMatches];
 }
 
 /**
