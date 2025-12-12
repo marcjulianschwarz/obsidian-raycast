@@ -17,3 +17,9 @@ export const Toast = {
     Animated: "animated",
   },
 };
+
+export const getPreferenceValues = vi.fn().mockReturnValue({
+  vaultPath: "",
+  excludedFolders: "",
+  configFileName: ".obsidian",
+});

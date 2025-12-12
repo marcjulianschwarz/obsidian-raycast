@@ -29,12 +29,13 @@ export function getVaultsFromPreferences(): ObsidianVault[] {
 
   return vaultString
     .split(",")
-    .filter((vaultPath) => vaultPath.trim() !== "")
+    .map((vaultPath) => vaultPath.trim())
+    .filter((vaultPath) => vaultPath !== "")
     .filter((vaultPath) => fs.existsSync(vaultPath))
     .map((vault) => ({
-      name: getVaultNameFromPath(vault.trim()) ?? "invalid vault name",
-      key: vault.trim(),
-      path: vault.trim(),
+      name: getVaultNameFromPath(vault) ?? "invalid vault name",
+      key: vault,
+      path: vault,
     }));
 }
 
