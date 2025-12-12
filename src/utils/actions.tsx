@@ -22,6 +22,7 @@ import { Obsidian, Vault } from "../obsidian";
 import { ObsidianTargetType } from "../obsidian/obsidian";
 import { ObsidianVault } from "../obsidian/vault";
 import { getCodeBlocks } from "./utils";
+import { useVaultPluginCheck } from "./hooks";
 
 const logger = new Logger("Actions");
 
@@ -374,7 +375,7 @@ export function OpenNoteActions(props: { note: NoteWithContent; vault: ObsidianV
   const { note, vault, showQuickLook = true } = props;
   const { primaryAction } = getPreferenceValues<SearchNotePreferences>();
 
-  const [vaultsWithPlugin] = Vault.checkPlugins({ vaults: [vault], communityPlugins: ["obsidian-advanced-uri"] });
+  const { vaultsWithPlugin } = useVaultPluginCheck({ vaults: [vault], communityPlugins: ["obsidian-advanced-uri"] });
 
   const quicklook = <QuickLookAction note={note} vault={vault} />;
   const openInDefaultApp = <OpenInDefaultAppAction note={note} vault={vault} />;

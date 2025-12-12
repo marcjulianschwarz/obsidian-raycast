@@ -5,10 +5,10 @@ import { NoPathProvided } from "./components/Notifications/NoPathProvided";
 import { NoVaultFoundMessage } from "./components/Notifications/NoVaultFoundMessage";
 import { vaultsWithoutAdvancedURIToast } from "./components/Toasts";
 import { AppendTaskPreferences } from "./utils/preferences";
-import { useObsidianVaults } from "./utils/hooks";
+import { useObsidianVaults, useVaultPluginCheck } from "./utils/hooks";
 import { clearCache } from "./api/cache/cache.service";
 import { applyTemplates } from "./api/templating/templating.service";
-import { Vault, Obsidian } from "./obsidian";
+import { Obsidian } from "./obsidian";
 import { ObsidianTargetType } from "./obsidian/obsidian";
 
 interface appendTaskArgs {
@@ -24,7 +24,7 @@ export default function AppendTask(props: { arguments: appendTaskArgs }) {
 
   const { appendTemplate, heading, notePath, noteTag, vaultName, silent, creationDate } =
     getPreferenceValues<AppendTaskPreferences>();
-  const [vaultsWithPlugin, vaultsWithoutPlugin] = Vault.checkPlugins({
+  const { vaultsWithPlugin, vaultsWithoutPlugin } = useVaultPluginCheck({
     vaults: vaults,
     communityPlugins: ["obsidian-advanced-uri"],
   });

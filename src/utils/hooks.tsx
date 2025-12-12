@@ -164,3 +164,51 @@ export function useNoteContent(note: Note, options = { enabled: true }) {
   }, [note, options.enabled]);
   return { noteContent, isLoading };
 }
+
+/**
+ * Global cache for vault plugin check results.
+ * Key format: "vaultPaths|communityPlugins|corePlugins"
+ */
+const vaultPluginCheckCache = new Map<
+  string,
+  {
+    vaultsWithPlugin: ObsidianVault[];
+    vaultsWithoutPlugin: ObsidianVault[];
+  }
+>();
+
+/**
+ * Memoized hook for checking vault plugins.
+ * Results are cached globally based on vault paths and required plugins to prevent duplicate checks and logging.
+ */
+export function useVaultPluginCheck(params: {
+  vaults: ObsidianVault[];
+  communityPlugins?: string[];
+  corePlugins?: string[];
+}) {
+  return useMemo(() => {
+    const cacheKey = [
+      params.vaults.map((v) => v.path).join(","),
+      params.communityPlugins?.join(",") || "",
+      params.corePlugins?.join(",") || "",
+    ].join("|");
+
+    // Check cache first
+    const cached = vaultPluginCheckCache.get(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
+    // Cache miss - perform the check
+    const result = Vault.checkPlugins(params);
+    const resultObject = {
+      vaultsWithPlugin: result[0],
+      vaultsWithoutPlugin: result[1],
+    };
+
+    // Store in cache
+    vaultPluginCheckCache.set(cacheKey, resultObject);
+
+    return resultObject;
+  }, [params.vaults.map((v) => v.path).join(","), params.communityPlugins?.join(","), params.corePlugins?.join(",")]);
+}

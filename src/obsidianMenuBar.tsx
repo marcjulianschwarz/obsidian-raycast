@@ -1,10 +1,10 @@
 import { MenuBarExtra, open } from "@raycast/api";
-import { Obsidian, Vault } from "./obsidian";
+import { Obsidian } from "./obsidian";
 import { Note } from "./obsidian/notes";
 import { ObsidianTargetType } from "./obsidian/obsidian";
 import { ObsidianVault } from "./obsidian/vault";
 import { ObsidianIcon } from "./utils/constants";
-import { useObsidianVaults } from "./utils/hooks";
+import { useObsidianVaults, useVaultPluginCheck } from "./utils/hooks";
 
 function BookmarkedNotesList(props: { vault: ObsidianVault }) {
   const notes: Note[] = [];
@@ -34,14 +34,14 @@ function BookmarkedNotesVaultSelection(props: { vaults: ObsidianVault[] }) {
 }
 
 function DailyNoteVaultSelection(props: { vaults: ObsidianVault[] }) {
-  const [withPlugin] = Vault.checkPlugins({
+  const { vaultsWithPlugin } = useVaultPluginCheck({
     vaults: props.vaults,
     communityPlugins: ["obsidian-advanced-uri"],
     corePlugins: ["daily-notes"],
   });
   return (
     <MenuBarExtra.Submenu title="Daily Note" key={"Daily Note"}>
-      {withPlugin.map((vault) => (
+      {vaultsWithPlugin.map((vault) => (
         <MenuBarExtra.Item
           title={vault.name}
           key={vault.path + "Daily Note"}
