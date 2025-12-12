@@ -13,6 +13,7 @@ export default defineConfig({
         "**/tests/**",
         "**/*.spec.ts",
         "**/*.test.ts",
+        "**/tools/**", // Exclude AI tools (for now, todo: add back when they get more complex)
         "**/components/**", // Exclude React components
         "**/*.tsx", // Exclude all TSX files (React components)
         "**/*.config.*",

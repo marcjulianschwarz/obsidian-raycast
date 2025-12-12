@@ -10,7 +10,7 @@ Read the documentation in `DOCUMENTATION.md` and `REFERENCE.md`. Try to keep the
 
 ## Testing
 
-Add unit tests for your new feature in the `src/tests` folder and any necessary helper in `src/tests/helpers`.
+Add unit tests for your new feature in the `src/tests` folder and any necessary helper in `src/tests/helpers`. Mocks for packages like Raycast can be added in the `__mocks__` folder.
 
 ### Temporary Vault for Testing
 
