@@ -1,6 +1,6 @@
 import { open } from "@raycast/api";
-import { getObsidianTarget, ObsidianTargetType } from "../utils/utils";
-import { getVaultsFromPreferencesOrObsidianJson } from "../api/vault/vault.service";
+import { Obsidian } from "../obsidian";
+import { ObsidianTargetType } from "../obsidian/obsidian";
 
 type Input = {
   /**
@@ -20,7 +20,7 @@ type Input = {
  */
 export default async function tool(input: Input) {
   // Validate that the path contains a valid vault name
-  const allVaults = await getVaultsFromPreferencesOrObsidianJson();
+  const allVaults = await Obsidian.getVaultsFromPreferencesOrObsidianJson();
   const pathContainsVault = allVaults.some((vault) => input.fullNotePath.includes(vault.name));
 
   if (!pathContainsVault) {
@@ -32,7 +32,7 @@ export default async function tool(input: Input) {
     }/folder/note.md). Available vaults: ${vaultNames}`;
   }
 
-  const target = getObsidianTarget({
+  const target = Obsidian.getTarget({
     type: ObsidianTargetType.OpenPath,
     path: input.fullNotePath,
   });

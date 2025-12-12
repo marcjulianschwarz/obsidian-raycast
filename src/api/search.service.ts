@@ -3,8 +3,7 @@ import * as path from "path";
 import * as fsAsync from "fs/promises";
 import pako from "pako";
 import { Logger } from "../../logger/logger.service";
-import { getMarkdownFilePathsFromVault } from "../vault.service";
-import { Vault } from "../vault.types";
+import { getMarkdownFilePathsFromVault, ObsidianVault } from "../../../obsidian/vault";
 
 const MINI_SEARCH_OPTIONS = {
   fields: ["name", "path", "content"],
@@ -15,12 +14,12 @@ const logger = new Logger("Search");
 const indexPath =
   "/Users/marcjulianschwarz/Mac/GitHub/marcjulianschwarz/obsidian-raycast/src/api/vault/search/index.json.gz";
 
-export async function loadMiniSearchIndex(vault: Vault): Promise<MiniSearch> {
+export async function loadMiniSearchIndex(vault: ObsidianVault): Promise<MiniSearch> {
   const index = await loadMiniSearchIndexFromDisk();
   if (index) return index;
 
   logger.debug("Create new MiniSearch index");
-  const filePaths = await getMarkdownFilePathsFromVault(vault);
+  const filePaths = await getMarkdownFilePathsFromVault(vault.path);
   const miniSearch = new MiniSearch(MINI_SEARCH_OPTIONS);
 
   for (const filePath of filePaths) {

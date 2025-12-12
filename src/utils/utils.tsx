@@ -1,10 +1,22 @@
 import fs from "fs";
 import path from "path";
-import { BYTES_PER_KILOBYTE } from "./constants";
+import {
+  AUDIO_FILE_EXTENSIONS,
+  BYTES_PER_KILOBYTE,
+  CODE_BLOCK_REGEX,
+  LATEX_INLINE_REGEX,
+  LATEX_REGEX,
+  VIDEO_FILE_EXTENSIONS,
+} from "./constants";
 import { Media } from "./interfaces";
-import { Vault } from "../api/vault/vault.types";
-import { Note } from "../api/vault/notes/notes.types";
-import { getSelectedText } from "@raycast/api";
+import { getPreferenceValues, getSelectedText, Icon } from "@raycast/api";
+import { GlobalPreferences } from "./preferences";
+import { Note } from "../obsidian/notes";
+
+export interface CodeBlock {
+  language: string;
+  code: string;
+}
 
 export function sortByAlphabet(a: string, b: string) {
   const aTitle = a;
@@ -80,88 +92,52 @@ export async function getSelectedTextContent(): Promise<string | undefined> {
     console.warn("Could not get selected text", error);
   }
   return selection;
-} // OBSIDIAN TARGETS
-
-export enum ObsidianTargetType {
-  OpenVault = "obsidian://open?vault=",
-  OpenPath = "obsidian://open?path=",
-  DailyNote = "obsidian://advanced-uri?daily=true&vault=",
-  DailyNoteAppend = "obsidian://advanced-uri?daily=true",
-  NewNote = "obsidian://new?vault=",
-  AppendTask = "obsidian://advanced-uri?mode=append&filepath=",
 }
 
-export type ObsidianTarget =
-  | { type: ObsidianTargetType.OpenVault; vault: Vault }
-  | { type: ObsidianTargetType.OpenPath; path: string }
-  | { type: ObsidianTargetType.DailyNote; vault: Vault }
-  | {
-      type: ObsidianTargetType.DailyNoteAppend;
-      vault: Vault;
-      text: string;
-      heading?: string;
-      prepend?: boolean;
-      silent?: boolean;
-    }
-  | { type: ObsidianTargetType.NewNote; vault: Vault; name: string; content?: string }
-  | {
-      type: ObsidianTargetType.AppendTask;
-      vault: Vault;
-      text: string;
-      path: string;
-      heading?: string;
-      silent?: boolean;
-    };
+/** Gets the icon for a given file path. This is used to determine the icon for a media item where the media itself can't be displayed (e.g. video, audio). */
+export function getIconFor(filePath: string) {
+  const fileExtension = path.extname(filePath);
+  if (VIDEO_FILE_EXTENSIONS.includes(fileExtension)) {
+    return { source: Icon.Video };
+  } else if (AUDIO_FILE_EXTENSIONS.includes(fileExtension)) {
+    return { source: Icon.Microphone };
+  }
+  return { source: filePath };
+}
 
-export function getObsidianTarget(target: ObsidianTarget) {
-  switch (target.type) {
-    case ObsidianTargetType.OpenVault: {
-      return ObsidianTargetType.OpenVault + encodeURIComponent(target.vault.name);
-    }
-    case ObsidianTargetType.OpenPath: {
-      return ObsidianTargetType.OpenPath + encodeURIComponent(target.path);
-    }
-    case ObsidianTargetType.DailyNote: {
-      return ObsidianTargetType.DailyNote + encodeURIComponent(target.vault.name);
-    }
-    case ObsidianTargetType.DailyNoteAppend: {
-      const headingParam = target.heading ? "&heading=" + encodeURIComponent(target.heading) : "";
-      return (
-        ObsidianTargetType.DailyNoteAppend +
-        (target.prepend ? "&mode=prepend" : "&mode=append") +
-        "&data=" +
-        encodeURIComponent(target.text) +
-        "&vault=" +
-        encodeURIComponent(target.vault.name) +
-        headingParam +
-        (target.silent ? "&openmode=silent" : "")
-      );
-    }
-    case ObsidianTargetType.NewNote: {
-      return (
-        ObsidianTargetType.NewNote +
-        encodeURIComponent(target.vault.name) +
-        "&name=" +
-        encodeURIComponent(target.name) +
-        "&content=" +
-        encodeURIComponent(target.content || "")
-      );
-    }
-    case ObsidianTargetType.AppendTask: {
-      const headingParam = target.heading ? "&heading=" + encodeURIComponent(target.heading) : "";
-      return (
-        ObsidianTargetType.AppendTask +
-        encodeURIComponent(target.path) +
-        "&data=" +
-        encodeURIComponent(target.text) +
-        "&vault=" +
-        encodeURIComponent(target.vault.name) +
-        headingParam +
-        (target.silent ? "&openmode=silent" : "")
-      );
-    }
-    default: {
-      return "";
+export function filterContent(content: string) {
+  const pref: GlobalPreferences = getPreferenceValues();
+
+  if (pref.removeYAML) {
+    const yamlHeader = content.match(/---(.|\n)*?---/gm);
+    if (yamlHeader) {
+      content = content.replace(yamlHeader[0], "");
     }
   }
+  if (pref.removeLatex) {
+    const latex = content.matchAll(LATEX_REGEX);
+    for (const match of latex) {
+      content = content.replace(match[0], "");
+    }
+    const latexInline = content.matchAll(LATEX_INLINE_REGEX);
+    for (const match of latexInline) {
+      content = content.replace(match[0], "");
+    }
+  }
+  if (pref.removeLinks) {
+    content = content.replaceAll("![[", "");
+    content = content.replaceAll("[[", "");
+    content = content.replaceAll("]]", "");
+  }
+  return content;
+}
+
+export function getCodeBlocks(content: string): CodeBlock[] {
+  const codeBlockMatches = content.matchAll(CODE_BLOCK_REGEX);
+  const codeBlocks = [];
+  for (const codeBlockMatch of codeBlockMatches) {
+    const [, language, code] = codeBlockMatch;
+    codeBlocks.push({ language, code });
+  }
+  return codeBlocks;
 }

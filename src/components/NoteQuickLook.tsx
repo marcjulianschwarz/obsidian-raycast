@@ -1,11 +1,11 @@
 import { ActionPanel, Detail } from "@raycast/api";
-import { Note } from "../api/vault/notes/notes.types";
-import { filterContent } from "../api/vault/vault.service";
-import { Vault } from "../api/vault/vault.types";
+import { Note } from "../obsidian/notes";
+import { ObsidianVault } from "../obsidian/vault";
 import { NoteActions, OpenNoteActions } from "../utils/actions";
 import { useNoteContent } from "../utils/hooks";
+import { filterContent } from "../utils/utils";
 
-export function NoteQuickLook(props: { showTitle: boolean; note: Note; vault: Vault }) {
+export function NoteQuickLook(props: { showTitle: boolean; note: Note; vault: ObsidianVault }) {
   const { note, showTitle, vault } = props;
   const { noteContent, isLoading } = useNoteContent(note);
 

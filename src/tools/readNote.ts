@@ -1,5 +1,5 @@
 import { Logger } from "../api/logger/logger.service";
-import { getNoteFileContent, getVaultsFromPreferencesOrObsidianJson } from "../api/vault/vault.service";
+import { Obsidian, Vault } from "../obsidian";
 
 type Input = {
   /**
@@ -17,7 +17,7 @@ const logger = new Logger("Tool ReadNote");
 export default async function tool(input: Input) {
   try {
     // Validate that the path contains a valid vault name
-    const allVaults = await getVaultsFromPreferencesOrObsidianJson();
+    const allVaults = await Obsidian.getVaultsFromPreferencesOrObsidianJson();
     const pathContainsVault = allVaults.some((vault) => input.fullNotePath.includes(vault.name));
 
     if (!pathContainsVault) {
@@ -30,7 +30,7 @@ export default async function tool(input: Input) {
       }/folder/note.md). Available vaults: ${vaultNames}`;
     }
 
-    const content = await getNoteFileContent(input.fullNotePath);
+    const content = await Vault.readMarkdown(input.fullNotePath);
     let context = `The following is the content of the note ${input.fullNotePath}. Use this content to follow the users instructions.\n########START NOTE CONTENT ########\n\n`;
     context += `# ${input.fullNotePath
       .split("/")

@@ -1,11 +1,11 @@
 import { Action, ActionPanel, closeMainWindow, getPreferenceValues, List, open, popToRoot } from "@raycast/api";
 
-import { getObsidianTarget, ObsidianTargetType } from "./utils/utils";
 import { NoVaultFoundMessage } from "./components/Notifications/NoVaultFoundMessage";
 import AdvancedURIPluginNotInstalled from "./components/Notifications/AdvancedURIPluginNotInstalled";
 import { useObsidianVaults } from "./utils/hooks";
-import { vaultPluginCheck } from "./api/vault/plugins/plugins.service";
 import { DailyNotePreferences } from "./utils/preferences";
+import { Vault, Obsidian } from "./obsidian";
+import { ObsidianTargetType } from "./obsidian/obsidian";
 
 export default function Command() {
   const { vaults, ready } = useObsidianVaults();
@@ -18,7 +18,7 @@ export default function Command() {
     return <NoVaultFoundMessage />;
   }
 
-  const [vaultsWithPlugin] = vaultPluginCheck({
+  const [vaultsWithPlugin] = Vault.checkPlugins({
     vaults: vaults,
     communityPlugins: ["obsidian-advanced-uri"],
     corePlugins: ["daily-notes"],
@@ -30,7 +30,7 @@ export default function Command() {
 
   if (preselectedVault || vaultsWithPlugin.length == 1) {
     const vaultToUse = preselectedVault || vaultsWithPlugin[0];
-    const target = getObsidianTarget({ type: ObsidianTargetType.DailyNote, vault: vaultToUse });
+    const target = Obsidian.getTarget({ type: ObsidianTargetType.DailyNote, vault: vaultToUse });
     open(target);
     popToRoot();
     closeMainWindow();
@@ -46,7 +46,7 @@ export default function Command() {
             <ActionPanel>
               <Action.Open
                 title="Daily Note"
-                target={getObsidianTarget({ type: ObsidianTargetType.DailyNote, vault: vault })}
+                target={Obsidian.getTarget({ type: ObsidianTargetType.DailyNote, vault: vault })}
               />
             </ActionPanel>
           }

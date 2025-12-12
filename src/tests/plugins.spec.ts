@@ -1,10 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import fs from "fs";
 import path from "path";
-import { readCommunityPlugins, readCorePlugins, vaultPluginCheck } from "../api/vault/plugins/plugins.service";
-import { Vault } from "../api/vault/vault.types";
-import { VaultPluginCheckParams } from "../api/vault/plugins/plugins.types";
 import { createTempVault } from "./helpers/createTemporaryVault";
+import { readCommunityPlugins, readCorePlugins, vaultPluginCheck, VaultPluginCheckParams } from "../obsidian/plugins";
+import { ObsidianVault } from "../obsidian/vault";
 
 vi.mock("@raycast/api", () => ({
   getPreferenceValues: () => ({
@@ -14,7 +13,7 @@ vi.mock("@raycast/api", () => ({
 
 describe("plugins", () => {
   let tempVaultData: {
-    vault: Vault;
+    vault: ObsidianVault;
     cleanup: () => void;
     paths: Record<string, string>;
   };
@@ -31,7 +30,7 @@ describe("plugins", () => {
 
   describe("readCommunityPlugins", () => {
     it("should return undefined when community-plugins.json does not exist", () => {
-      const plugins = readCommunityPlugins(tempVaultData.vault);
+      const plugins = readCommunityPlugins(tempVaultData.vault.path);
       expect(plugins).toBeUndefined();
     });
 
@@ -41,7 +40,7 @@ describe("plugins", () => {
 
       fs.writeFileSync(pluginsPath, JSON.stringify(communityPlugins));
 
-      const result = readCommunityPlugins(tempVaultData.vault);
+      const result = readCommunityPlugins(tempVaultData.vault.path);
       expect(result).toEqual(communityPlugins);
     });
 
@@ -51,14 +50,14 @@ describe("plugins", () => {
 
       fs.writeFileSync(pluginsPath, JSON.stringify(communityPlugins));
 
-      const result = readCommunityPlugins(tempVaultData.vault);
+      const result = readCommunityPlugins(tempVaultData.vault.path);
       expect(result).toEqual([]);
     });
   });
 
   describe("readCorePlugins", () => {
     it("should return undefined when core-plugins.json does not exist", () => {
-      const plugins = readCorePlugins(tempVaultData.vault);
+      const plugins = readCorePlugins(tempVaultData.vault.path);
       expect(plugins).toBeUndefined();
     });
 
@@ -73,7 +72,7 @@ describe("plugins", () => {
 
       fs.writeFileSync(pluginsPath, JSON.stringify(corePlugins));
 
-      const result = readCorePlugins(tempVaultData.vault);
+      const result = readCorePlugins(tempVaultData.vault.path);
       expect(result).toEqual(corePlugins);
     });
 
@@ -83,14 +82,14 @@ describe("plugins", () => {
 
       fs.writeFileSync(pluginsPath, JSON.stringify(corePlugins));
 
-      const result = readCorePlugins(tempVaultData.vault);
+      const result = readCorePlugins(tempVaultData.vault.path);
       expect(result).toEqual({});
     });
   });
 
   describe("vaultPluginCheck", () => {
     let vault2Data: {
-      vault: Vault;
+      vault: ObsidianVault;
       cleanup: () => void;
       paths: Record<string, string>;
     };

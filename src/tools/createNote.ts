@@ -1,8 +1,8 @@
 import { Tool, open } from "@raycast/api";
-import { getVaultsFromPreferencesOrObsidianJson } from "../api/vault/vault.service";
-import { createNote } from "../api/vault/notes/notes.service";
 import { invalidateNotesCache } from "../api/cache/cache.service";
-import { getObsidianTarget, ObsidianTargetType } from "../utils/utils";
+import { createNote } from "../api/create-note";
+import { Obsidian } from "../obsidian";
+import { ObsidianTargetType } from "../obsidian/obsidian";
 
 type Input = {
   /**
@@ -32,7 +32,7 @@ type Input = {
 };
 
 export const confirmation: Tool.Confirmation<Input> = async (input) => {
-  const vaults = await getVaultsFromPreferencesOrObsidianJson();
+  const vaults = await Obsidian.getVaultsFromPreferencesOrObsidianJson();
 
   if (vaults.length === 0) {
     return {
@@ -71,7 +71,7 @@ export const confirmation: Tool.Confirmation<Input> = async (input) => {
  * Create a new note in an Obsidian vault or create/open today's daily note
  */
 export default async function tool(input: Input) {
-  const vaults = await getVaultsFromPreferencesOrObsidianJson();
+  const vaults = await Obsidian.getVaultsFromPreferencesOrObsidianJson();
 
   if (vaults.length === 0) {
     return "No vaults found. Please configure vault paths in Raycast preferences.";
@@ -85,7 +85,7 @@ export default async function tool(input: Input) {
 
   // Handle daily note creation (requires Advanced URI plugin)
   if (input.useDailyNote) {
-    const target = getObsidianTarget({
+    const target = Obsidian.getTarget({
       type: ObsidianTargetType.DailyNote,
       vault: targetVault,
     });
@@ -115,7 +115,7 @@ export default async function tool(input: Input) {
   });
 
   if (saved) {
-    invalidateNotesCache(targetVault);
+    invalidateNotesCache(targetVault.path);
     return `Successfully created note "${input.name}" in vault "${targetVault.name}"${
       notePath ? ` at path "${notePath}"` : " at vault root"
     }`;

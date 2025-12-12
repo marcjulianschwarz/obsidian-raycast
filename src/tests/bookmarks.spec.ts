@@ -2,15 +2,15 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import fs from "fs";
 import path from "path";
 import { createTempVault } from "./helpers/createTemporaryVault";
-import { Vault } from "../api/vault/vault.types";
 import {
   bookmarkNote,
   getAllBookmarkFiles,
   getBookmarkedNotePaths,
   getBookmarksJson,
   unbookmarkNote,
-} from "../api/vault/notes/bookmarks/bookmarks.service";
-import { Note } from "../api/vault/notes/notes.types";
+} from "../obsidian/bookmarks";
+import { Note } from "../obsidian/notes";
+import { ObsidianVault } from "../obsidian/vault";
 
 vi.mock("@raycast/api", () => ({
   getPreferenceValues: () => ({
@@ -19,7 +19,7 @@ vi.mock("@raycast/api", () => ({
 }));
 
 describe("bookmarks", () => {
-  let tempVault: Vault;
+  let tempVault: ObsidianVault;
   let cleanup: () => void;
   let paths: Record<string, string>;
 
@@ -36,7 +36,7 @@ describe("bookmarks", () => {
 
   describe("getBookmarksJson", () => {
     it("should return the bookmarks JSON object", () => {
-      const bookmarks = getBookmarksJson(tempVault);
+      const bookmarks = getBookmarksJson(tempVault.path);
 
       expect(bookmarks).toBeDefined();
       expect(bookmarks?.items).toHaveLength(2);
@@ -52,14 +52,14 @@ describe("bookmarks", () => {
       cleanup = result.cleanup;
       paths = result.paths;
 
-      const bookmarks = getBookmarksJson(tempVault);
+      const bookmarks = getBookmarksJson(tempVault.path);
       expect(bookmarks).toBeUndefined();
     });
   });
 
   describe("getAllBookmarkFiles", () => {
     it("should return all bookmarked files flattened", () => {
-      const bookmarkFiles = getAllBookmarkFiles(tempVault);
+      const bookmarkFiles = getAllBookmarkFiles(tempVault.path);
 
       expect(bookmarkFiles).toHaveLength(2);
       expect(bookmarkFiles[0].path).toBe("note1.md");
@@ -73,14 +73,14 @@ describe("bookmarks", () => {
       tempVault = result.vault;
       cleanup = result.cleanup;
 
-      const bookmarkFiles = getAllBookmarkFiles(tempVault);
+      const bookmarkFiles = getAllBookmarkFiles(tempVault.path);
       expect(bookmarkFiles).toEqual([]);
     });
   });
 
   describe("getBookmarkedNotePaths", () => {
     it("should return paths of all bookmarked notes", () => {
-      const notePaths = getBookmarkedNotePaths(tempVault);
+      const notePaths = getBookmarkedNotePaths(tempVault.path);
 
       expect(notePaths).toHaveLength(2);
       expect(notePaths).toContain("note1.md");
@@ -101,11 +101,11 @@ describe("bookmarks", () => {
         bookmarked: false,
       };
 
-      bookmarkNote(tempVault, newNote);
+      bookmarkNote(tempVault.path, newNote);
 
       // Verify the note was added to bookmarks
-      const bookmarks = getBookmarksJson(tempVault);
-      const allFiles = getAllBookmarkFiles(tempVault);
+      const bookmarks = getBookmarksJson(tempVault.path);
+      const allFiles = getAllBookmarkFiles(tempVault.path);
 
       expect(allFiles).toHaveLength(3);
       expect(allFiles.some((file) => file.path === "new-note.md")).toBeTruthy();
@@ -120,11 +120,11 @@ describe("bookmarks", () => {
         bookmarked: false,
       };
 
-      bookmarkNote(tempVault, existingNote);
+      bookmarkNote(tempVault.path, existingNote);
 
       // Verify no duplicate was added
-      const bookmarks = getBookmarksJson(tempVault);
-      const allFiles = getAllBookmarkFiles(tempVault);
+      const bookmarks = getBookmarksJson(tempVault.path);
+      const allFiles = getAllBookmarkFiles(tempVault.path);
 
       expect(allFiles).toHaveLength(2);
       expect(bookmarks?.items).toHaveLength(2);
@@ -145,12 +145,12 @@ describe("bookmarks", () => {
         bookmarked: false,
       };
 
-      bookmarkNote(tempVault, newNote);
+      bookmarkNote(tempVault.path, newNote);
 
       // Verify a new bookmarks.json was created with the note
       expect(fs.existsSync(path.join(tempVault.path, ".obsidian", "bookmarks.json"))).toBeTruthy();
 
-      const bookmarks = getBookmarksJson(tempVault);
+      const bookmarks = getBookmarksJson(tempVault.path);
       expect(bookmarks?.items).toHaveLength(1);
       // expect(bookmarks?.items[0].path).toBe("note1.md");
     });
@@ -165,11 +165,11 @@ describe("bookmarks", () => {
         bookmarked: false,
       };
 
-      unbookmarkNote(tempVault, note);
+      unbookmarkNote(tempVault.path, note);
 
       // Verify the note was removed
-      const bookmarks = getBookmarksJson(tempVault);
-      const allFiles = getAllBookmarkFiles(tempVault);
+      const bookmarks = getBookmarksJson(tempVault.path);
+      const allFiles = getAllBookmarkFiles(tempVault.path);
 
       expect(allFiles).toHaveLength(1);
       expect(allFiles[0].path).toBe("Folder1/note2.md");
@@ -184,11 +184,11 @@ describe("bookmarks", () => {
         bookmarked: false,
       };
 
-      unbookmarkNote(tempVault, note);
+      unbookmarkNote(tempVault.path, note);
 
       // Verify the note was removed from the group
-      const bookmarks = getBookmarksJson(tempVault);
-      const allFiles = getAllBookmarkFiles(tempVault);
+      const bookmarks = getBookmarksJson(tempVault.path);
+      const allFiles = getAllBookmarkFiles(tempVault.path);
 
       expect(allFiles).toHaveLength(1);
       expect(allFiles[0].path).toBe("note1.md");
@@ -207,11 +207,11 @@ describe("bookmarks", () => {
         bookmarked: false,
       };
 
-      unbookmarkNote(tempVault, note);
+      unbookmarkNote(tempVault.path, note);
 
       // Verify nothing changed
-      const bookmarks = getBookmarksJson(tempVault);
-      const allFiles = getAllBookmarkFiles(tempVault);
+      const bookmarks = getBookmarksJson(tempVault.path);
+      const allFiles = getAllBookmarkFiles(tempVault.path);
 
       expect(allFiles).toHaveLength(2);
       expect(bookmarks?.items).toHaveLength(2);
@@ -233,7 +233,7 @@ describe("bookmarks", () => {
       };
 
       // This should not throw an error
-      unbookmarkNote(tempVault, note);
+      unbookmarkNote(tempVault.path, note);
 
       // Verify bookmarks.json still doesn't exist
       expect(fs.existsSync(path.join(tempVault.path, ".obsidian", "bookmarks.json"))).toBeFalsy();

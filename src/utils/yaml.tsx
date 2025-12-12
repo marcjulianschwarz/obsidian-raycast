@@ -1,5 +1,5 @@
 import YAML from "yaml";
-import { NoteWithContent } from "../api/vault/notes/notes.types";
+import { NoteWithContent } from "../obsidian/notes";
 
 import { CODE_BLOCK_REGEX, INLINE_TAGS_REGEX, YAML_FRONTMATTER_REGEX } from "./constants";
 import { sortByAlphabet } from "./utils";

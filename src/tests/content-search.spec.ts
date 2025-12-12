@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { searchNotesWithContent } from "../api/search/simple-content-search.service";
-import { Note } from "../api/vault/notes/notes.types";
 import fs from "fs";
 import path from "path";
 import os from "os";
+import { Note } from "../obsidian/notes";
 
 describe("content search", () => {
   let tempDir: string;

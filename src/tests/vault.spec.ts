@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { getExistingVaultsFromPreferences, getNotes, getVaultNameFromPath } from "../api/vault/vault.service";
-import { Vault } from "../api/vault/vault.types";
+import { getVaultNameFromPath, getVaultsFromPreferences } from "../obsidian/obsidian";
+import { ObsidianVault, getNotes } from "../obsidian/vault";
 import { createTempVault } from "./helpers/createTemporaryVault";
 
 vi.mock("@raycast/api", () => ({
@@ -29,7 +29,7 @@ vi.mock("@raycast/api", () => ({
 
 describe("vault", () => {
   let tempVaultData: {
-    vault: Vault;
+    vault: ObsidianVault;
     cleanup: () => void;
     paths: Record<string, string>;
   };
@@ -53,14 +53,14 @@ describe("vault", () => {
 
   describe("getExistingVaultsFromPreferences", () => {
     it("should  get exisitng vaults from preferences", () => {
-      const vaults = getExistingVaultsFromPreferences();
+      const vaults = getVaultsFromPreferences();
       console.log(vaults);
     });
   });
 
   describe("getNoteEntries", () => {
     it("should get note entries", async () => {
-      const noteMetadataEntries = await getNotes(tempVaultData.vault);
+      const noteMetadataEntries = await getNotes(tempVaultData.vault.path);
       expect(noteMetadataEntries.length).toBe(2);
     });
   });

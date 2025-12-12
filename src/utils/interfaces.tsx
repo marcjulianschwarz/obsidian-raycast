@@ -1,5 +1,3 @@
-import { Image } from "@raycast/api";
-
 export interface SearchArguments {
   searchArgument?: string;
   tagArgument?: string;
@@ -8,7 +6,6 @@ export interface SearchArguments {
 export interface Media {
   title: string;
   path: string;
-  icon: Image;
 }
 
 export interface MediaState {

@@ -7,18 +7,18 @@ import { SearchNotePreferences } from "../../utils/preferences";
 import { CreateNoteView } from "./CreateNoteView";
 import { filterNotesFuzzy } from "../../api/search/search.service";
 import { searchNotesWithContent } from "../../api/search/simple-content-search.service";
-import { Vault } from "../../api/vault/vault.types";
-import { Note } from "../../api/vault/notes/notes.types";
 import { SearchArguments } from "../../utils/interfaces";
+import { Note } from "../../obsidian/notes";
+import { ObsidianVault } from "../../obsidian/vault";
 
 export interface NoteListProps {
   title?: string;
-  vault: Vault;
+  vault: ObsidianVault;
   notes: Note[];
   isLoading?: boolean;
   searchArguments: SearchArguments;
-  action?: (note: Note, vault: Vault) => React.ReactNode;
-  onDelete?: (note: Note, vault: Vault) => void;
+  action?: (note: Note, vault: ObsidianVault) => React.ReactNode;
+  onDelete?: (note: Note, vault: ObsidianVault) => void;
   onSearchChange?: (search: string) => void;
   onNoteUpdated?: (notePath: string, updates: Partial<Note>) => void;
 }

@@ -1,23 +1,43 @@
 import { getPreferenceValues, showToast, Toast } from "@raycast/api";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { MediaState } from "./interfaces";
-import { sortByAlphabet } from "./utils";
+import { filterContent, sortByAlphabet } from "./utils";
 import fs from "fs";
-import { ObsidianVaultsState, Vault } from "../api/vault/vault.types";
-import { Note } from "../api/vault/notes/notes.types";
-import {
-  getMedia,
-  loadObsidianJson,
-  getExistingVaultsFromPreferences,
-  getNotesWithCache,
-  getNoteFileContent,
-} from "../api/vault/vault.service";
 import { Logger } from "../api/logger/logger.service";
-import { invalidateNotesCache } from "../api/cache/cache.service";
+import { getNotesFromCache, invalidateNotesCache, setNotesInCache } from "../api/cache/cache.service";
+import { parseExcludedFoldersPreferences } from "../api/preferences/preferences.service";
+import { SearchNotePreferences } from "./preferences";
+import { Vault, Obsidian } from "../obsidian";
+import { Note } from "../obsidian/notes";
+import { ObsidianVault, ObsidianVaultsState } from "../obsidian/vault";
 
 const logger = new Logger("Hooks");
 
-export function useNotes(vault: Vault, bookmarked = false) {
+/**
+ * Gets notes with caching. Checks cache first, falls back to disk scan.
+ */
+export async function getNotesWithCache(vaultPath: string): Promise<Note[]> {
+  // Try cached
+  const cached = getNotesFromCache(vaultPath);
+  if (cached) {
+    return cached;
+  }
+
+  // Cache miss, load from disk
+  logger.info(`Cache miss for ${vaultPath}, loading from disk`);
+  const { configFileName } = getPreferenceValues();
+  const pref = getPreferenceValues<SearchNotePreferences>();
+  const excludedFolders = parseExcludedFoldersPreferences(pref.excludedFolders);
+
+  const notes = await Vault.getNotes(vaultPath, configFileName, excludedFolders);
+
+  // Store in cache for next time
+  setNotesInCache(vaultPath, notes);
+
+  return notes;
+}
+
+export function useNotes(vault: ObsidianVault, bookmarked = false) {
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -28,7 +48,7 @@ export function useNotes(vault: Vault, bookmarked = false) {
     async function load() {
       try {
         setLoading(true);
-        const loadedNotes = await getNotesWithCache(vault);
+        const loadedNotes = await getNotesWithCache(vault.path);
         if (!cancelled) setNotes(loadedNotes);
       } catch (error) {
         logger.error(`Error loading notes. ${error}`);
@@ -46,7 +66,7 @@ export function useNotes(vault: Vault, bookmarked = false) {
   // Refresh function to force reload
   const refresh = useCallback(() => {
     logger.info(`Refreshing notes for vault ${vault.name}`);
-    invalidateNotesCache(vault);
+    invalidateNotesCache(vault.path);
     setRefreshKey((k) => k + 1);
   }, [vault]);
 
@@ -61,7 +81,7 @@ export function useNotes(vault: Vault, bookmarked = false) {
   return { notes: filtered, loading, refresh, updateNote } as const;
 }
 
-export function useMedia(vault: Vault) {
+export function useMedia(vault: ObsidianVault) {
   const [media, setMedia] = useState<MediaState>({
     ready: false,
     media: [],
@@ -73,7 +93,12 @@ export function useMedia(vault: Vault) {
         try {
           await fs.promises.access(vault.path + "/.");
 
-          const media = (await getMedia(vault)).sort((m1, m2) => sortByAlphabet(m1.title, m2.title));
+          const { configFileName } = getPreferenceValues();
+          const pref = getPreferenceValues<SearchNotePreferences>();
+          const excludedFolders = parseExcludedFoldersPreferences(pref.excludedFolders);
+          const media = (await Vault.getMedia(vault.path, configFileName, excludedFolders)).sort((m1, m2) =>
+            sortByAlphabet(m1.title, m2.title)
+          );
 
           setMedia({ ready: true, media });
         } catch (error) {
@@ -98,7 +123,7 @@ export function useObsidianVaults(): ObsidianVaultsState {
     if (pref.vaultPath) {
       return {
         ready: true,
-        vaults: getExistingVaultsFromPreferences(),
+        vaults: Obsidian.getVaultsFromPreferences(),
       };
     }
     return { ready: false, vaults: [] };
@@ -106,11 +131,11 @@ export function useObsidianVaults(): ObsidianVaultsState {
 
   useEffect(() => {
     if (!pref.vaultPath) {
-      loadObsidianJson()
+      Obsidian.getVaultsFromObsidianJson()
         .then((vaults) => {
           setState({ vaults, ready: true });
         })
-        .catch(() => setState({ vaults: getExistingVaultsFromPreferences(), ready: true }));
+        .catch(() => setState({ vaults: Obsidian.getVaultsFromPreferences(), ready: true }));
     }
   }, []);
 
@@ -125,7 +150,7 @@ export function useNoteContent(note: Note, options = { enabled: true }) {
   useEffect(() => {
     if (!options.enabled) return;
     setIsLoading(true);
-    getNoteFileContent(note.path)
+    Vault.readMarkdown(note.path, filterContent)
       .then((content) => {
         setNoteContent(content);
       })

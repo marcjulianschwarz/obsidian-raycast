@@ -1,12 +1,11 @@
 import { ActionPanel, Form, Action, getPreferenceValues, Keyboard, popToRoot, closeMainWindow } from "@raycast/api";
 import { invalidateNotesCache } from "../api/cache/cache.service";
+import { CreateNoteParams, createNote } from "../api/create-note";
 import { parseFolderActionsPreferences, parseTagsPreferences } from "../api/preferences/preferences.service";
-import { createNote } from "../api/vault/notes/notes.service";
-import { CreateNoteParams } from "../api/vault/notes/notes.types";
-import { Vault } from "../api/vault/vault.types";
+import { ObsidianVault } from "../obsidian/vault";
 import { NoteFormPreferences } from "../utils/preferences";
 
-export function CreateNoteForm(props: { vault: Vault; showTitle: boolean }) {
+export function CreateNoteForm(props: { vault: ObsidianVault; showTitle: boolean }) {
   const { vault, showTitle } = props;
 
   const pref = getPreferenceValues<NoteFormPreferences>();
@@ -25,7 +24,7 @@ export function CreateNoteForm(props: { vault: Vault; showTitle: boolean }) {
     const saved = await createNote(vault, params);
     if (saved) {
       // Invalidate cache so new note appears in lists
-      invalidateNotesCache(vault);
+      invalidateNotesCache(vault.path);
     }
     popToRoot();
     closeMainWindow();

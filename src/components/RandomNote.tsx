@@ -1,10 +1,10 @@
 import { Detail } from "@raycast/api";
 import { useMemo } from "react";
-import { Vault } from "../api/vault/vault.types";
+import { ObsidianVault } from "../obsidian/vault";
 import { useNotes } from "../utils/hooks";
 import { NoteQuickLook } from "./NoteQuickLook";
 
-export function RandomNote(props: { vault: Vault; showTitle: boolean }) {
+export function RandomNote(props: { vault: ObsidianVault; showTitle: boolean }) {
   const { vault, showTitle } = props;
   const { notes, loading: notesLoading } = useNotes(vault);
 

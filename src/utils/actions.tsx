@@ -10,19 +10,18 @@ import {
 } from "@raycast/api";
 import React, { useEffect, useState } from "react";
 import fs from "fs";
-import { bookmarkNote, unbookmarkNote } from "../api/vault/notes/bookmarks/bookmarks.service";
-import { appendSelectedTextTo, getCodeBlocks } from "../api/vault/notes/notes.service";
-import { Note, NoteWithContent } from "../api/vault/notes/notes.types";
-import { vaultPluginCheck } from "../api/vault/plugins/plugins.service";
-import { Vault } from "../api/vault/vault.types";
+import { appendSelectedTextTo, Note, NoteWithContent } from "../obsidian/notes";
 import { AppendNoteForm } from "../components/AppendNoteForm";
 import { EditNote } from "../components/EditNote";
 import { NoteQuickLook } from "../components/NoteQuickLook";
 import { ObsidianIcon, PrimaryAction } from "./constants";
 import { SearchNotePreferences } from "./preferences";
-import { getObsidianTarget, ObsidianTargetType } from "./utils";
 import { updateNoteInCache, deleteNoteFromCache } from "../api/cache/cache.service";
 import { Logger } from "../api/logger/logger.service";
+import { Obsidian, Vault } from "../obsidian";
+import { ObsidianTargetType } from "../obsidian/obsidian";
+import { ObsidianVault } from "../obsidian/vault";
+import { getCodeBlocks } from "./utils";
 
 const logger = new Logger("Actions");
 
@@ -44,7 +43,7 @@ export function ShowPathInFinderAction(props: { path: string }) {
 
 export function EditNoteAction(props: {
   note: NoteWithContent;
-  vault: Vault;
+  vault: ObsidianVault;
   onNoteUpdated?: (notePath: string, updates: Partial<Note>) => void;
 }) {
   const { note, vault, onNoteUpdated } = props;
@@ -61,7 +60,7 @@ export function EditNoteAction(props: {
 
 export function AppendToNoteAction(props: {
   note: Note;
-  vault: Vault;
+  vault: ObsidianVault;
   onNoteUpdated?: (notePath: string, updates: Partial<Note>) => void;
 }) {
   const { note, vault, onNoteUpdated } = props;
@@ -78,7 +77,7 @@ export function AppendToNoteAction(props: {
 
 export function AppendSelectedTextToNoteAction(props: {
   note: Note;
-  vault: Vault;
+  vault: ObsidianVault;
   onNoteUpdated?: (notePath: string, updates: Partial<Note>) => void;
 }) {
   const { note, vault, onNoteUpdated } = props;
@@ -92,7 +91,7 @@ export function AppendSelectedTextToNoteAction(props: {
           // Update cache with new metadata
           const stats = fs.statSync(note.path);
           const updates = { lastModified: stats.mtime };
-          updateNoteInCache(vault, note.path, updates);
+          updateNoteInCache(vault.path, note.path, updates);
           onNoteUpdated?.(note.path, updates);
         }
       }}
@@ -126,7 +125,7 @@ export function PasteNoteAction(props: { note: NoteWithContent }) {
 
 export function CopyMarkdownLinkAction(props: { note: Note }) {
   const { note } = props;
-  const target = getObsidianTarget({ type: ObsidianTargetType.OpenPath, path: note.path });
+  const target = Obsidian.getTarget({ type: ObsidianTargetType.OpenPath, path: note.path });
 
   return (
     <Action.CopyToClipboard
@@ -140,7 +139,7 @@ export function CopyMarkdownLinkAction(props: { note: Note }) {
 
 export function CopyObsidianURIAction(props: { note: Note }) {
   const { note } = props;
-  const target = getObsidianTarget({ type: ObsidianTargetType.OpenPath, path: note.path });
+  const target = Obsidian.getTarget({ type: ObsidianTargetType.OpenPath, path: note.path });
 
   return (
     <Action.CopyToClipboard
@@ -152,7 +151,7 @@ export function CopyObsidianURIAction(props: { note: Note }) {
   );
 }
 
-export function DeleteNoteAction(props: { note: Note; vault: Vault }) {
+export function DeleteNoteAction(props: { note: Note; vault: ObsidianVault }) {
   const { note, vault } = props;
   return (
     <Action
@@ -169,7 +168,7 @@ export function DeleteNoteAction(props: { note: Note; vault: Vault }) {
           fs.unlinkSync(note.path);
 
           // Update cache
-          deleteNoteFromCache(vault, note.path);
+          deleteNoteFromCache(vault.path, note.path);
         }
       }}
       icon={{ source: Icon.Trash, tintColor: Color.Red }}
@@ -177,7 +176,7 @@ export function DeleteNoteAction(props: { note: Note; vault: Vault }) {
   );
 }
 
-export function QuickLookAction(props: { note: NoteWithContent; vault: Vault }) {
+export function QuickLookAction(props: { note: NoteWithContent; vault: ObsidianVault }) {
   const { note, vault } = props;
   return (
     <Action.Push
@@ -188,7 +187,7 @@ export function QuickLookAction(props: { note: NoteWithContent; vault: Vault }) 
   );
 }
 
-export function OpenInDefaultAppAction(props: { note: Note; vault: Vault }) {
+export function OpenInDefaultAppAction(props: { note: Note; vault: ObsidianVault }) {
   const { note } = props;
   const [defaultApp, setDefaultApp] = useState<string>("Default App");
   useEffect(() => {
@@ -204,14 +203,16 @@ export function OpenInDefaultAppAction(props: { note: Note; vault: Vault }) {
   return <Action.Open title={`Open in ${defaultApp}`} target={note.path} icon={Icon.AppWindow} />;
 }
 
-export function BookmarkNoteAction(props: { note: Note; vault: Vault; onBookmark?: () => void }) {
+export function BookmarkNoteAction(props: { note: Note; vault: ObsidianVault; onBookmark?: () => void }) {
   const { note, vault, onBookmark } = props;
+  const { configFileName } = getPreferenceValues();
+
   return (
     <Action
       title="Bookmark Note"
       shortcut={{ modifiers: ["opt"], key: "p" }}
       onAction={() => {
-        bookmarkNote(vault, note);
+        Vault.bookmarkNote(vault.path, note, configFileName);
         onBookmark?.();
       }}
       icon={Icon.Bookmark}
@@ -219,14 +220,16 @@ export function BookmarkNoteAction(props: { note: Note; vault: Vault; onBookmark
   );
 }
 
-export function UnbookmarkNoteAction(props: { note: Note; vault: Vault; onUnbookmark?: () => void }) {
+export function UnbookmarkNoteAction(props: { note: Note; vault: ObsidianVault; onUnbookmark?: () => void }) {
   const { note, vault, onUnbookmark } = props;
+  const { configFileName } = getPreferenceValues();
+
   return (
     <Action
       title="Unbookmark Note"
       shortcut={{ modifiers: ["opt"], key: "p" }}
       onAction={() => {
-        unbookmarkNote(vault, note);
+        Vault.unbookmarkNote(vault.path, note, configFileName);
         onUnbookmark?.();
       }}
       icon={Icon.Bookmark}
@@ -236,11 +239,11 @@ export function UnbookmarkNoteAction(props: { note: Note; vault: Vault; onUnbook
 
 export function OpenPathInObsidianAction(props: { path: string }) {
   const { path } = props;
-  const target = getObsidianTarget({ type: ObsidianTargetType.OpenPath, path: path });
+  const target = Obsidian.getTarget({ type: ObsidianTargetType.OpenPath, path: path });
   return <Action.Open title="Open in Obsidian" target={target} icon={ObsidianIcon} />;
 }
 
-export function OpenNoteInObsidianNewPaneAction(props: { note: Note; vault: Vault }) {
+export function OpenNoteInObsidianNewPaneAction(props: { note: Note; vault: ObsidianVault }) {
   const { note, vault } = props;
 
   return (
@@ -258,7 +261,7 @@ export function OpenNoteInObsidianNewPaneAction(props: { note: Note; vault: Vaul
   );
 }
 
-export function ShowVaultInFinderAction(props: { vault: Vault }) {
+export function ShowVaultInFinderAction(props: { vault: ObsidianVault }) {
   const { vault } = props;
   return <Action.ShowInFinder title="Show in Finder" icon={Icon.Finder} path={vault.path} />;
 }
@@ -337,7 +340,7 @@ type NoteActionType = "bookmark" | "unbookmark" | "edit" | "append" | "appendSel
 
 export function NoteActions(props: {
   note: NoteWithContent;
-  vault: Vault;
+  vault: ObsidianVault;
   onNoteAction?: (actionType: NoteActionType) => void;
   onNoteUpdated?: (notePath: string, updates: Partial<Note>) => void;
 }) {
@@ -367,11 +370,11 @@ export function NoteActions(props: {
   );
 }
 
-export function OpenNoteActions(props: { note: NoteWithContent; vault: Vault; showQuickLook?: boolean }) {
+export function OpenNoteActions(props: { note: NoteWithContent; vault: ObsidianVault; showQuickLook?: boolean }) {
   const { note, vault, showQuickLook = true } = props;
   const { primaryAction } = getPreferenceValues<SearchNotePreferences>();
 
-  const [vaultsWithPlugin] = vaultPluginCheck({ vaults: [vault], communityPlugins: ["obsidian-advanced-uri"] });
+  const [vaultsWithPlugin] = Vault.checkPlugins({ vaults: [vault], communityPlugins: ["obsidian-advanced-uri"] });
 
   const quicklook = <QuickLookAction note={note} vault={vault} />;
   const openInDefaultApp = <OpenInDefaultAppAction note={note} vault={vault} />;
@@ -430,7 +433,7 @@ export function OpenNoteActions(props: { note: NoteWithContent; vault: Vault; sh
 
 export function AppendTaskAction(props: {
   note: Note;
-  vault: Vault;
+  vault: ObsidianVault;
   onNoteUpdated?: (notePath: string, updates: Partial<Note>) => void;
 }) {
   const { note, vault, onNoteUpdated } = props;

@@ -1,8 +1,8 @@
 import { Tool, open } from "@raycast/api";
-import { getVaultsFromPreferencesOrObsidianJson } from "../api/vault/vault.service";
 import fs from "fs";
 import { applyTemplates } from "../api/templating/templating.service";
-import { getObsidianTarget, ObsidianTargetType } from "../utils/utils";
+import { Obsidian } from "../obsidian";
+import { ObsidianTargetType } from "../obsidian/obsidian";
 
 type Input = {
   /**
@@ -43,7 +43,7 @@ type Input = {
 };
 
 export const confirmation: Tool.Confirmation<Input> = async (input) => {
-  const vaults = await getVaultsFromPreferencesOrObsidianJson();
+  const vaults = await Obsidian.getVaultsFromPreferencesOrObsidianJson();
 
   if (vaults.length === 0) {
     return {
@@ -88,7 +88,7 @@ export default async function tool(input: Input) {
 
   // Handle daily note append (requires Advanced URI plugin)
   if (input.useDailyNote) {
-    const vaults = await getVaultsFromPreferencesOrObsidianJson();
+    const vaults = await Obsidian.getVaultsFromPreferencesOrObsidianJson();
 
     if (vaults.length === 0) {
       return "No vaults found. Please configure vault paths in Raycast preferences.";
@@ -101,7 +101,7 @@ export default async function tool(input: Input) {
     }
 
     // Append to daily note using Advanced URI
-    const target = getObsidianTarget({
+    const target = Obsidian.getTarget({
       type: ObsidianTargetType.DailyNoteAppend,
       vault: targetVault,
       text: processedContent,
@@ -123,7 +123,7 @@ export default async function tool(input: Input) {
   }
 
   // Validate that the path contains a valid vault name
-  const allVaults = await getVaultsFromPreferencesOrObsidianJson();
+  const allVaults = await Obsidian.getVaultsFromPreferencesOrObsidianJson();
   const pathContainsVault = allVaults.some((vault) => input.fullNotePath!.includes(vault.name));
 
   if (!pathContainsVault) {

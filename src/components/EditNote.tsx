@@ -1,10 +1,10 @@
 import { ActionPanel, Form, Action, useNavigation, showToast, Toast, Icon, confirmAlert } from "@raycast/api";
 import fs from "fs";
 import { applyTemplates } from "../api/templating/templating.service";
-import { Note, NoteWithContent } from "../api/vault/notes/notes.types";
-import { Vault } from "../api/vault/vault.types";
 import { updateNoteInCache } from "../api/cache/cache.service";
 import { Logger } from "../api/logger/logger.service";
+import { NoteWithContent, Note } from "../obsidian/notes";
+import { ObsidianVault } from "../obsidian/vault";
 
 const logger = new Logger("EditNote");
 
@@ -14,7 +14,7 @@ interface FormValue {
 
 export function EditNote(props: {
   note: NoteWithContent;
-  vault: Vault;
+  vault: ObsidianVault;
   onNoteUpdated?: (notePath: string, updates: Partial<Note>) => void;
 }) {
   const { note, vault, onNoteUpdated } = props;
@@ -37,7 +37,7 @@ export function EditNote(props: {
       const stats = fs.statSync(note.path);
       const updates = { lastModified: stats.mtime };
       logger.info(`Updating cache and notifying parent for: ${note.path}`);
-      updateNoteInCache(vault, note.path, updates);
+      updateNoteInCache(vault.path, note.path, updates);
       onNoteUpdated?.(note.path, updates);
 
       showToast({ title: "Edited note", style: Toast.Style.Success });

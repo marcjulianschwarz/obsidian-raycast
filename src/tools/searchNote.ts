@@ -1,8 +1,9 @@
 import { Logger } from "../api/logger/logger.service";
 import { filterNotesFuzzy } from "../api/search/search.service";
-import { Note } from "../api/vault/notes/notes.types";
-import { getNotesWithCache, getVaultsFromPreferencesOrObsidianJson } from "../api/vault/vault.service";
-import { Vault } from "../api/vault/vault.types";
+import { Obsidian } from "../obsidian";
+import { Note } from "../obsidian/notes";
+import { ObsidianVault } from "../obsidian/vault";
+import { getNotesWithCache } from "../utils/hooks";
 
 type Input = {
   /**
@@ -21,7 +22,7 @@ const logger = new Logger("Tool SearchNote");
  * Search for notes in Obsidian vaults and return a list of matching notes with their title, vault, and path
  */
 export default async function tool(input: Input) {
-  const vaults = await getVaultsFromPreferencesOrObsidianJson();
+  const vaults = await Obsidian.getVaultsFromPreferencesOrObsidianJson();
 
   if (vaults.length === 0) {
     logger.warning("No vaults configured");
@@ -36,9 +37,9 @@ export default async function tool(input: Input) {
   }
 
   // Search across all target vaults
-  let allFilteredNotes: { note: Note; vault: Vault }[] = [];
+  let allFilteredNotes: { note: Note; vault: ObsidianVault }[] = [];
   for (const vault of targetVaults) {
-    const notes = await getNotesWithCache(vault);
+    const notes = await getNotesWithCache(vault.path);
     const filtered = filterNotesFuzzy(notes, input.searchTerm);
 
     allFilteredNotes.push(...filtered.map((note) => ({ note, vault })));

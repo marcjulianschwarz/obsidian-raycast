@@ -1,19 +1,25 @@
 import { List, ActionPanel } from "@raycast/api";
 import fs from "fs";
-import { readingTime, wordCount, trimPathToMaxLength, createdDateFor, fileSizeFor } from "../../../utils/utils";
+import {
+  readingTime,
+  wordCount,
+  trimPathToMaxLength,
+  createdDateFor,
+  fileSizeFor,
+  filterContent,
+} from "../../../utils/utils";
 import { yamlPropertyForString } from "../../../utils/yaml";
 import { SearchNotePreferences } from "../../../utils/preferences";
-import { Note } from "../../../api/vault/notes/notes.types";
-import { Vault } from "../../../api/vault/vault.types";
-import { filterContent } from "../../../api/vault/vault.service";
 import { invalidateNotesCache } from "../../../api/cache/cache.service";
 import { NoteActions, OpenNoteActions } from "../../../utils/actions";
 import { useNoteContent } from "../../../utils/hooks";
 import { useState } from "react";
+import { Note } from "../../../obsidian/notes";
+import { ObsidianVault } from "../../../obsidian/vault";
 
 export function NoteListItem(props: {
   note: Note;
-  vault: Vault;
+  vault: ObsidianVault;
   key: string;
   pref: SearchNotePreferences;
   selectedItemId: string | null;
@@ -27,7 +33,7 @@ export function NoteListItem(props: {
 
   const noteHasBeenMoved = !fs.existsSync(note.path);
   if (noteHasBeenMoved) {
-    invalidateNotesCache(vault);
+    invalidateNotesCache(vault.path);
   }
 
   // Create a modified note object with the current bookmark state

@@ -5,11 +5,11 @@ import { NoPathProvided } from "./components/Notifications/NoPathProvided";
 import { NoVaultFoundMessage } from "./components/Notifications/NoVaultFoundMessage";
 import { vaultsWithoutAdvancedURIToast } from "./components/Toasts";
 import { AppendTaskPreferences } from "./utils/preferences";
-import { getObsidianTarget, ObsidianTargetType } from "./utils/utils";
 import { useObsidianVaults } from "./utils/hooks";
-import { vaultPluginCheck } from "./api/vault/plugins/plugins.service";
 import { clearCache } from "./api/cache/cache.service";
 import { applyTemplates } from "./api/templating/templating.service";
+import { Vault, Obsidian } from "./obsidian";
+import { ObsidianTargetType } from "./obsidian/obsidian";
 
 interface appendTaskArgs {
   text: string;
@@ -24,7 +24,7 @@ export default function AppendTask(props: { arguments: appendTaskArgs }) {
 
   const { appendTemplate, heading, notePath, noteTag, vaultName, silent, creationDate } =
     getPreferenceValues<AppendTaskPreferences>();
-  const [vaultsWithPlugin, vaultsWithoutPlugin] = vaultPluginCheck({
+  const [vaultsWithPlugin, vaultsWithoutPlugin] = Vault.checkPlugins({
     vaults: vaults,
     communityPlugins: ["obsidian-advanced-uri"],
   });
@@ -52,7 +52,7 @@ export default function AppendTask(props: { arguments: appendTaskArgs }) {
       const creationDateString = creationDate ? " ➕ " + new Date().toLocaleDateString("en-CA") : "";
 
       const notePathExpanded = await applyTemplates(notePath);
-      const target = getObsidianTarget({
+      const target = Obsidian.getTarget({
         type: ObsidianTargetType.AppendTask,
         path: notePathExpanded,
         vault: vaultToUse,
@@ -141,7 +141,7 @@ export default function AppendTask(props: { arguments: appendTaskArgs }) {
             <ActionPanel>
               <Action.Open
                 title="Append Task"
-                target={getObsidianTarget({
+                target={Obsidian.getTarget({
                   type: ObsidianTargetType.AppendTask,
                   path: notePath,
                   vault: vault,

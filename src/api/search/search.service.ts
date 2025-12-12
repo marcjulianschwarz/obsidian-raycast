@@ -1,6 +1,6 @@
 import Fuse from "fuse.js";
+import { Note } from "../../obsidian/notes";
 import { Media } from "../../utils/interfaces";
-import { Note } from "../vault/notes/notes.types";
 
 /**
  * Fuzzy search notes by title and path (metadata only, no content)

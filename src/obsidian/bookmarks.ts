@@ -1,10 +1,26 @@
 import { getPreferenceValues } from "@raycast/api";
-import { Vault } from "../../vault.types";
-import { BookmarkEntry, BookmarkFile, BookmarkJson } from "./bookmarks.types";
 import fs from "fs";
 import path from "path";
-import { Note } from "../notes.types";
-import { Logger } from "../../../logger/logger.service";
+import { Logger } from "../api/logger/logger.service";
+import { Note } from "./notes";
+
+export type BookmarkFile = {
+  type: "file";
+  path: string;
+  title: string;
+};
+
+export type BookmarkGroup = {
+  type: "group";
+  title: string;
+  items: BookmarkEntry[];
+};
+
+export type BookmarkEntry = BookmarkFile | BookmarkGroup;
+
+export type BookmarkJson = {
+  items: BookmarkEntry[];
+};
 
 const logger = new Logger("Bookmarks");
 
@@ -16,9 +32,9 @@ function* flattenBookmarks(bookmarkEntries: BookmarkEntry[]): Generator<Bookmark
   }
 }
 
-export function getBookmarksJson(vault: Vault): BookmarkJson | undefined {
+export function getBookmarksJson(vaultPath: string): BookmarkJson | undefined {
   const { configFileName } = getPreferenceValues();
-  const bookmarksJsonPath = `${vault.path}/${configFileName || ".obsidian"}/bookmarks.json`;
+  const bookmarksJsonPath = `${vaultPath}/${configFileName || ".obsidian"}/bookmarks.json`;
   if (!fs.existsSync(bookmarksJsonPath)) {
     logger.warning("No bookmarks JSON found");
     return;
@@ -29,32 +45,31 @@ export function getBookmarksJson(vault: Vault): BookmarkJson | undefined {
   return bookmarkJson;
 }
 
-function writeBookmarksJson(vault: Vault, bookmarksJson: BookmarkJson) {
-  const { configFileName } = getPreferenceValues();
-  const bookmarksJsonPath = `${vault.path}/${configFileName || ".obsidian"}/bookmarks.json`;
+function writeBookmarksJson(vaultPath: string, bookmarksJson: BookmarkJson, configFileName: string) {
+  const bookmarksJsonPath = `${vaultPath}/${configFileName}/bookmarks.json`;
   fs.writeFileSync(bookmarksJsonPath, JSON.stringify(bookmarksJson, null, 2));
 }
 
-export function getAllBookmarkFiles(vault: Vault): BookmarkFile[] {
-  const bookmarkJson = getBookmarksJson(vault);
+export function getAllBookmarkFiles(vaultPath: string): BookmarkFile[] {
+  const bookmarkJson = getBookmarksJson(vaultPath);
   if (!bookmarkJson) return [];
   return Array.from(flattenBookmarks(bookmarkJson.items));
 }
 
-export function getBookmarkedNotePaths(vault: Vault): string[] {
-  const bookmarkFiles = getAllBookmarkFiles(vault);
+export function getBookmarkedNotePaths(vaultPath: string): string[] {
+  const bookmarkFiles = getAllBookmarkFiles(vaultPath);
   const notePaths = bookmarkFiles.map((note) => note.path);
   logger.info(notePaths);
   return notePaths;
 }
 
 /** Bookmark a note in a vault if it was not bookmarked yet */
-export function bookmarkNote(vault: Vault, note: Note) {
-  const bookmarksJson = getBookmarksJson(vault);
-  const relativeNotePath = path.relative(vault.path, note.path);
+export function bookmarkNote(vaultPath: string, note: Note, configFileName: string = ".obsidian") {
+  const bookmarksJson = getBookmarksJson(vaultPath);
+  const relativeNotePath = path.relative(vaultPath, note.path);
 
   // Check if the note is already bookmarked
-  const bookmarkedFiles = getAllBookmarkFiles(vault);
+  const bookmarkedFiles = getAllBookmarkFiles(vaultPath);
   if (bookmarkedFiles.some((file) => file.path === relativeNotePath)) {
     logger.info(`Note ${note.title} is already bookmarked`);
     return;
@@ -72,25 +87,25 @@ export function bookmarkNote(vault: Vault, note: Note) {
     const newBookmarksJson: BookmarkJson = {
       items: [bookmarkedNote],
     };
-    writeBookmarksJson(vault, newBookmarksJson);
+    writeBookmarksJson(vaultPath, newBookmarksJson, configFileName);
     return;
   }
 
   // Add the note to the root level of bookmarks, preserving the existing structure
   bookmarksJson.items.push(bookmarkedNote);
-  writeBookmarksJson(vault, bookmarksJson);
+  writeBookmarksJson(vaultPath, bookmarksJson, configFileName);
   logger.info(`Bookmarked note: ${note.title}`);
 }
 
 /** Unbookmark a note in a vault if it was bookmarked */
-export function unbookmarkNote(vault: Vault, note: Note) {
-  const bookmarksJson = getBookmarksJson(vault);
+export function unbookmarkNote(vaultPath: string, note: Note, configFileName: string = ".obsidian") {
+  const bookmarksJson = getBookmarksJson(vaultPath);
   if (!bookmarksJson) {
     logger.warning("No bookmarks JSON found, can't unbookmark note.");
     return;
   }
 
-  const notePath = path.relative(vault.path, note.path);
+  const notePath = path.relative(vaultPath, note.path);
   let bookmarkFound = false;
 
   // Function to filter out the bookmark we want to remove
@@ -116,7 +131,7 @@ export function unbookmarkNote(vault: Vault, note: Note) {
   bookmarkFound = removeBookmark(bookmarksJson.items);
 
   if (bookmarkFound) {
-    writeBookmarksJson(vault, bookmarksJson);
+    writeBookmarksJson(vaultPath, bookmarksJson, configFileName);
     logger.info(`Removed bookmark for note: ${note.title}`);
   } else {
     logger.warning(`Note not found in bookmarks: ${note.title}`);

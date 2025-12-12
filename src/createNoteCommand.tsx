@@ -3,12 +3,13 @@ import { useEffect, useRef } from "react";
 
 import { CreateNoteForm } from "./components/CreateNoteForm";
 import { VaultSelection } from "./components/VaultSelection";
-import { getObsidianTarget, ObsidianTargetType } from "./utils/utils";
 import { NoVaultFoundMessage } from "./components/Notifications/NoVaultFoundMessage";
 import { noVaultPathsToast } from "./components/Toasts";
 import { NoteFormPreferences } from "./utils/preferences";
 import { useObsidianVaults } from "./utils/hooks";
-import { Vault } from "./api/vault/vault.types";
+import { Obsidian } from "./obsidian";
+import { ObsidianTargetType } from "./obsidian/obsidian";
+import { ObsidianVault } from "./obsidian/vault";
 
 export default function Command() {
   const { vaults, ready } = useObsidianVaults();
@@ -18,7 +19,7 @@ export default function Command() {
   useEffect(() => {
     if (ready && vaults.length === 1 && pref.blankNote && !hasExecutedRef.current) {
       hasExecutedRef.current = true;
-      const target = getObsidianTarget({
+      const target = Obsidian.getTarget({
         type: ObsidianTargetType.NewNote,
         vault: vaults[0],
         name: pref.prefNoteName || "Blank Note",
@@ -35,7 +36,10 @@ export default function Command() {
     return <NoVaultFoundMessage />;
   } else if (vaults.length > 1) {
     return (
-      <VaultSelection vaults={vaults} target={(vault: Vault) => <CreateNoteForm vault={vault} showTitle={true} />} />
+      <VaultSelection
+        vaults={vaults}
+        target={(vault: ObsidianVault) => <CreateNoteForm vault={vault} showTitle={true} />}
+      />
     );
   } else if (vaults.length === 1) {
     if (pref.blankNote) {

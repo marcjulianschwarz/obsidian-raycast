@@ -6,7 +6,6 @@ import { Cache } from "@raycast/api";
 import { BYTES_PER_MEGABYTE } from "../../utils/constants";
 import { Logger } from "../logger/logger.service";
 import { Note } from "../vault/notes/notes.types";
-import { Vault } from "../vault/vault.types";
 
 const logger = new Logger("Cache");
 const cache = new Cache({ capacity: BYTES_PER_MEGABYTE * 100 }); // 100MB for metadata only
@@ -18,14 +17,14 @@ interface CachedNotesData {
   notes: Note[];
 }
 
-export function setNotesInCache(vault: Vault, notes: Note[]): void {
+export function setNotesInCache(cacheKey: string, notes: Note[]): void {
   const data: CachedNotesData = {
     lastCached: Date.now(),
     notes,
   };
   try {
-    cache.set(vault.name, JSON.stringify(data));
-    logger.info(`Cached ${notes.length} notes for vault ${vault.name}`);
+    cache.set(cacheKey, JSON.stringify(data));
+    logger.info(`Cached ${notes.length} notes for ${cacheKey}`);
   } catch (error) {
     logger.error(`Failed to cache notes. Error: ${error}`);
   }
@@ -34,25 +33,25 @@ export function setNotesInCache(vault: Vault, notes: Note[]): void {
 /**
  * Gets notes from cache if available and not stale.
  */
-export function getNotesFromCache(vault: Vault): Note[] | null {
-  if (!cache.has(vault.name)) {
-    logger.info(`No cache for vault ${vault.name}`);
+export function getNotesFromCache(cacheKey: string): Note[] | null {
+  if (!cache.has(cacheKey)) {
+    logger.info(`No cache for ${cacheKey}`);
     return null;
   }
 
   try {
-    const cached = cache.get(vault.name);
+    const cached = cache.get(cacheKey);
     if (!cached) return null;
 
     const data: CachedNotesData = JSON.parse(cached);
 
     // Check if stale
     if (Date.now() - data.lastCached > CACHE_TTL) {
-      logger.info(`Cache stale for vault ${vault.name}`);
+      logger.info(`Cache stale for ${cacheKey}`);
       return null;
     }
 
-    logger.info(`Using cached notes for vault ${vault.name}`);
+    logger.info(`Using cached notes for ${cacheKey}`);
     return data.notes;
   } catch (error) {
     logger.error(`Failed to parse cached notes. Error: ${error}`);
@@ -63,40 +62,40 @@ export function getNotesFromCache(vault: Vault): Note[] | null {
 /**
  * Invalidates the cache for a given vault.
  */
-export function invalidateNotesCache(vault: Vault): void {
-  cache.remove(vault.name);
-  logger.info(`Invalidated cache for vault ${vault.name}`);
+export function invalidateNotesCache(cacheKey: string): void {
+  cache.remove(cacheKey);
+  logger.info(`Invalidated cache for ${cacheKey}`);
 }
 
 /**
  * Updates a single note in the cache.
  */
-export function updateNoteInCache(vault: Vault, notePath: string, updates: Partial<Note>): void {
-  const cached = getNotesFromCache(vault);
+export function updateNoteInCache(cacheKey: string, notePath: string, updates: Partial<Note>): void {
+  const cached = getNotesFromCache(cacheKey);
   if (!cached) {
-    logger.info(`No cache to update for vault ${vault.name}`);
+    logger.info(`No cache to update for ${cacheKey}`);
     return;
   }
 
   const updatedNotes = cached.map((note) => (note.path === notePath ? { ...note, ...updates } : note));
 
-  setNotesInCache(vault, updatedNotes);
+  setNotesInCache(cacheKey, updatedNotes);
   logger.info(`Updated note ${notePath} in cache`);
 }
 
 /**
  * Deletes a note from the cache.
  */
-export function deleteNoteFromCache(vault: Vault, notePath: string): void {
-  const cached = getNotesFromCache(vault);
+export function deleteNoteFromCache(cacheKey: string, notePath: string): void {
+  const cached = getNotesFromCache(cacheKey);
   if (!cached) {
-    logger.info(`No cache to delete from for vault ${vault.name}`);
+    logger.info(`No cache to delete from for ${cacheKey}`);
     return;
   }
 
   const filteredNotes = cached.filter((note) => note.path !== notePath);
 
-  setNotesInCache(vault, filteredNotes);
+  setNotesInCache(cacheKey, filteredNotes);
   logger.info(`Deleted note ${notePath} from cache`);
 }
 

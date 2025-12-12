@@ -1,10 +1,10 @@
 import { ActionPanel, Form, Action, useNavigation, showToast, Toast, getPreferenceValues } from "@raycast/api";
 import fs from "fs";
 import { SearchNotePreferences } from "../utils/preferences";
-import { Note } from "../api/vault/notes/notes.types";
-import { Vault } from "../api/vault/vault.types";
 import { applyTemplates } from "../api/templating/templating.service";
 import { updateNoteInCache } from "../api/cache/cache.service";
+import { Note } from "../obsidian/notes";
+import { ObsidianVault } from "../obsidian/vault";
 
 interface FormValue {
   content: string;
@@ -12,7 +12,7 @@ interface FormValue {
 
 export function AppendNoteForm(props: {
   note: Note;
-  vault: Vault;
+  vault: ObsidianVault;
   onNoteUpdated?: (notePath: string, updates: Partial<Note>) => void;
 }) {
   const { note, vault, onNoteUpdated } = props;
@@ -27,7 +27,7 @@ export function AppendNoteForm(props: {
     // Update cache and notify parent
     const stats = fs.statSync(note.path);
     const updates = { lastModified: stats.mtime };
-    updateNoteInCache(vault, note.path, updates);
+    updateNoteInCache(vault.path, note.path, updates);
     onNoteUpdated?.(note.path, updates);
 
     showToast({ title: "Added text to note", style: Toast.Style.Success });

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { filterNotesFuzzy } from "../api/search/search.service";
-import { NoteWithContent } from "../api/vault/notes/notes.types";
+import { NoteWithContent } from "../obsidian/notes";
 
 describe("search", () => {
   describe("filterNotesFuzzy", () => {

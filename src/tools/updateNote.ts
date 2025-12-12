@@ -1,7 +1,7 @@
 import { Tool } from "@raycast/api";
 import fs from "fs";
 import { applyTemplates } from "../api/templating/templating.service";
-import { getVaultsFromPreferencesOrObsidianJson } from "../api/vault/vault.service";
+import { Obsidian } from "../obsidian";
 
 type Input = {
   /**
@@ -33,7 +33,7 @@ export const confirmation: Tool.Confirmation<Input> = async (input) => {
 export default async function tool(input: Input) {
   try {
     // Validate that the path contains a valid vault name
-    const allVaults = await getVaultsFromPreferencesOrObsidianJson();
+    const allVaults = await Obsidian.getVaultsFromPreferencesOrObsidianJson();
     const pathContainsVault = allVaults.some((vault) => input.fullNotePath.includes(vault.name));
 
     if (!pathContainsVault) {

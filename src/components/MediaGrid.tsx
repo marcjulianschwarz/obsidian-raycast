@@ -2,14 +2,14 @@ import { Action, ActionPanel, getPreferenceValues, Grid, Image } from "@raycast/
 import { useEffect, useMemo, useState } from "react";
 import { Media, MediaSearchArguments } from "../utils/interfaces";
 import { OpenPathInObsidianAction, ShowPathInFinderAction } from "../utils/actions";
-import { getListOfMediaFileExtensions } from "../utils/utils";
+import { getIconFor, getListOfMediaFileExtensions } from "../utils/utils";
 import { IMAGE_SIZE_MAPPING } from "../utils/constants";
 import { useMedia } from "../utils/hooks";
 import { SearchMediaPreferences } from "../utils/preferences";
-import { Vault } from "../api/vault/vault.types";
 import { filterMedia } from "../api/search/search.service";
+import { ObsidianVault } from "../obsidian/vault";
 
-export function MediaGrid(props: { vault: Vault; searchArguments: MediaSearchArguments }) {
+export function MediaGrid(props: { vault: ObsidianVault; searchArguments: MediaSearchArguments }) {
   const { vault, searchArguments } = props;
 
   const { ready, media } = useMedia(vault);
@@ -62,10 +62,11 @@ export function MediaGrid(props: { vault: Vault; searchArguments: MediaSearchArg
       }
     >
       {list.map((m) => {
+        const icon = getIconFor(m.path);
         return (
           <Grid.Item
             title={m.title}
-            content={{ source: m.icon.source, mask: Image.Mask.RoundedRectangle }}
+            content={{ source: icon.source, mask: Image.Mask.RoundedRectangle }}
             key={m.path}
             quickLook={{ path: m.path, name: m.title }}
             actions={

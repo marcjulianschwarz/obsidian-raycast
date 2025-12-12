@@ -1,13 +1,13 @@
 import fs from "fs";
 import os from "os";
 import path from "path";
-import { BookmarkJson } from "../../api/vault/notes/bookmarks/bookmarks.types";
-import { Vault } from "../../api/vault/vault.types";
+import { BookmarkJson } from "../../obsidian/bookmarks";
+import { ObsidianVault } from "../../obsidian/vault";
 
 /** Builds a throw-away Obsidian vault on the local tmp dir and returns the Vault
  *  object together with a cleanup callback that erases the folder again. */
 export function createTempVault(options?: { withBookmarks?: boolean }): {
-  vault: Vault;
+  vault: ObsidianVault;
   cleanup: () => void;
   paths: Record<string, string>;
 } {
@@ -55,7 +55,7 @@ export function createTempVault(options?: { withBookmarks?: boolean }): {
     fs.writeFileSync(path.join(vaultRoot, ".obsidian", "bookmarks.json"), JSON.stringify(initialBookmarks, null, 2));
   }
 
-  const vault: Vault = { name: "Temp Vault", key: vaultRoot, path: vaultRoot };
+  const vault: ObsidianVault = { name: "Temp Vault", key: vaultRoot, path: vaultRoot };
   const cleanup = () => fs.rmSync(vaultRoot, { recursive: true, force: true });
 
   return { vault, cleanup, paths: { note1Path, note2Path, media1Path } };

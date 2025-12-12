@@ -1,10 +1,10 @@
+import { ObsidianVault } from "../../obsidian/vault";
 import { useNotes } from "../../utils/hooks";
 import { SearchArguments } from "../../utils/interfaces";
 import { NoteList } from "./NoteList";
-import { Vault } from "../../api/vault/vault.types";
 
 export const NoteListObsidian = function NoteListObsidian(props: {
-  vault: Vault;
+  vault: ObsidianVault;
   showTitle: boolean;
   bookmarked: boolean;
   searchArguments: SearchArguments;
