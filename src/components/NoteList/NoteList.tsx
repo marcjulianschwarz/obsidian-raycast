@@ -29,10 +29,23 @@ export function NoteList(props: NoteListProps) {
   const { notes, vault, title, searchArguments, isLoading, onNoteUpdated, onDelete } = props;
 
   const pref = getPreferenceValues<SearchNotePreferences>();
-  const [inputText, setInputText] = useState(searchArguments.searchArgument || "");
+
+  // Combine searchArgument and tagArgument into a single search string with tag: syntax
+  const initialSearchText = (() => {
+    const parts: string[] = [];
+    if (searchArguments.tagArgument) {
+      parts.push(`tag:${searchArguments.tagArgument}`);
+    }
+    if (searchArguments.searchArgument) {
+      parts.push(searchArguments.searchArgument);
+    }
+    return parts.join(" ");
+  })();
+
+  const [inputText, setInputText] = useState(initialSearchText);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [filteredNotes, setFilteredNotes] = useState<Note[]>([]);
-  const [isSearching, setIsSearching] = useState(!!searchArguments.searchArgument);
+  const [isSearching, setIsSearching] = useState(!!initialSearchText);
   const [sortOrder, setSortOrder] = useState<SortOrder>("relevance");
 
   // Search with or without content based on preference
