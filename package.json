@@ -686,7 +686,8 @@
     "test": "vitest run",
     "coverage": "vitest run --coverage",
     "test:watch": "vitest",
-    "publish": "yarn lint && yarn test && ray publish"
+    "prepublish": "ray lint && vitest run",
+    "publish": "ray publish"
   },
   "platforms": [
     "macOS",
