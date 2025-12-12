@@ -32,7 +32,7 @@ export function NoteList(props: NoteListProps) {
   const [inputText, setInputText] = useState(searchArguments.searchArgument || "");
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [filteredNotes, setFilteredNotes] = useState<Note[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
+  const [isSearching, setIsSearching] = useState(!!searchArguments.searchArgument);
   const [sortOrder, setSortOrder] = useState<SortOrder>("relevance");
 
   // Search with or without content based on preference
@@ -65,7 +65,7 @@ export function NoteList(props: NoteListProps) {
     return () => clearTimeout(timeoutId);
   }, [notes, inputText, pref.searchContent, sortOrder]);
 
-  if (filteredNotes.length === 0 && inputText.trim() !== "") {
+  if (filteredNotes.length === 0 && inputText.trim() !== "" && !isSearching && !isLoading) {
     return <CreateNoteView title={title || ""} searchText={inputText} onSearchChange={setInputText} vault={vault} />;
   }
 
