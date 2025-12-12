@@ -4,6 +4,22 @@ import path from "path";
 export default defineConfig({
   test: {
     environment: "node",
+    coverage: {
+      provider: "v8",
+      exclude: [
+        "**/node_modules/**",
+        "**/dist/**",
+        "**/__mocks__/**",
+        "**/tests/**",
+        "**/*.spec.ts",
+        "**/*.test.ts",
+        "**/components/**", // Exclude React components
+        "**/*.tsx", // Exclude all TSX files (React components)
+        "**/*.config.*",
+        "**/constants.tsx",
+      ],
+      include: ["src/**/*.ts"], // Only include .ts files in src
+    },
   },
   resolve: {
     alias: {
