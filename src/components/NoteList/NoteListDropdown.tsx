@@ -1,10 +1,7 @@
 import { List, Icon } from "@raycast/api";
 import { SortOrder } from "../../utils/sorting";
 
-export function NoteListDropdown(props: {
-  sortOrder: SortOrder;
-  setSortOrder: (o: SortOrder) => void;
-}) {
+export function NoteListDropdown(props: { sortOrder: SortOrder; setSortOrder: (o: SortOrder) => void }) {
   const { sortOrder, setSortOrder } = props;
 
   return (

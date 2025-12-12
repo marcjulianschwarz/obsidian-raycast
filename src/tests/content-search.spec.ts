@@ -3,7 +3,7 @@ import { searchNotesWithContent } from "../api/search/simple-content-search.serv
 import fs from "fs";
 import path from "path";
 import os from "os";
-import { Note } from "../obsidian/notes";
+import { Note } from "@/obsidian";
 
 describe("content search", () => {
   let tempDir: string;

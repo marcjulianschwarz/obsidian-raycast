@@ -1,8 +1,6 @@
 import { Logger } from "../api/logger/logger.service";
 import { filterNotesFuzzy } from "../api/search/search.service";
-import { Obsidian } from "../obsidian";
-import { Note } from "../obsidian/notes";
-import { ObsidianVault } from "../obsidian/vault";
+import { Note, Obsidian, ObsidianVault } from "@/obsidian";
 import { getNotesWithCache } from "../utils/hooks";
 
 type Input = {

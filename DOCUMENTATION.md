@@ -35,7 +35,8 @@ Vault.writeMarkdown(
 
 ### Contributing to the Obsidian API
 
-The Obsidian API should not use any Raycast specific features. It should work as a standalone package to interface with the Obsidian app and the notes of vaults.
+The Obsidian API should not use any Raycast specific features. It should work as a standalone package to interface with the Obsidian app and the notes of vaults. Add functions to the `internal` folder of the API and only expose necessary methods in the public `index.ts` by either re-exporting them, adding them to the existing namespaces or creating new ones.
+
 All functionality related to Raycast can be placed in the `api`, `components`, `utils`, `tools` folders.
 
 ## Raycast Commands

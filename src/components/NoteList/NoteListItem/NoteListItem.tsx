@@ -8,14 +8,12 @@ import {
   fileSizeFor,
   filterContent,
 } from "../../../utils/utils";
-import { yamlPropertyForString } from "../../../utils/yaml";
 import { SearchNotePreferences } from "../../../utils/preferences";
 import { invalidateNotesCache } from "../../../api/cache/cache.service";
 import { NoteActions, OpenNoteActions } from "../../../utils/actions";
 import { useNoteContent } from "../../../utils/hooks";
 import { useState } from "react";
-import { Note } from "../../../obsidian/notes";
-import { ObsidianVault } from "../../../obsidian/vault";
+import { Note, ObsidianVault, ObsidianUtils } from "@/obsidian";
 
 export function NoteListItem(props: {
   note: Note;
@@ -57,7 +55,7 @@ export function NoteListItem(props: {
 
   function Link() {
     if (!noteContent) return null;
-    const url = yamlPropertyForString(noteContent, "url");
+    const url = ObsidianUtils.getPropery(noteContent, "url");
     if (url) {
       return <List.Item.Detail.Metadata.Link target={url} text="View" title="URL" />;
     } else {

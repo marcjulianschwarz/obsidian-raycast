@@ -1,8 +1,8 @@
 import YAML from "yaml";
-import { NoteWithContent } from "../obsidian/notes";
+import { NoteWithContent } from "./notes";
 
-import { CODE_BLOCK_REGEX, INLINE_TAGS_REGEX, YAML_FRONTMATTER_REGEX } from "./constants";
-import { sortByAlphabet } from "./utils";
+import { CODE_BLOCK_REGEX, INLINE_TAGS_REGEX, YAML_FRONTMATTER_REGEX } from "../../utils/constants";
+import { sortByAlphabet } from "../../utils/utils";
 
 export function parsedYAMLFrontmatter(str: string) {
   const frontmatter = str.match(YAML_FRONTMATTER_REGEX);

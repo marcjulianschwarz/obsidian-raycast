@@ -3,7 +3,7 @@
 // and the next command run can reuse the previously cached data.
 
 import { Cache } from "@raycast/api";
-import { Note } from "../../obsidian/notes";
+import { Note } from "@/obsidian";
 import { BYTES_PER_MEGABYTE } from "../../utils/constants";
 import { Logger } from "../logger/logger.service";
 

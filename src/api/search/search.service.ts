@@ -1,5 +1,5 @@
+import { Note } from "@/obsidian";
 import Fuse from "fuse.js";
-import { Note } from "../../obsidian/notes";
 import { Media } from "../../utils/interfaces";
 
 /**

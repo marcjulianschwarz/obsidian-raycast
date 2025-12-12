@@ -1,7 +1,5 @@
 import { Action, ActionPanel, List, open } from "@raycast/api";
-import { Obsidian } from "../../obsidian";
-import { ObsidianTargetType } from "../../obsidian/obsidian";
-import { ObsidianVault } from "../../obsidian/vault";
+import { Obsidian, ObsidianTargetType, ObsidianVault } from "../../obsidian";
 
 interface CreateNoteViewProps {
   title: string;

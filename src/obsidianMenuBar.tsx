@@ -1,8 +1,5 @@
 import { MenuBarExtra, open } from "@raycast/api";
-import { Obsidian } from "./obsidian";
-import { Note } from "./obsidian/notes";
-import { ObsidianTargetType } from "./obsidian/obsidian";
-import { ObsidianVault } from "./obsidian/vault";
+import { Obsidian, ObsidianTargetType, ObsidianVault, Note } from "@/obsidian";
 import { ObsidianIcon } from "./utils/constants";
 import { useObsidianVaults, useVaultPluginCheck } from "./utils/hooks";
 

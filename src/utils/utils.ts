@@ -1,3 +1,5 @@
+import { Note } from "@/obsidian";
+import { getPreferenceValues, getSelectedText, Icon } from "@raycast/api";
 import fs from "fs";
 import path from "path";
 import {
@@ -9,9 +11,7 @@ import {
   VIDEO_FILE_EXTENSIONS,
 } from "./constants";
 import { Media } from "./interfaces";
-import { getPreferenceValues, getSelectedText, Icon } from "@raycast/api";
 import { GlobalPreferences } from "./preferences";
-import { Note } from "../obsidian/notes";
 
 export interface CodeBlock {
   language: string;

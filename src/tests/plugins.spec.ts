@@ -2,8 +2,13 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import fs from "fs";
 import path from "path";
 import { createTempVault } from "./helpers/createTemporaryVault";
-import { readCommunityPlugins, readCorePlugins, vaultPluginCheck, VaultPluginCheckParams } from "../obsidian/plugins";
-import { ObsidianVault } from "../obsidian/vault";
+import { ObsidianVault } from "@/obsidian";
+import {
+  readCommunityPlugins,
+  readCorePlugins,
+  VaultPluginCheckParams,
+  vaultPluginCheck,
+} from "@/obsidian/internal/plugins";
 
 vi.mock("@raycast/api", () => ({
   getPreferenceValues: () => ({

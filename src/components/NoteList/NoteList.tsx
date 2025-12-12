@@ -8,9 +8,8 @@ import { CreateNoteView } from "./CreateNoteView";
 import { filterNotesFuzzy } from "../../api/search/search.service";
 import { searchNotesWithContent } from "../../api/search/simple-content-search.service";
 import { SearchArguments } from "../../utils/interfaces";
-import { Note } from "../../obsidian/notes";
-import { ObsidianVault } from "../../obsidian/vault";
 import { sortNotes, SortOrder } from "../../utils/sorting";
+import { Note, ObsidianVault } from "@/obsidian";
 
 export interface NoteListProps {
   title?: string;

@@ -1,6 +1,5 @@
+import { Note, ObsidianVault } from "@/obsidian";
 import { ActionPanel, Detail } from "@raycast/api";
-import { Note } from "../obsidian/notes";
-import { ObsidianVault } from "../obsidian/vault";
 import { NoteActions, OpenNoteActions } from "../utils/actions";
 import { useNoteContent } from "../utils/hooks";
 import { filterContent } from "../utils/utils";

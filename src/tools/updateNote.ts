@@ -1,7 +1,7 @@
 import { Tool } from "@raycast/api";
 import fs from "fs";
 import { applyTemplates } from "../api/templating/templating.service";
-import { Obsidian } from "../obsidian";
+import { Obsidian } from "@/obsidian";
 
 type Input = {
   /**

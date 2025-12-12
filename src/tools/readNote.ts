@@ -1,5 +1,5 @@
 import { Logger } from "../api/logger/logger.service";
-import { Obsidian, Vault } from "../obsidian";
+import { Obsidian, Vault } from "@/obsidian";
 
 type Input = {
   /**

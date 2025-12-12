@@ -1,6 +1,6 @@
 import { getPreferenceValues } from "@raycast/api";
 import fs from "fs";
-import { Logger } from "../api/logger/logger.service";
+import { Logger } from "../../api/logger/logger.service";
 import { ObsidianVault } from "./vault";
 
 const logger: Logger = new Logger("Plugins");

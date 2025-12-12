@@ -1,7 +1,7 @@
 import { getPreferenceValues } from "@raycast/api";
 import fs from "fs";
 import path from "path";
-import { Logger } from "../api/logger/logger.service";
+import { Logger } from "../../api/logger/logger.service";
 import { Note } from "./notes";
 
 export type BookmarkFile = {

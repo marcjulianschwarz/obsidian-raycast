@@ -1,4 +1,4 @@
-import { ObsidianVault } from "../../obsidian/vault";
+import { ObsidianVault } from "@/obsidian";
 import { useNotes } from "../../utils/hooks";
 import { SearchArguments } from "../../utils/interfaces";
 import { NoteList } from "./NoteList";

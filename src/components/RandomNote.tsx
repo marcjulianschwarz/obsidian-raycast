@@ -1,6 +1,6 @@
+import { ObsidianVault } from "@/obsidian";
 import { Detail } from "@raycast/api";
 import { useMemo } from "react";
-import { ObsidianVault } from "../obsidian/vault";
 import { useNotes } from "../utils/hooks";
 import { NoteQuickLook } from "./NoteQuickLook";
 

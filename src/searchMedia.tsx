@@ -6,7 +6,7 @@ import { NoVaultFoundMessage } from "./components/Notifications/NoVaultFoundMess
 import { noVaultPathsToast } from "./components/Toasts";
 import { MediaGrid } from "./components/MediaGrid";
 import { useObsidianVaults } from "./utils/hooks";
-import { ObsidianVault } from "./obsidian/vault";
+import { ObsidianVault } from "@/obsidian";
 
 export default function Command(props: { arguments: MediaSearchArguments }) {
   const { vaults, ready } = useObsidianVaults();

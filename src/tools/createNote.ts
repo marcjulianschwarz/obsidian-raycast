@@ -1,8 +1,7 @@
-import { Tool, open } from "@raycast/api";
+import { open, Tool } from "@raycast/api";
 import { invalidateNotesCache } from "../api/cache/cache.service";
 import { createNote } from "../api/create-note";
-import { Obsidian } from "../obsidian";
-import { ObsidianTargetType } from "../obsidian/obsidian";
+import { Obsidian, ObsidianTargetType } from "@/obsidian";
 
 type Input = {
   /**

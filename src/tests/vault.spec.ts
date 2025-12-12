@@ -1,6 +1,7 @@
+import { ObsidianVault } from "@/obsidian";
+import { getVaultNameFromPath, getVaultsFromPreferences } from "@/obsidian/internal/obsidian";
+import { getNotes } from "@/obsidian/internal/vault";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { getVaultNameFromPath, getVaultsFromPreferences } from "../obsidian/obsidian";
-import { ObsidianVault, getNotes } from "../obsidian/vault";
 import { createTempVault } from "./helpers/createTemporaryVault";
 
 vi.mock("@raycast/api", () => ({

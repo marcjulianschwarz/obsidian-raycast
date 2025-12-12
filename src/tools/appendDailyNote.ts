@@ -1,7 +1,7 @@
-import { Tool, open } from "@raycast/api";
+import { getVaultsFromPreferencesOrObsidianJson } from "@/obsidian/internal/obsidian";
+import { open, Tool } from "@raycast/api";
 import { applyTemplates } from "../api/templating/templating.service";
-import { Obsidian } from "../obsidian";
-import { getVaultsFromPreferencesOrObsidianJson, ObsidianTargetType } from "../obsidian/obsidian";
+import { Obsidian, ObsidianTargetType } from "@/obsidian";
 
 type Input = {
   /**

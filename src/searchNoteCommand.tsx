@@ -6,7 +6,7 @@ import { SearchArguments } from "./utils/interfaces";
 import { NoVaultFoundMessage } from "./components/Notifications/NoVaultFoundMessage";
 import { noVaultPathsToast } from "./components/Toasts";
 import { useObsidianVaults } from "./utils/hooks";
-import { ObsidianVault } from "./obsidian/vault";
+import { ObsidianVault } from "@/obsidian";
 
 export default function Command(props: { arguments: SearchArguments }) {
   const { ready, vaults } = useObsidianVaults();

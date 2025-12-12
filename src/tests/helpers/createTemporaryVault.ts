@@ -1,8 +1,8 @@
+import { ObsidianVault } from "@/obsidian";
+import { BookmarkJson } from "@/obsidian/internal/bookmarks";
 import fs from "fs";
 import os from "os";
 import path from "path";
-import { BookmarkJson } from "../../obsidian/bookmarks";
-import { ObsidianVault } from "../../obsidian/vault";
 
 /** Builds a throw-away Obsidian vault on the local tmp dir and returns the Vault
  *  object together with a cleanup callback that erases the folder again. */

@@ -1,4 +1,4 @@
-import { Note } from "../obsidian/notes";
+import { Note } from "@/obsidian";
 import fs from "fs";
 
 export type SortOrder =

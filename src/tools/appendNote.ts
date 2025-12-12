@@ -1,8 +1,7 @@
 import { Tool, open } from "@raycast/api";
 import fs from "fs";
 import { applyTemplates } from "../api/templating/templating.service";
-import { Obsidian } from "../obsidian";
-import { ObsidianTargetType } from "../obsidian/obsidian";
+import { Obsidian, ObsidianTargetType } from "@/obsidian";
 
 type Input = {
   /**

@@ -3,7 +3,7 @@ import * as fs from "fs";
 import * as fsAsync from "fs/promises";
 import { homedir } from "os";
 import path from "path";
-import { GlobalPreferences } from "../utils/preferences";
+import { GlobalPreferences } from "../../utils/preferences";
 import { ObsidianVault } from "./vault";
 
 interface ObsidianVaultJSON {

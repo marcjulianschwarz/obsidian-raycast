@@ -1,8 +1,7 @@
-import { getPreferenceValues, getSelectedText, showToast, Toast } from "@raycast/api";
-import { SearchNotePreferences } from "../utils/preferences";
+import { showToast, Toast } from "@raycast/api";
+
 import fs from "fs";
 import path from "path";
-import { applyTemplates } from "../api/templating/templating.service";
 
 export interface Note {
   title: string;
@@ -15,29 +14,8 @@ export interface NoteWithContent extends Note {
   content: string;
 }
 
-export async function appendSelectedTextTo(note: Note) {
-  let { appendSelectedTemplate } = getPreferenceValues<SearchNotePreferences>();
-
-  appendSelectedTemplate = appendSelectedTemplate ? appendSelectedTemplate : "{content}";
-
-  try {
-    const selectedText = await getSelectedText();
-    if (selectedText.trim() == "") {
-      showToast({ title: "No text selected", message: "Make sure to select some text.", style: Toast.Style.Failure });
-    } else {
-      let content = appendSelectedTemplate.replaceAll("{content}", selectedText);
-      content = await applyTemplates(content);
-      fs.appendFileSync(note.path, "\n" + content);
-      showToast({ title: "Added selected text to note", style: Toast.Style.Success });
-      return true;
-    }
-  } catch {
-    showToast({
-      title: "Couldn't copy selected text",
-      message: "Maybe you didn't select anything.",
-      style: Toast.Style.Failure,
-    });
-  }
+export function appendText(notePath: string, content: string) {
+  fs.appendFileSync(notePath, "\n" + content);
 }
 
 /** Gets the Obsidian Properties YAML frontmatter for a list of tags */

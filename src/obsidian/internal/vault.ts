@@ -1,10 +1,10 @@
 import * as fs from "fs";
 import * as fsAsync from "fs/promises";
 import path from "path";
-import { AUDIO_FILE_EXTENSIONS, VIDEO_FILE_EXTENSIONS } from "../utils/constants";
-import { Media } from "../utils/interfaces";
-import { getFilePaths } from "../api/file/file.service";
-import { Logger } from "../api/logger/logger.service";
+import { AUDIO_FILE_EXTENSIONS, VIDEO_FILE_EXTENSIONS } from "../../utils/constants";
+import { Media } from "../../utils/interfaces";
+import { getFilePaths } from "../../api/file/file.service";
+import { Logger } from "../../api/logger/logger.service";
 import { getBookmarkedNotePaths } from "./bookmarks";
 import { Note } from "./notes";
 
@@ -14,11 +14,6 @@ export interface ObsidianVault {
   name: string;
   key: string;
   path: string;
-}
-
-export interface ObsidianVaultsState {
-  ready: boolean;
-  vaults: ObsidianVault[];
 }
 
 /** Gets a list of folders that are ignored by the user inside of Obsidian */

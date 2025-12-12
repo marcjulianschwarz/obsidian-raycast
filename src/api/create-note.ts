@@ -1,10 +1,9 @@
 import { confirmAlert, getPreferenceValues, Icon, open } from "@raycast/api";
 import path from "path";
 import fs from "fs";
-import { ObsidianVault } from "../obsidian/vault";
 import { NoteFormPreferences } from "../utils/preferences";
 import { directoryCreationErrorToast, fileWriteErrorToast } from "../components/Toasts";
-import { ObsidianUtils, Vault } from "../obsidian";
+import { ObsidianUtils, ObsidianVault, Vault } from "../obsidian";
 import { applyTemplates } from "./templating/templating.service";
 
 export interface CreateNoteParams {

@@ -1,6 +1,5 @@
-import { Tool, open } from "@raycast/api";
-import { Obsidian } from "../obsidian";
-import { ObsidianTargetType } from "../obsidian/obsidian";
+import { open, Tool } from "@raycast/api";
+import { Obsidian, ObsidianTargetType } from "@/obsidian";
 
 type Input = {
   /**

@@ -10,7 +10,6 @@ import {
 } from "@raycast/api";
 import React, { useEffect, useState } from "react";
 import fs from "fs";
-import { appendSelectedTextTo, Note, NoteWithContent } from "../obsidian/notes";
 import { AppendNoteForm } from "../components/AppendNoteForm";
 import { EditNote } from "../components/EditNote";
 import { NoteQuickLook } from "../components/NoteQuickLook";
@@ -18,11 +17,10 @@ import { ObsidianIcon, PrimaryAction } from "./constants";
 import { SearchNotePreferences } from "./preferences";
 import { updateNoteInCache, deleteNoteFromCache } from "../api/cache/cache.service";
 import { Logger } from "../api/logger/logger.service";
-import { Obsidian, Vault } from "../obsidian";
-import { ObsidianTargetType } from "../obsidian/obsidian";
-import { ObsidianVault } from "../obsidian/vault";
+import { Note, NoteWithContent, Obsidian, ObsidianTargetType, ObsidianVault, Vault } from "@/obsidian";
 import { getCodeBlocks } from "./utils";
 import { useVaultPluginCheck } from "./hooks";
+import { appendSelectedTextTo } from "@/api/append-note";
 
 const logger = new Logger("Actions");
 

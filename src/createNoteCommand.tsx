@@ -7,9 +7,7 @@ import { NoVaultFoundMessage } from "./components/Notifications/NoVaultFoundMess
 import { noVaultPathsToast } from "./components/Toasts";
 import { NoteFormPreferences } from "./utils/preferences";
 import { useObsidianVaults } from "./utils/hooks";
-import { Obsidian } from "./obsidian";
-import { ObsidianTargetType } from "./obsidian/obsidian";
-import { ObsidianVault } from "./obsidian/vault";
+import { Obsidian, ObsidianTargetType, ObsidianVault } from "@/obsidian";
 
 export default function Command() {
   const { vaults, ready } = useObsidianVaults();

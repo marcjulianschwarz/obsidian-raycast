@@ -1,13 +1,13 @@
-import { bookmarkNote, unbookmarkNote } from "./bookmarks";
-import { createProperties, deleteNote, Note, writeMarkdown } from "./notes";
+import { bookmarkNote, unbookmarkNote } from "./internal/bookmarks";
+import { appendText, createProperties, deleteNote, Note, writeMarkdown } from "./internal/notes";
 import {
   getVaultsFromPreferences,
   getVaultsFromObsidianJson,
   getVaultsFromPreferencesOrObsidianJson,
   ObsidianTarget,
   getObsidianTarget,
-} from "./obsidian";
-import { readCommunityPlugins, readCorePlugins, VaultPluginCheckParams, vaultPluginCheck } from "./plugins";
+} from "./internal/obsidian";
+import { readCommunityPlugins, readCorePlugins, VaultPluginCheckParams, vaultPluginCheck } from "./internal/plugins";
 import {
   getNoteFileContent,
   getNotes,
@@ -15,7 +15,12 @@ import {
   getExcludedFolders,
   getMarkdownFilePaths,
   getCanvasFilePaths,
-} from "./vault";
+} from "./internal/vault";
+import { inlineTagsForString, tagsForString, yamlPropertyForString, yamlTagsForString } from "./internal/yaml";
+
+export type { Note, NoteWithContent } from "./internal/notes";
+export type { ObsidianVault } from "./internal/vault";
+export { ObsidianTargetType } from "./internal/obsidian";
 
 export const Vault = {
   readMarkdown(path: string, filter?: (input: string) => string) {
@@ -79,6 +84,10 @@ export const Vault = {
   deleteNote(note: Note) {
     return deleteNote(note);
   },
+
+  appendToNote(note: Note, content: string) {
+    appendText(note.path, content);
+  },
 };
 
 /**
@@ -105,5 +114,21 @@ export const Obsidian = {
 export const ObsidianUtils = {
   createProperties(tags: string[]) {
     createProperties(tags);
+  },
+
+  getInlineTags(str: string) {
+    return inlineTagsForString(str);
+  },
+
+  getPropery(str: string, property: string) {
+    return yamlPropertyForString(str, property);
+  },
+
+  getPropertiesTags(str: string) {
+    return yamlTagsForString(str);
+  },
+
+  getAllTags(str: string) {
+    return tagsForString(str);
   },
 };

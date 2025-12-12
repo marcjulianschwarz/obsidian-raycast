@@ -1,8 +1,8 @@
-import { ActionPanel, Form, Action, getPreferenceValues, Keyboard, popToRoot, closeMainWindow } from "@raycast/api";
+import { ObsidianVault } from "@/obsidian";
+import { Action, ActionPanel, closeMainWindow, Form, getPreferenceValues, Keyboard, popToRoot } from "@raycast/api";
 import { invalidateNotesCache } from "../api/cache/cache.service";
-import { CreateNoteParams, createNote } from "../api/create-note";
+import { createNote, CreateNoteParams } from "../api/create-note";
 import { parseFolderActionsPreferences, parseTagsPreferences } from "../api/preferences/preferences.service";
-import { ObsidianVault } from "../obsidian/vault";
 import { NoteFormPreferences } from "../utils/preferences";
 
 export function CreateNoteForm(props: { vault: ObsidianVault; showTitle: boolean }) {

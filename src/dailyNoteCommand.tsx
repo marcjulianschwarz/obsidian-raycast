@@ -4,8 +4,7 @@ import { NoVaultFoundMessage } from "./components/Notifications/NoVaultFoundMess
 import AdvancedURIPluginNotInstalled from "./components/Notifications/AdvancedURIPluginNotInstalled";
 import { useObsidianVaults, useVaultPluginCheck } from "./utils/hooks";
 import { DailyNotePreferences } from "./utils/preferences";
-import { Obsidian } from "./obsidian";
-import { ObsidianTargetType } from "./obsidian/obsidian";
+import { Obsidian, ObsidianTargetType } from "@/obsidian";
 
 export default function Command() {
   const { vaults, ready } = useObsidianVaults();

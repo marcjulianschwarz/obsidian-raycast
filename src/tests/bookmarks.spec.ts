@@ -2,15 +2,14 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import fs from "fs";
 import path from "path";
 import { createTempVault } from "./helpers/createTemporaryVault";
+import { ObsidianVault, Note } from "@/obsidian";
 import {
-  bookmarkNote,
+  getBookmarksJson,
   getAllBookmarkFiles,
   getBookmarkedNotePaths,
-  getBookmarksJson,
+  bookmarkNote,
   unbookmarkNote,
-} from "../obsidian/bookmarks";
-import { Note } from "../obsidian/notes";
-import { ObsidianVault } from "../obsidian/vault";
+} from "@/obsidian/internal/bookmarks";
 
 vi.mock("@raycast/api", () => ({
   getPreferenceValues: () => ({

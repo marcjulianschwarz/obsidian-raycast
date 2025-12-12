@@ -5,7 +5,7 @@ import { NoVaultFoundMessage } from "./components/Notifications/NoVaultFoundMess
 import { noVaultPathsToast } from "./components/Toasts";
 import { RandomNote } from "./components/RandomNote";
 import { useObsidianVaults } from "./utils/hooks";
-import { ObsidianVault } from "./obsidian/vault";
+import { ObsidianVault } from "@/obsidian";
 
 export default function Command() {
   const { vaults, ready } = useObsidianVaults();

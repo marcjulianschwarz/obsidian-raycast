@@ -1,10 +1,9 @@
-import { ActionPanel, Form, Action, useNavigation, showToast, Toast, getPreferenceValues } from "@raycast/api";
+import { Note, ObsidianVault } from "@/obsidian";
+import { Action, ActionPanel, Form, getPreferenceValues, showToast, Toast, useNavigation } from "@raycast/api";
 import fs from "fs";
-import { SearchNotePreferences } from "../utils/preferences";
-import { applyTemplates } from "../api/templating/templating.service";
 import { updateNoteInCache } from "../api/cache/cache.service";
-import { Note } from "../obsidian/notes";
-import { ObsidianVault } from "../obsidian/vault";
+import { applyTemplates } from "../api/templating/templating.service";
+import { SearchNotePreferences } from "../utils/preferences";
 
 interface FormValue {
   content: string;

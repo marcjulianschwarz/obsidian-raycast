@@ -1,13 +1,13 @@
+import { ObsidianVault } from "@/obsidian";
 import { Action, ActionPanel, getPreferenceValues, Grid, Image } from "@raycast/api";
 import { useEffect, useMemo, useState } from "react";
-import { Media, MediaSearchArguments } from "../utils/interfaces";
+import { filterMedia } from "../api/search/search.service";
 import { OpenPathInObsidianAction, ShowPathInFinderAction } from "../utils/actions";
-import { getIconFor, getListOfMediaFileExtensions } from "../utils/utils";
 import { IMAGE_SIZE_MAPPING } from "../utils/constants";
 import { useMedia } from "../utils/hooks";
+import { Media, MediaSearchArguments } from "../utils/interfaces";
 import { SearchMediaPreferences } from "../utils/preferences";
-import { filterMedia } from "../api/search/search.service";
-import { ObsidianVault } from "../obsidian/vault";
+import { getIconFor, getListOfMediaFileExtensions } from "../utils/utils";
 
 export function MediaGrid(props: { vault: ObsidianVault; searchArguments: MediaSearchArguments }) {
   const { vault, searchArguments } = props;

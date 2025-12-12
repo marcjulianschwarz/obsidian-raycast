@@ -8,8 +8,7 @@ import { AppendTaskPreferences } from "./utils/preferences";
 import { useObsidianVaults, useVaultPluginCheck } from "./utils/hooks";
 import { clearCache } from "./api/cache/cache.service";
 import { applyTemplates } from "./api/templating/templating.service";
-import { Obsidian } from "./obsidian";
-import { ObsidianTargetType } from "./obsidian/obsidian";
+import { Obsidian, ObsidianTargetType } from "@/obsidian";
 
 interface appendTaskArgs {
   text: string;

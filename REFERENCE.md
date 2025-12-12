@@ -65,6 +65,7 @@ Many commands use a note list.
   - [ ] Creation Date
   - [ ] File Size
   - [ ] Note Path (relative to vault root)
+  - [ ] Link to Websit (extracted from "url" property field if available)
 - [ ] "Search Content" option -> should the note content be used for the search (additional to title)
 - [ ] "Use Fuzzy Search" option -> typos and different spellings can still find relevant notes
 - [ ] Primary Action -> what action should be performed when pressing Enter on a note

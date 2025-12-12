@@ -7,9 +7,7 @@ import { Logger } from "../api/logger/logger.service";
 import { getNotesFromCache, invalidateNotesCache, setNotesInCache } from "../api/cache/cache.service";
 import { parseExcludedFoldersPreferences } from "../api/preferences/preferences.service";
 import { SearchNotePreferences } from "./preferences";
-import { Vault, Obsidian } from "../obsidian";
-import { Note } from "../obsidian/notes";
-import { ObsidianVault, ObsidianVaultsState } from "../obsidian/vault";
+import { Vault, Obsidian, Note, ObsidianVault } from "../obsidian";
 
 const logger = new Logger("Hooks");
 
@@ -119,6 +117,11 @@ export function useMedia(vault: ObsidianVault) {
   }, []);
 
   return media;
+}
+
+export interface ObsidianVaultsState {
+  ready: boolean;
+  vaults: ObsidianVault[];
 }
 
 export function useObsidianVaults(): ObsidianVaultsState {

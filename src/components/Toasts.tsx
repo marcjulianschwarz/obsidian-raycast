@@ -1,5 +1,5 @@
+import { ObsidianVault } from "@/obsidian";
 import { showToast, Toast } from "@raycast/api";
-import { ObsidianVault } from "../obsidian/vault";
 
 //--------------------------------------------------------------------------------
 // All toasts for all commands should be defined here.

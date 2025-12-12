@@ -1,10 +1,9 @@
-import { ActionPanel, Form, Action, useNavigation, showToast, Toast, Icon, confirmAlert } from "@raycast/api";
+import { Note, NoteWithContent, ObsidianVault } from "@/obsidian";
+import { Action, ActionPanel, confirmAlert, Form, Icon, showToast, Toast, useNavigation } from "@raycast/api";
 import fs from "fs";
-import { applyTemplates } from "../api/templating/templating.service";
 import { updateNoteInCache } from "../api/cache/cache.service";
 import { Logger } from "../api/logger/logger.service";
-import { NoteWithContent, Note } from "../obsidian/notes";
-import { ObsidianVault } from "../obsidian/vault";
+import { applyTemplates } from "../api/templating/templating.service";
 
 const logger = new Logger("EditNote");
 
