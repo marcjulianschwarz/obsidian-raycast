@@ -3,9 +3,9 @@
 // and the next command run can reuse the previously cached data.
 
 import { Cache } from "@raycast/api";
+import { Note } from "../../obsidian/notes";
 import { BYTES_PER_MEGABYTE } from "../../utils/constants";
 import { Logger } from "../logger/logger.service";
-import { Note } from "../vault/notes/notes.types";
 
 const logger = new Logger("Cache");
 const cache = new Cache({ capacity: BYTES_PER_MEGABYTE * 100 }); // 100MB for metadata only
