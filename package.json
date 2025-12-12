@@ -686,10 +686,11 @@
     "test": "vitest run",
     "coverage": "vitest run --coverage",
     "test:watch": "vitest",
-    "publish": "ray publish"
+    "publish": "yarn lint && yarn test && ray publish"
   },
   "platforms": [
     "macOS",
     "Windows"
-  ]
+  ],
+  "version": "1.0.0"
 }

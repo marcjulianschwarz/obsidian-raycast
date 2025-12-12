@@ -17,7 +17,6 @@ import { Note } from "../obsidian/internal/notes";
 import fs from "fs";
 import path from "path";
 import os from "os";
-import { Icon } from "@raycast/api";
 
 vi.mock("@raycast/api", () => ({
   getPreferenceValues: vi.fn().mockReturnValue({
