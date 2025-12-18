@@ -120,7 +120,7 @@ export const Obsidian = {
 
 export const ObsidianUtils = {
   createProperties(tags: string[]) {
-    createProperties(tags);
+    return createProperties(tags);
   },
 
   getInlineTags(str: string) {
