@@ -4,6 +4,7 @@
 
 - Adds callout support
 - Adds "Copy File Path" action (opt + shift + c) to notes, vaults, and media items
+- Fixes bookmarked notes not shown in the menubar
 
 ## [Welcoming AI, Sort Notes, Better Tag Search, Code Improvements] - {PR_MERGE_DATE}
 
