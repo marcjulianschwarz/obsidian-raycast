@@ -241,7 +241,7 @@ describe("obsidian", () => {
         vault: mockVault,
       });
 
-      expect(url).toBe("obsidian://advanced-uri?daily=true&vault=Test%20Vault");
+      expect(url).toBe("obsidian://adv-uri?daily=true&vault=Test%20Vault");
     });
 
     it("should generate DailyNoteAppend URL with append mode", () => {
@@ -251,7 +251,7 @@ describe("obsidian", () => {
         text: "New task",
       });
 
-      expect(url).toContain("obsidian://advanced-uri?daily=true");
+      expect(url).toContain("obsidian://adv-uri?daily=true");
       expect(url).toContain("&mode=append");
       expect(url).toContain("&data=New%20task");
       expect(url).toContain("&vault=Test%20Vault");
@@ -321,7 +321,7 @@ describe("obsidian", () => {
         path: "tasks.md",
       });
 
-      expect(url).toContain("obsidian://advanced-uri?mode=append&filepath=tasks.md");
+      expect(url).toContain("obsidian://adv-uri?mode=append&filepath=tasks.md");
       expect(url).toContain("&data=-");
       expect(url).toContain("&vault=Test%20Vault");
     });
