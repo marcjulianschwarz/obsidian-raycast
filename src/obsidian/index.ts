@@ -1,4 +1,5 @@
 import { bookmarkNote, unbookmarkNote } from "./internal/bookmarks";
+import { renderCallouts } from "./internal/callouts";
 import { appendText, createProperties, deleteNote, Note, writeMarkdown } from "./internal/notes";
 import {
   getVaultsFromPreferences,
@@ -136,5 +137,9 @@ export const ObsidianUtils = {
 
   getAllTags(str: string) {
     return tagsForString(str);
+  },
+
+  renderCallouts(str: string) {
+    return renderCallouts(str);
   },
 };

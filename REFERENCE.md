@@ -4,6 +4,16 @@ This is a reference page for all features of the extension. You can use this ref
 
 Last time verified all: 2025-12-11 (macOS)
 
+## Callouts Rendering
+
+- [ ] Obsidian callouts are rendered with emojis in Quick Look and detail views
+- [ ] All standard callout types are supported (note, warning, error, success, tip, question, info, todo, bug, example, quote, etc.)
+- [ ] Callouts with titles display emoji + bold title
+- [ ] Callouts without titles display emoji only
+- [ ] Multi-line callout content is preserved
+- [ ] Callouts are properly spaced from surrounding text
+- [ ] Unknown callout types fall back to note emoji (📝)
+
 ## General Preferences
 
 - [ ] Path to Vault

@@ -1,5 +1,9 @@
 # Obsidian Changelog
 
+## Update
+
+- Adds callout support
+
 ## [Welcoming AI, Sort Notes, Better Tag Search, Code Improvements] - {PR_MERGE_DATE}
 
 - Adds new syntax to search for tagged notes: "tag:someTag". This can be used in combination with a normal search. For example "tag:someTag some text", this searches for notes with the tag "someTag" and then filters those notes with "some text"
