@@ -1,6 +1,6 @@
 import { ObsidianVault } from "@/obsidian";
 import { getVaultNameFromPath, getVaultsFromPreferences } from "@/obsidian/internal/obsidian";
-import { getNotes, getExcludedFolders, getNoteFileContent } from "@/obsidian/internal/vault";
+import { getNotes, getExcludedFolders, getNoteFileContent, getMedia } from "@/obsidian/internal/vault";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { createTempVault } from "./helpers/createTemporaryVault";
 import fs from "fs";
@@ -163,6 +163,138 @@ describe("vault", () => {
       const nonExistentPath = path.join(tempVaultData.vault.path, "non-existent.md");
 
       await expect(getNoteFileContent(nonExistentPath)).rejects.toThrow();
+    });
+  });
+
+  describe("getMedia", () => {
+    it("should return media files from vault", async () => {
+      // Create various media files
+      const imagePath = path.join(tempVaultData.vault.path, "image.jpg");
+      const pdfPath = path.join(tempVaultData.vault.path, "document.pdf");
+      const videoPath = path.join(tempVaultData.vault.path, "video.mp4");
+      const audioPath = path.join(tempVaultData.vault.path, "audio.mp3");
+
+      fs.writeFileSync(imagePath, "fake image content");
+      fs.writeFileSync(pdfPath, "fake pdf content");
+      fs.writeFileSync(videoPath, "fake video content");
+      fs.writeFileSync(audioPath, "fake audio content");
+
+      const media = await getMedia(tempVaultData.vault.path, ".obsidian", []);
+
+      // Should include at least the files we created (may also include media.jpg from createTempVault)
+      expect(media.length).toBeGreaterThanOrEqual(4);
+
+      const mediaTitles = media.map((m) => m.title);
+      expect(mediaTitles).toContain("image.jpg");
+      expect(mediaTitles).toContain("document.pdf");
+      expect(mediaTitles).toContain("video.mp4");
+      expect(mediaTitles).toContain("audio.mp3");
+    });
+
+    it("should return correct media structure with title and path", async () => {
+      const imagePath = path.join(tempVaultData.vault.path, "test-image.png");
+      fs.writeFileSync(imagePath, "fake content");
+
+      const media = await getMedia(tempVaultData.vault.path, ".obsidian", []);
+
+      const testImage = media.find((m) => m.title === "test-image.png");
+      expect(testImage).toBeDefined();
+      expect(testImage?.title).toBe("test-image.png");
+      expect(testImage?.path).toBe(imagePath);
+    });
+
+    it("should exclude media from specified folders", async () => {
+      // Create a folder to exclude
+      const excludedFolder = path.join(tempVaultData.vault.path, "excluded");
+      fs.mkdirSync(excludedFolder, { recursive: true });
+
+      const normalImagePath = path.join(tempVaultData.vault.path, "normal.jpg");
+      const excludedImagePath = path.join(excludedFolder, "excluded.jpg");
+
+      fs.writeFileSync(normalImagePath, "normal image");
+      fs.writeFileSync(excludedImagePath, "excluded image");
+
+      const media = await getMedia(tempVaultData.vault.path, ".obsidian", ["excluded"]);
+
+      const mediaTitles = media.map((m) => m.title);
+      expect(mediaTitles).toContain("normal.jpg");
+      expect(mediaTitles).not.toContain("excluded.jpg");
+    });
+
+    it("should exclude media from .obsidian folder", async () => {
+      const obsidianImagePath = path.join(tempVaultData.vault.path, ".obsidian", "config-image.png");
+      fs.writeFileSync(obsidianImagePath, "config image");
+
+      const normalImagePath = path.join(tempVaultData.vault.path, "normal.png");
+      fs.writeFileSync(normalImagePath, "normal image");
+
+      const media = await getMedia(tempVaultData.vault.path, ".obsidian", []);
+
+      const mediaTitles = media.map((m) => m.title);
+      expect(mediaTitles).toContain("normal.png");
+      expect(mediaTitles).not.toContain("config-image.png");
+    });
+
+    it("should respect userIgnoreFilters from app.json", async () => {
+      // Create app.json with userIgnoreFilters
+      const appJsonPath = path.join(tempVaultData.vault.path, ".obsidian", "app.json");
+      const appConfig = {
+        userIgnoreFilters: ["Archive"],
+      };
+      fs.writeFileSync(appJsonPath, JSON.stringify(appConfig, null, 2));
+
+      // Create archive folder
+      const archiveFolder = path.join(tempVaultData.vault.path, "Archive");
+      fs.mkdirSync(archiveFolder, { recursive: true });
+
+      const normalImagePath = path.join(tempVaultData.vault.path, "normal.jpg");
+      const archivedImagePath = path.join(archiveFolder, "archived.jpg");
+
+      fs.writeFileSync(normalImagePath, "normal image");
+      fs.writeFileSync(archivedImagePath, "archived image");
+
+      const media = await getMedia(tempVaultData.vault.path, ".obsidian", []);
+
+      const mediaTitles = media.map((m) => m.title);
+      expect(mediaTitles).toContain("normal.jpg");
+      expect(mediaTitles).not.toContain("archived.jpg");
+    });
+
+    it("should return empty array when no media files exist", async () => {
+      // Create a fresh temp vault without media
+      const emptyVaultPath = path.join(tempVaultData.vault.path, "empty-vault");
+      fs.mkdirSync(emptyVaultPath, { recursive: true });
+      fs.mkdirSync(path.join(emptyVaultPath, ".obsidian"), { recursive: true });
+
+      // Add only markdown files (not media)
+      const notePath = path.join(emptyVaultPath, "note.md");
+      fs.writeFileSync(notePath, "# Note");
+
+      const media = await getMedia(emptyVaultPath, ".obsidian", []);
+      expect(media).toEqual([]);
+    });
+
+    it("should handle multiple file types in subdirectories", async () => {
+      const subfolder = path.join(tempVaultData.vault.path, "media-folder");
+      fs.mkdirSync(subfolder, { recursive: true });
+
+      const pngPath = path.join(subfolder, "image.png");
+      const gifPath = path.join(subfolder, "animation.gif");
+      const webmPath = path.join(subfolder, "video.webm");
+      const flacPath = path.join(subfolder, "audio.flac");
+
+      fs.writeFileSync(pngPath, "png content");
+      fs.writeFileSync(gifPath, "gif content");
+      fs.writeFileSync(webmPath, "webm content");
+      fs.writeFileSync(flacPath, "flac content");
+
+      const media = await getMedia(tempVaultData.vault.path, ".obsidian", []);
+
+      const mediaTitles = media.map((m) => m.title);
+      expect(mediaTitles).toContain("image.png");
+      expect(mediaTitles).toContain("animation.gif");
+      expect(mediaTitles).toContain("video.webm");
+      expect(mediaTitles).toContain("audio.flac");
     });
   });
 });
