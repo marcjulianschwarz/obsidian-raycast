@@ -1,6 +1,6 @@
 import { ObsidianVault } from "@/obsidian";
 import { getVaultNameFromPath, getVaultsFromPreferences } from "@/obsidian/internal/obsidian";
-import { getNotes, getExcludedFolders } from "@/obsidian/internal/vault";
+import { getNotes, getExcludedFolders, getNoteFileContent } from "@/obsidian/internal/vault";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { createTempVault } from "./helpers/createTemporaryVault";
 import fs from "fs";
@@ -119,6 +119,50 @@ describe("vault", () => {
 
       const excludedFolders = getExcludedFolders(tempVaultData.vault.path, ".obsidian");
       expect(excludedFolders).toEqual([]);
+    });
+  });
+
+  describe("getNoteFileContent", () => {
+    it("should read file content without filter", async () => {
+      const testFilePath = path.join(tempVaultData.vault.path, "test-note.md");
+      const testContent = "# Test Note\n\nThis is test content.";
+      fs.writeFileSync(testFilePath, testContent);
+
+      const content = await getNoteFileContent(testFilePath);
+      expect(content).toBe(testContent);
+    });
+
+    it("should read file content with filter function", async () => {
+      const testFilePath = path.join(tempVaultData.vault.path, "test-note-with-filter.md");
+      const testContent = "# Test Note\n\nThis is test content with some words.";
+      fs.writeFileSync(testFilePath, testContent);
+
+      const filterFunc = (input: string) => input.toUpperCase();
+      const content = await getNoteFileContent(testFilePath, filterFunc);
+      expect(content).toBe(testContent.toUpperCase());
+    });
+
+    it("should handle empty file", async () => {
+      const testFilePath = path.join(tempVaultData.vault.path, "empty-note.md");
+      fs.writeFileSync(testFilePath, "");
+
+      const content = await getNoteFileContent(testFilePath);
+      expect(content).toBe("");
+    });
+
+    it("should handle file with special characters", async () => {
+      const testFilePath = path.join(tempVaultData.vault.path, "special-chars.md");
+      const testContent = "# Test\n\nSpecial chars: émoji 🎉, symbols ©®™, quotes 'test'";
+      fs.writeFileSync(testFilePath, testContent);
+
+      const content = await getNoteFileContent(testFilePath);
+      expect(content).toBe(testContent);
+    });
+
+    it("should throw error for non-existent file", async () => {
+      const nonExistentPath = path.join(tempVaultData.vault.path, "non-existent.md");
+
+      await expect(getNoteFileContent(nonExistentPath)).rejects.toThrow();
     });
   });
 });
