@@ -66,6 +66,98 @@ describe("vault", () => {
       const noteMetadataEntries = await getNotes(tempVaultData.vault.path);
       expect(noteMetadataEntries.length).toBe(2);
     });
+
+    it("should include canvas files in note entries", async () => {
+      const canvas1Path = path.join(tempVaultData.vault.path, "canvas1.canvas");
+      const canvas2Path = path.join(tempVaultData.vault.path, "Folder1", "canvas2.canvas");
+
+      fs.writeFileSync(canvas1Path, JSON.stringify({ nodes: [], edges: [] }));
+      fs.writeFileSync(canvas2Path, JSON.stringify({ nodes: [], edges: [] }));
+
+      const noteMetadataEntries = await getNotes(tempVaultData.vault.path);
+
+      // Should have 2 markdown files + 2 canvas files = 4 total
+      expect(noteMetadataEntries.length).toBe(4);
+
+      const canvasNotes = noteMetadataEntries.filter((note) => note.path.endsWith(".canvas"));
+      expect(canvasNotes.length).toBe(2);
+
+      const canvas1Note = noteMetadataEntries.find((note) => note.title === "canvas1");
+      expect(canvas1Note).toBeDefined();
+      expect(canvas1Note?.path).toBe(canvas1Path);
+
+      const canvas2Note = noteMetadataEntries.find((note) => note.title === "canvas2");
+      expect(canvas2Note).toBeDefined();
+      expect(canvas2Note?.path).toBe(canvas2Path);
+    });
+
+    it("should exclude canvas files from excluded folders", async () => {
+      const excludedFolder = path.join(tempVaultData.vault.path, "excluded");
+      fs.mkdirSync(excludedFolder, { recursive: true });
+
+      const normalCanvasPath = path.join(tempVaultData.vault.path, "normal.canvas");
+      const excludedCanvasPath = path.join(excludedFolder, "excluded.canvas");
+      const normalMdPath = path.join(tempVaultData.vault.path, "normal.md");
+
+      fs.writeFileSync(normalCanvasPath, JSON.stringify({ nodes: [], edges: [] }));
+      fs.writeFileSync(excludedCanvasPath, JSON.stringify({ nodes: [], edges: [] }));
+      fs.writeFileSync(normalMdPath, "# Normal note");
+
+      const noteMetadataEntries = await getNotes(tempVaultData.vault.path, ".obsidian", ["excluded"]);
+
+      const noteTitles = noteMetadataEntries.map((note) => note.title);
+      expect(noteTitles).toContain("normal");
+      expect(noteTitles).not.toContain("excluded");
+
+      // Should have 2 original markdown files + 1 normal.md + 1 normal.canvas = 4 total
+      expect(noteMetadataEntries.length).toBe(4);
+    });
+
+    it("should set bookmarked status for canvas files", async () => {
+      const canvasPath = path.join(tempVaultData.vault.path, "bookmarked.canvas");
+      fs.writeFileSync(canvasPath, JSON.stringify({ nodes: [], edges: [] }));
+
+      // Create bookmarks.json with canvas file
+      const bookmarksJsonPath = path.join(tempVaultData.vault.path, ".obsidian", "bookmarks.json");
+      const bookmarksData = {
+        items: [
+          {
+            type: "file",
+            title: "Bookmarked Canvas",
+            path: "bookmarked.canvas",
+          },
+        ],
+      };
+      fs.writeFileSync(bookmarksJsonPath, JSON.stringify(bookmarksData, null, 2));
+
+      const noteMetadataEntries = await getNotes(tempVaultData.vault.path);
+
+      const canvasNote = noteMetadataEntries.find((note) => note.title === "bookmarked");
+      expect(canvasNote).toBeDefined();
+      expect(canvasNote?.bookmarked).toBe(true);
+    });
+
+    it("should return both markdown and canvas files with correct metadata", async () => {
+      const canvasPath = path.join(tempVaultData.vault.path, "test.canvas");
+      fs.writeFileSync(canvasPath, JSON.stringify({ nodes: [], edges: [] }));
+
+      const noteMetadataEntries = await getNotes(tempVaultData.vault.path);
+
+      // Verify all notes have required properties
+      noteMetadataEntries.forEach((note) => {
+        expect(note).toHaveProperty("title");
+        expect(note).toHaveProperty("path");
+        expect(note).toHaveProperty("lastModified");
+        expect(note).toHaveProperty("bookmarked");
+        expect(typeof note.title).toBe("string");
+        expect(typeof note.path).toBe("string");
+        expect(note.lastModified).toBeInstanceOf(Date);
+        expect(typeof note.bookmarked).toBe("boolean");
+      });
+
+      // Should have at least 3 notes (2 md + 1 canvas)
+      expect(noteMetadataEntries.length).toBeGreaterThanOrEqual(3);
+    });
   });
 
   describe("getExcludedFolders", () => {
