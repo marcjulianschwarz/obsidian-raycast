@@ -32,6 +32,11 @@ Last time verified all: 2025-12-11 (macOS)
 
 Nearly every command has a vault selection that either moves to the next "action/page" directly when there is only one vault in Obsidian or shows a selection when there are multiple vaults.
 
+- [ ] actions
+  - [ ] Select Vault
+  - [ ] Show in Finder
+  - [ ] Copy File Path (opt + shift + c)
+
 ## Notes List
 
 Many commands use a note list.
@@ -49,6 +54,7 @@ Many commands use a note list.
     - [ ] if multiple code blocks in the note -> shows code blocks in a list with language information -> paste or copy now
   - [ ] Copy Note Content
   - [ ] Copy Note Title
+  - [ ] Copy File Path (opt + shift + c)
   - [ ] Paste Note Content
   - [ ] Copy Markdown Link
   - [ ] Copy Obsidian Link
@@ -95,6 +101,7 @@ Many commands use a note list.
 - [ ] actions
   - [ ] Open Vault
   - [ ] Show in Finder
+  - [ ] Copy File Path (opt + shift + c)
 
 ## Random Note Command
 
@@ -196,6 +203,7 @@ Many commands use a note list.
   - [ ] open in macOS quick look
   - [ ] open in Obsidian
   - [ ] show in finder
+  - [ ] Copy File Path (opt + shift + c)
 - [ ] preferences
   - [ ] excluded folders
     - [ ] media from those folders should not appear
