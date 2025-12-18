@@ -269,6 +269,13 @@
       "mode": "view"
     },
     {
+      "name": "openWorkspaceCommand",
+      "title": "Open Workspace",
+      "subtitle": "Obsidian",
+      "description": "Open a workspace in Obsidian.",
+      "mode": "view"
+    },
+    {
       "name": "dailyNoteAppendCommand",
       "title": "Append to Daily Note",
       "subtitle": "Obsidian",

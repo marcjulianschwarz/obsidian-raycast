@@ -19,11 +19,13 @@ import {
   getCanvasFilePaths,
   ObsidianVault,
 } from "./internal/vault";
+import { getWorkspaces } from "./internal/workspaces";
 import { inlineTagsForString, tagsForString, yamlPropertyForString, yamlTagsForString } from "./internal/yaml";
 
 export type { Note, NoteWithContent } from "./internal/notes";
 export type { ObsidianVault } from "./internal/vault";
 export { ObsidianTargetType } from "./internal/obsidian";
+export type { WorkspacesJson, Workspace } from "./internal/workspaces";
 
 export const Vault = {
   readMarkdown(path: string, filter?: (input: string) => string) {
@@ -90,6 +92,10 @@ export const Vault = {
 
   appendToNote(note: Note, content: string) {
     appendText(note.path, content);
+  },
+
+  getWorkspaces(vaultPath: string, configPath: string) {
+    return getWorkspaces(vaultPath, configPath);
   },
 };
 
