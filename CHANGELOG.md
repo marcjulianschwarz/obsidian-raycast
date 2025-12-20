@@ -1,9 +1,9 @@
 # Obsidian Changelog
 
-## Update
+## [New Open Workspace command, Callout Support, Copy Files Action] - {PR_MERGE_DATE}
 
 - Adds new Open Workspace command that shows a list of all workspaces in your vault. Requires advanced URI plugin and workspaces core plugin to be enabled
-- Adds callout support
+- Adds callout support by rendering them as quotes with emojis
 - Adds "Copy File Path" action (opt + shift + c) to notes, vaults, and media items
 - Fixes bookmarked notes not shown in the menubar
 - Fixes Create Note AI tool prepending "undefined" to all notes
