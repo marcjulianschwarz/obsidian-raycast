@@ -216,4 +216,25 @@ Many commands use a note list.
 
 - [ ] shows in menubar when enabled
 - [ ] opens daily note via vault selection of subset of vaults
+- [ ] opens vaults
 - [ ] shows bookmarked notes via vault selection of subset of vaults
+
+## AI Tools
+
+- [ ] create note
+- [ ] open note
+- [ ] search note
+- [ ] read note
+- [ ] update note
+- [ ] get vaults
+- [ ] prepend/append to note
+  - [ ] regular note
+  - [ ] daily note
+  - [ ] below certain heading
+
+## Open Workspaces
+
+- [ ] see vault selection (only shows vaults with workspaces core plugin enabled)
+- [ ] shows list of workspaces
+- [ ] last active workspace is selected
+- [ ] opens workspace
