@@ -1,10 +1,48 @@
 import { MenuBarExtra, open } from "@raycast/api";
-import { Obsidian, ObsidianTargetType, ObsidianVault } from "@/obsidian";
+import { Note, Obsidian, ObsidianTargetType, ObsidianVault } from "@/obsidian";
 import { ObsidianIcon } from "./utils/constants";
-import { useObsidianVaults, useVaultPluginCheck, useNotes } from "./utils/hooks";
+import { useObsidianVaults, useVaultPluginCheck } from "./utils/hooks";
+import { useState, useEffect } from "react";
+import { getNotesWithCache } from "./utils/hooks";
+import { Logger } from "./api/logger/logger.service";
+
+const logger = new Logger("MenuBar");
+
+// Custom hook that loads with a delay to avoid blocking initial render
+function useNotesLazy(vault: ObsidianVault, bookmarked = false) {
+  const [notes, setNotes] = useState<Note[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    // Small delay to let the menu render first
+    const timer = setTimeout(async () => {
+      try {
+        const loadedNotes = await getNotesWithCache(vault.path);
+        if (!cancelled) {
+          const filtered = bookmarked ? loadedNotes.filter((n) => n.bookmarked) : loadedNotes;
+          setNotes(filtered);
+        }
+      } catch (error) {
+        logger.error(`Error loading notes. ${error}`);
+        if (!cancelled) setNotes([]);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }, 100); // 100ms delay
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [vault.path, bookmarked]);
+
+  return { notes, loading };
+}
 
 function BookmarkedNotesList(props: { vault: ObsidianVault }) {
-  const { notes, loading } = useNotes(props.vault, true);
+  const { notes, loading } = useNotesLazy(props.vault, true);
 
   if (loading) {
     return (
