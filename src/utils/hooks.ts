@@ -39,8 +39,10 @@ export async function getNotesWithCache(vaultPath: string): Promise<Note[]> {
       const { configFileName } = getPreferenceValues();
       const pref = getPreferenceValues<SearchNotePreferences>();
       const excludedFolders = parseExcludedFoldersPreferences(pref.excludedFolders);
+      const obsidianIgnoredFoldersResult = Vault.getUserIgnoredFolders(vaultPath, configFileName);
+      const obsidianIgnoredFolders = obsidianIgnoredFoldersResult.isOk() ? obsidianIgnoredFoldersResult.value : [];
 
-      const notes = await Vault.getNotes(vaultPath, configFileName, excludedFolders);
+      const notes = await Vault.getNotes(vaultPath, [...excludedFolders, ...obsidianIgnoredFolders]);
 
       // Store in cache for next time
       setNotesInCache(vaultPath, notes);
