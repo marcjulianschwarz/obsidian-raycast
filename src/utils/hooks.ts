@@ -11,8 +11,12 @@ import { Vault, Obsidian, Note, ObsidianVault } from "../obsidian";
 
 const logger = new Logger("Hooks");
 
+// Track in-flight requests to prevent duplicate loads
+const pendingLoads = new Map<string, Promise<Note[]>>();
+
 /**
  * Gets notes with caching. Checks cache first, falls back to disk scan.
+ * Prevents concurrent loads for the same vault.
  */
 export async function getNotesWithCache(vaultPath: string): Promise<Note[]> {
   // Try cached
@@ -21,18 +25,35 @@ export async function getNotesWithCache(vaultPath: string): Promise<Note[]> {
     return cached;
   }
 
+  // Check if a load is already in progress
+  const pending = pendingLoads.get(vaultPath);
+  if (pending) {
+    logger.debug(`Load already in progress for ${vaultPath}, waiting...`);
+    return pending;
+  }
+
   // Cache miss, load from disk
-  logger.info(`Cache miss for ${vaultPath}, loading from disk`);
-  const { configFileName } = getPreferenceValues();
-  const pref = getPreferenceValues<SearchNotePreferences>();
-  const excludedFolders = parseExcludedFoldersPreferences(pref.excludedFolders);
+  logger.debug(`Cache miss for ${vaultPath}, loading from disk`);
+  const loadPromise = (async () => {
+    try {
+      const { configFileName } = getPreferenceValues();
+      const pref = getPreferenceValues<SearchNotePreferences>();
+      const excludedFolders = parseExcludedFoldersPreferences(pref.excludedFolders);
 
-  const notes = await Vault.getNotes(vaultPath, configFileName, excludedFolders);
+      const notes = await Vault.getNotes(vaultPath, configFileName, excludedFolders);
 
-  // Store in cache for next time
-  setNotesInCache(vaultPath, notes);
+      // Store in cache for next time
+      setNotesInCache(vaultPath, notes);
 
-  return notes;
+      return notes;
+    } finally {
+      // Clean up pending load tracker
+      pendingLoads.delete(vaultPath);
+    }
+  })();
+
+  pendingLoads.set(vaultPath, loadPromise);
+  return loadPromise;
 }
 
 export function useNotes(vault: ObsidianVault, bookmarked = false) {
@@ -42,6 +63,7 @@ export function useNotes(vault: ObsidianVault, bookmarked = false) {
 
   // Load notes with caching
   useEffect(() => {
+    logger.trace(useNotes.name, { vault: vault.name, bookmarked });
     let cancelled = false;
     async function load() {
       try {
