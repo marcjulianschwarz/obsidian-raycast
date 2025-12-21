@@ -7,6 +7,8 @@ import { getFilePaths } from "../../api/file/file.service";
 import { Logger } from "../../api/logger/logger.service";
 import { getBookmarkedNotePaths } from "./bookmarks";
 import { Note } from "./notes";
+import { FileReadError, safeReadFile } from "./utils";
+import { err, ok, Result } from "neverthrow";
 
 const logger: Logger = new Logger("Vaults");
 
@@ -16,62 +18,34 @@ export interface ObsidianVault {
   path: string;
 }
 
-/** Gets a list of folders that are ignored by the user inside of Obsidian */
-export function getExcludedFolders(vaultPath: string, configFileName: string): string[] {
-  const appJSONPath = path.join(vaultPath, configFileName || ".obsidian", "app.json");
-  if (!fs.existsSync(appJSONPath)) {
-    return [];
-  } else {
-    const appJSON = JSON.parse(fs.readFileSync(appJSONPath, "utf-8"));
-    return appJSON["userIgnoreFilters"] || [];
-  }
-}
+export type GetMarkdownFilePathsWarning = FileReadError;
 
-/** Returns a list of file paths for all notes inside of the given vault, filtered by Raycast and Obsidian exclusions. */
-export async function getMarkdownFilePaths(
-  vaultPath: string,
-  configFileName: string,
-  excludedFolders: string[]
-): Promise<string[]> {
-  const userIgnoredFolders = getExcludedFolders(vaultPath, configFileName);
-  excludedFolders.push(...userIgnoredFolders, configFileName);
-  const files = await getFilePaths({
-    path: vaultPath,
-    excludedFolders,
-    includedFileExtensions: [".md"],
-  });
-  logger.info(`Loaded ${files.length} markdown file paths in ${vaultPath}.`);
-  return files;
-}
+/**
+ * Gets a list of folders that are ignored by the user inside of Obsidian
+ * by reading the app.json file located in the vaults config folder (default .obsidian)
+ * and returning the userIgnoreFilters values.
+ */
+export function getUserIgnoredFolders(vaultPath: string, configFileName: string): Result<string[], FileReadError> {
+  logger.trace(getUserIgnoredFolders.name, { vaultPath, configFileName });
+  const appJSONPath = path.join(vaultPath, configFileName, "app.json");
+  const fileReadResult = safeReadFile(appJSONPath);
+  if (fileReadResult.isErr()) return err(fileReadResult.error);
 
-/** Returns a list of file paths for all canvases inside of the given vault, filtered by Raycast and Obsidian exclusions. */
-export async function getCanvasFilePaths(
-  vaultPath: string,
-  configFileName: string,
-  excludedFolders: string[]
-): Promise<string[]> {
-  const userIgnoredFolders = getExcludedFolders(vaultPath, configFileName);
-  excludedFolders.push(...userIgnoredFolders, configFileName);
-  const files = await getFilePaths({
-    path: vaultPath,
-    excludedFolders,
-    includedFileExtensions: [".canvas"],
-  });
-  logger.info(`Loaded ${files.length} canvas file paths in ${vaultPath}.`);
-  return files;
+  // TODO: handle parsing errors
+  const appJSON = JSON.parse(fileReadResult.value) as { userIgnoreFilters?: string[] };
+  const userIgnoredFolders = appJSON.userIgnoreFilters || [];
+  logger.info("Obsidian user ignored folders", { userIgnoredFolders });
+  return ok(userIgnoredFolders);
 }
 
 export async function getNoteFileContent(path: string, filter?: (input: string) => string) {
+  logger.trace(getNoteFileContent.name, { path, filter: Boolean(filter) });
   const content = await fsAsync.readFile(path, { encoding: "utf-8" });
-  logger.debug(`Load file content for ${path}${filter ? " and filtering content." : ""}`);
   return filter ? filter(content) : content;
 }
 
 /** Gets a list of file paths for all media. */
 async function getMediaFilePaths(vaultPath: string, configFileName: string, excludedFolders: string[]) {
-  const userIgnoredFolders = getExcludedFolders(vaultPath, configFileName);
-  excludedFolders.push(...userIgnoredFolders, configFileName);
-
   const files = await getFilePaths({
     path: vaultPath,
     excludedFolders,
@@ -85,6 +59,9 @@ async function getMediaFilePaths(vaultPath: string, configFileName: string, excl
       ".pdf",
     ],
   });
+
+  logger.info(`Got media files`, { vaultPath, fileCount: files.length });
+
   return files;
 }
 
@@ -106,12 +83,13 @@ export async function getMedia(vaultPath: string, configFileName: string, exclud
   return medias;
 }
 
-export async function getNotes(
-  vaultPath: string,
-  configFileName: string = ".obsidian",
-  excludedFolders: string[] = []
-): Promise<Note[]> {
-  const filePaths = await getMarkdownFilePaths(vaultPath, configFileName, excludedFolders);
+export async function getNotes(vaultPath: string, excludedFolders: string[] = []): Promise<Note[]> {
+  const filePaths = await getFilePaths({
+    path: vaultPath,
+    excludedFolders,
+    includedFileExtensions: [".md"],
+  });
+
   const bookmarkedFilePaths = getBookmarkedNotePaths(vaultPath);
   const notes: Note[] = [];
 
@@ -128,7 +106,12 @@ export async function getNotes(
   }
 
   // Add canvas files in a second pass. Canvas specific changes can be made here
-  const canvasFilePaths = await getCanvasFilePaths(vaultPath, configFileName, excludedFolders);
+  const canvasFilePaths = await getFilePaths({
+    path: vaultPath,
+    excludedFolders,
+    includedFileExtensions: [".canvas"],
+  });
+
   for (const canvasFilePath of canvasFilePaths) {
     const title = path.basename(canvasFilePath, path.extname(canvasFilePath));
     const relativePath = path.relative(vaultPath, canvasFilePath);
@@ -140,6 +123,8 @@ export async function getNotes(
       bookmarked: bookmarkedFilePaths.includes(relativePath),
     });
   }
+
+  logger.info(`Got total notes`, { vaultPath, fileCount: notes.length });
 
   return notes;
 }

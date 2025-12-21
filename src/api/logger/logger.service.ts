@@ -14,6 +14,13 @@ export class Logger {
     name: "\x1b[36m", // Cyan for logger name
   };
 
+  // Enabled log levels - modify this array to control what gets logged
+  private static enabledLevels: string[] = ["info", "success", "warning", "error", "trace"];
+
+  // Logger name filtering - inclusion list takes priority over exclusion
+  private static includeNames: string[] = ["Vaults"]; // Only show logs from these logger names (empty = show all)
+  private static excludeNames: string[] = []; // Hide logs from these logger names
+
   constructor(name?: string) {
     this.name = name || "Logger";
   }
@@ -42,37 +49,111 @@ export class Logger {
     return String(message);
   }
 
-  private log(level: string, color: string, message: unknown): void {
+  private shouldLog(level: string): boolean {
+    // Check if level is enabled
+    if (!Logger.enabledLevels.includes(level)) {
+      return false;
+    }
+
+    // If inclusion list has items, only show loggers in that list
+    if (Logger.includeNames.length > 0) {
+      return Logger.includeNames.includes(this.name);
+    }
+
+    // If no inclusion list, check exclusion list
+    return !Logger.excludeNames.includes(this.name);
+  }
+
+  private log(level: string, color: string, message: unknown, data?: Record<string, unknown>): void {
+    if (!this.shouldLog(level)) {
+      return;
+    }
+
     const formattedTimestamp = `${Logger.COLORS.timestamp}[${this.timestamp()}]${Logger.COLORS.reset}`;
     const formattedName = `${Logger.COLORS.name}[${this.name}]${Logger.COLORS.reset}`;
     const formattedLevel = `${color}[${level.toUpperCase()}]${Logger.COLORS.reset}`;
     const formattedMessage = this.formatMessage(message);
 
-    console.log(`${formattedTimestamp} ${formattedName} ${formattedLevel} ${formattedMessage}`);
-    // console.log(`${color}${formattedTimestamp} ${formattedName} ${formattedLevel} ${formattedMessage}${Logger.COLORS.reset}`);
+    let output = `${formattedTimestamp} ${formattedName} ${formattedLevel} ${formattedMessage}`;
+
+    if (data) {
+      try {
+        const formattedData = JSON.stringify(data, null, 2);
+        output += `\n${Logger.COLORS.trace}${formattedData}${Logger.COLORS.reset}`;
+      } catch (e) {
+        output += `\n${Logger.COLORS.trace}[Invalid JSON data]${Logger.COLORS.reset}`;
+      }
+    }
+
+    console.log(output);
   }
 
-  info(message: unknown): void {
-    this.log("info", Logger.COLORS.info, message);
+  // Static methods to manage logger name filtering
+  static setIncludeNames(names: string[]): void {
+    Logger.includeNames = [...names];
   }
 
-  success(message: unknown): void {
-    this.log("success", Logger.COLORS.success, message);
+  static setExcludeNames(names: string[]): void {
+    Logger.excludeNames = [...names];
   }
 
-  warning(message: unknown): void {
-    this.log("warning", Logger.COLORS.warning, message);
+  static addIncludeName(name: string): void {
+    if (!Logger.includeNames.includes(name)) {
+      Logger.includeNames.push(name);
+    }
   }
 
-  error(message: unknown): void {
-    this.log("error", Logger.COLORS.error, message);
+  static addExcludeName(name: string): void {
+    if (!Logger.excludeNames.includes(name)) {
+      Logger.excludeNames.push(name);
+    }
   }
 
-  debug(message: unknown): void {
-    this.log("debug", Logger.COLORS.debug, message);
+  static removeIncludeName(name: string): void {
+    Logger.includeNames = Logger.includeNames.filter((n) => n !== name);
   }
 
-  trace(message: unknown): void {
-    this.log("trace", Logger.COLORS.trace, message);
+  static removeExcludeName(name: string): void {
+    Logger.excludeNames = Logger.excludeNames.filter((n) => n !== name);
+  }
+
+  static clearIncludeNames(): void {
+    Logger.includeNames = [];
+  }
+
+  static clearExcludeNames(): void {
+    Logger.excludeNames = [];
+  }
+
+  static getIncludeNames(): string[] {
+    return [...Logger.includeNames];
+  }
+
+  static getExcludeNames(): string[] {
+    return [...Logger.excludeNames];
+  }
+
+  info(message: unknown, data?: Record<string, unknown>): void {
+    this.log("info", Logger.COLORS.info, message, data);
+  }
+
+  success(message: unknown, data?: Record<string, unknown>): void {
+    this.log("success", Logger.COLORS.success, message, data);
+  }
+
+  warning(message: unknown, data?: Record<string, unknown>): void {
+    this.log("warning", Logger.COLORS.warning, message, data);
+  }
+
+  error(message: unknown, data?: Record<string, unknown>): void {
+    this.log("error", Logger.COLORS.error, message, data);
+  }
+
+  debug(message: unknown, data?: Record<string, unknown>): void {
+    this.log("debug", Logger.COLORS.debug, message, data);
+  }
+
+  trace(message: unknown, data?: Record<string, unknown>): void {
+    this.log("trace", Logger.COLORS.trace, message, data);
   }
 }

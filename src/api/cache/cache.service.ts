@@ -24,7 +24,7 @@ export function setNotesInCache(cacheKey: string, notes: Note[]): void {
   };
   try {
     cache.set(cacheKey, JSON.stringify(data));
-    logger.info(`Cached ${notes.length} notes for ${cacheKey}`);
+    logger.debug(`Cached ${notes.length} notes for ${cacheKey}`);
   } catch (error) {
     logger.error(`Failed to cache notes. Error: ${error}`);
   }
@@ -35,7 +35,7 @@ export function setNotesInCache(cacheKey: string, notes: Note[]): void {
  */
 export function getNotesFromCache(cacheKey: string): Note[] | null {
   if (!cache.has(cacheKey)) {
-    logger.info(`No cache for ${cacheKey}`);
+    logger.debug(`No cache for ${cacheKey}`);
     return null;
   }
 
@@ -47,7 +47,7 @@ export function getNotesFromCache(cacheKey: string): Note[] | null {
 
     // Check if stale
     if (Date.now() - data.lastCached > CACHE_TTL) {
-      logger.info(`Cache stale for ${cacheKey}`);
+      logger.debug(`Cache stale for ${cacheKey}`);
       return null;
     }
 
@@ -57,7 +57,7 @@ export function getNotesFromCache(cacheKey: string): Note[] | null {
       lastModified: new Date(note.lastModified),
     }));
 
-    logger.info(`Using cached notes for ${cacheKey}`);
+    logger.debug(`Using cached notes for ${cacheKey}`);
     return notesWithDates;
   } catch (error) {
     logger.error(`Failed to parse cached notes. Error: ${error}`);
@@ -70,7 +70,7 @@ export function getNotesFromCache(cacheKey: string): Note[] | null {
  */
 export function invalidateNotesCache(cacheKey: string): void {
   cache.remove(cacheKey);
-  logger.info(`Invalidated cache for ${cacheKey}`);
+  logger.debug(`Invalidated cache for ${cacheKey}`);
 }
 
 /**
@@ -79,14 +79,14 @@ export function invalidateNotesCache(cacheKey: string): void {
 export function updateNoteInCache(cacheKey: string, notePath: string, updates: Partial<Note>): void {
   const cached = getNotesFromCache(cacheKey);
   if (!cached) {
-    logger.info(`No cache to update for ${cacheKey}`);
+    logger.debug(`No cache to update for ${cacheKey}`);
     return;
   }
 
   const updatedNotes = cached.map((note) => (note.path === notePath ? { ...note, ...updates } : note));
 
   setNotesInCache(cacheKey, updatedNotes);
-  logger.info(`Updated note ${notePath} in cache`);
+  logger.debug(`Updated note ${notePath} in cache`);
 }
 
 /**
@@ -95,14 +95,14 @@ export function updateNoteInCache(cacheKey: string, notePath: string, updates: P
 export function deleteNoteFromCache(cacheKey: string, notePath: string): void {
   const cached = getNotesFromCache(cacheKey);
   if (!cached) {
-    logger.info(`No cache to delete from for ${cacheKey}`);
+    logger.debug(`No cache to delete from for ${cacheKey}`);
     return;
   }
 
   const filteredNotes = cached.filter((note) => note.path !== notePath);
 
   setNotesInCache(cacheKey, filteredNotes);
-  logger.info(`Deleted note ${notePath} from cache`);
+  logger.debug(`Deleted note ${notePath} from cache`);
 }
 
 /**
@@ -110,5 +110,5 @@ export function deleteNoteFromCache(cacheKey: string, notePath: string): void {
  */
 export function clearCache(): void {
   cache.clear();
-  logger.info("Cleared all cache");
+  logger.debug("Cleared all cache");
 }
