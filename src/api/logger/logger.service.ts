@@ -17,6 +17,10 @@ export class Logger {
   // Enabled log levels - modify this array to control what gets logged
   private static enabledLevels: string[] = ["info", "success", "warning", "error", "trace"];
 
+  // Logger name filtering - inclusion list takes priority over exclusion
+  private static includeNames: string[] = ["Vaults"]; // Only show logs from these logger names (empty = show all)
+  private static excludeNames: string[] = []; // Hide logs from these logger names
+
   constructor(name?: string) {
     this.name = name || "Logger";
   }
@@ -45,8 +49,23 @@ export class Logger {
     return String(message);
   }
 
-  private log(level: string, color: string, message: unknown, data?: Record<string, unknown>): void {
+  private shouldLog(level: string): boolean {
+    // Check if level is enabled
     if (!Logger.enabledLevels.includes(level)) {
+      return false;
+    }
+
+    // If inclusion list has items, only show loggers in that list
+    if (Logger.includeNames.length > 0) {
+      return Logger.includeNames.includes(this.name);
+    }
+
+    // If no inclusion list, check exclusion list
+    return !Logger.excludeNames.includes(this.name);
+  }
+
+  private log(level: string, color: string, message: unknown, data?: Record<string, unknown>): void {
+    if (!this.shouldLog(level)) {
       return;
     }
 
@@ -67,6 +86,51 @@ export class Logger {
     }
 
     console.log(output);
+  }
+
+  // Static methods to manage logger name filtering
+  static setIncludeNames(names: string[]): void {
+    Logger.includeNames = [...names];
+  }
+
+  static setExcludeNames(names: string[]): void {
+    Logger.excludeNames = [...names];
+  }
+
+  static addIncludeName(name: string): void {
+    if (!Logger.includeNames.includes(name)) {
+      Logger.includeNames.push(name);
+    }
+  }
+
+  static addExcludeName(name: string): void {
+    if (!Logger.excludeNames.includes(name)) {
+      Logger.excludeNames.push(name);
+    }
+  }
+
+  static removeIncludeName(name: string): void {
+    Logger.includeNames = Logger.includeNames.filter((n) => n !== name);
+  }
+
+  static removeExcludeName(name: string): void {
+    Logger.excludeNames = Logger.excludeNames.filter((n) => n !== name);
+  }
+
+  static clearIncludeNames(): void {
+    Logger.includeNames = [];
+  }
+
+  static clearExcludeNames(): void {
+    Logger.excludeNames = [];
+  }
+
+  static getIncludeNames(): string[] {
+    return [...Logger.includeNames];
+  }
+
+  static getExcludeNames(): string[] {
+    return [...Logger.excludeNames];
   }
 
   info(message: unknown, data?: Record<string, unknown>): void {
