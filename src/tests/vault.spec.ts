@@ -1,6 +1,6 @@
 import { ObsidianVault } from "@/obsidian";
 import { getVaultNameFromPath, getVaultsFromPreferences } from "@/obsidian/internal/obsidian";
-import { getNotes, getExcludedFolders, getNoteFileContent, getMedia } from "@/obsidian/internal/vault";
+import { getNotes, getUserIgnoredFolders, getNoteFileContent, getMedia } from "@/obsidian/internal/vault";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { createTempVault } from "./helpers/createTemporaryVault";
 import fs from "fs";
@@ -162,7 +162,7 @@ describe("vault", () => {
 
   describe("getExcludedFolders", () => {
     it("should return empty array when app.json does not exist", () => {
-      const excludedFolders = getExcludedFolders(tempVaultData.vault.path, ".obsidian");
+      const excludedFolders = getUserIgnoredFolders(tempVaultData.vault.path, ".obsidian");
       expect(excludedFolders).toEqual([]);
     });
 
@@ -173,7 +173,7 @@ describe("vault", () => {
       };
       fs.writeFileSync(appJsonPath, JSON.stringify(appConfig, null, 2));
 
-      const excludedFolders = getExcludedFolders(tempVaultData.vault.path, ".obsidian");
+      const excludedFolders = getUserIgnoredFolders(tempVaultData.vault.path, ".obsidian");
       expect(excludedFolders).toEqual(["Archive", "Templates", "Private"]);
     });
 
@@ -184,7 +184,7 @@ describe("vault", () => {
       };
       fs.writeFileSync(appJsonPath, JSON.stringify(appConfig, null, 2));
 
-      const excludedFolders = getExcludedFolders(tempVaultData.vault.path, ".obsidian");
+      const excludedFolders = getUserIgnoredFolders(tempVaultData.vault.path, ".obsidian");
       expect(excludedFolders).toEqual([]);
     });
 
@@ -198,7 +198,7 @@ describe("vault", () => {
       };
       fs.writeFileSync(appJsonPath, JSON.stringify(appConfig, null, 2));
 
-      const excludedFolders = getExcludedFolders(tempVaultData.vault.path, customConfigDir);
+      const excludedFolders = getUserIgnoredFolders(tempVaultData.vault.path, customConfigDir);
       expect(excludedFolders).toEqual(["CustomFolder"]);
     });
 
@@ -209,7 +209,7 @@ describe("vault", () => {
       };
       fs.writeFileSync(appJsonPath, JSON.stringify(appConfig, null, 2));
 
-      const excludedFolders = getExcludedFolders(tempVaultData.vault.path, ".obsidian");
+      const excludedFolders = getUserIgnoredFolders(tempVaultData.vault.path, ".obsidian");
       expect(excludedFolders).toEqual([]);
     });
   });

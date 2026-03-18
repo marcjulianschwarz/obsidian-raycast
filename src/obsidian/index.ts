@@ -10,15 +10,7 @@ import {
   validateNotePath,
 } from "./internal/obsidian";
 import { readCommunityPlugins, readCorePlugins, VaultPluginCheckParams, vaultPluginCheck } from "./internal/plugins";
-import {
-  getNoteFileContent,
-  getNotes,
-  getMedia,
-  getExcludedFolders,
-  getMarkdownFilePaths,
-  getCanvasFilePaths,
-  ObsidianVault,
-} from "./internal/vault";
+import { getNoteFileContent, getNotes, getMedia, getUserIgnoredFolders, ObsidianVault } from "./internal/vault";
 import { getWorkspaces } from "./internal/workspaces";
 import { inlineTagsForString, tagsForString, yamlPropertyForString, yamlTagsForString } from "./internal/yaml";
 
@@ -54,20 +46,19 @@ export const Vault = {
     return vaultPluginCheck(params);
   },
 
-  getExcludedFolders(path: string, configFileName: string) {
-    return getExcludedFolders(path, configFileName);
+  /**
+   * Gets a list of folders that are ignored by the user inside of Obsidian
+   */
+  getUserIgnoredFolders(vaultPath: string, configFileName: string) {
+    return getUserIgnoredFolders(vaultPath, configFileName);
   },
 
-  getMarkdownFilePaths(path: string, configFileName: string, excludedFolders: string[]) {
-    return getMarkdownFilePaths(path, configFileName, excludedFolders);
-  },
-
-  getCanvasFilePaths(path: string, configFileName: string, excludedFolders: string[]) {
-    return getCanvasFilePaths(path, configFileName, excludedFolders);
-  },
-
-  getNotes(path: string, configFileName: string, excludedFolders: string[]) {
-    return getNotes(path, configFileName, excludedFolders);
+  /**
+   * Loads all notes (markdown and canvas) except the ones in
+   * the excludedFolders array.
+   */
+  getNotes(path: string, excludedFolders: string[]) {
+    return getNotes(path, excludedFolders);
   },
 
   getMedia(path: string, configFileName: string, excludedFolders: string[]) {
