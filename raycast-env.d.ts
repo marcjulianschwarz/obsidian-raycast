@@ -136,6 +136,8 @@ declare namespace Preferences {
   /** Silent Mode - Don't open note when appending. */
   "silent": boolean
 }
+  /** Preferences accessible in the `runActionCommand` command */
+  export type RunActionCommand = ExtensionPreferences & {}
 }
 
 declare namespace Arguments {
@@ -184,5 +186,7 @@ declare namespace Arguments {
   /** YYYY-MM-DD */
   "dueDate": string
 }
+  /** Arguments passed to the `runActionCommand` command */
+  export type RunActionCommand = {}
 }
 
