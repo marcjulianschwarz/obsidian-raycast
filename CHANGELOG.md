@@ -1,6 +1,12 @@
 # Obsidian Changelog
 
-## [Bugfix] - {PR_MERGE_DATE}
+## [Silent Mode No Longer Activates Obsidian] - 2026-03-31
+
+- Fix: Append to Daily Note, Append Task, and custom actions with silent mode enabled no longer bring Obsidian to the foreground
+- Fix: Multi-vault Append Task was missing the silent flag, causing Obsidian to always activate on vault selection
+- Uses macOS `open -g` (background flag) instead of Raycast `open()` when silent mode is on
+
+## [Bugfix] - 2026-03-18
 
 - Fixes a bug where the extension was failing after initial install
 
